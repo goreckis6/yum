@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Secrets / env (keep .env.example)
+.env
+**/.env
+!**/.env.example
+
+# Expo / RN build artifacts
+.expo/
+**/.expo/
+dist/
+**/dist/
+web-build/
+**/web-build/
+*.tsbuildinfo
+
+# Native
+*.keystore
+*.pem
+
+# Logs
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.thumbnail
+
+# Claude Code local data (memory, transcripts) — never publish
+.claude/
+
+# Backend runtime uploads
+uploads/

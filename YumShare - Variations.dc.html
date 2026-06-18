@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#E4E2DE;padding:48px 40px 80px;font-family:'Plus Jakarta Sans',sans-serif;">
+
+  <!-- Page header -->
+  <div style="max-width:900px;margin:0 auto 56px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+      <span style="width:10px;height:10px;border-radius:50%;background:#161616;"></span>
+      <span style="font-size:12px;font-weight:700;color:#6A6A6A;letter-spacing:1.2px;text-transform:uppercase;">Design exploration</span>
+    </div>
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:38px;color:#161616;letter-spacing:-1px;line-height:1.1;margin-bottom:10px;">YumShare — Variations</div>
+    <div style="font-size:16px;font-weight:500;color:#6A6A6A;max-width:520px;line-height:1.5;">Three design dimensions to explore: recipe card layout, recipe detail structure, and meal plan presentation. Mix and match freely.</div>
+  </div>
+
+  <!-- ═══════ SECTION 1: RECIPE CARD LAYOUT ═══════ -->
+  <div style="max-width:900px;margin:0 auto 64px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;">
+      <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:22px;color:#161616;letter-spacing:-0.4px;">1 — Recipe card layout</div>
+    </div>
+    <div style="font-size:14px;font-weight:500;color:#868686;margin-bottom:28px;">How cards appear in the library. Grid feels familiar; list surfaces more detail; magazine mixes both.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+
+      <!-- A: 2-col Grid -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">A — Grid (current)</div>
+        <div style="background:#F6F6F4;border-radius:26px;padding:18px;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <!-- card 1 -->
+            <div style="background:#fff;border-radius:16px;overflow:hidden;">
+              <div style="height:96px;background:#E4E4E2;position:relative;">
+                <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 10px,rgba(255,255,255,0.3) 10px 11px);"></div>
+                <div style="position:absolute;top:7px;right:7px;background:rgba(255,255,255,0.92);border-radius:999px;padding:2px 6px;display:flex;align-items:center;gap:2px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="#161616"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg><span style="font-size:10px;font-weight:700;color:#161616;">4.8</span></div>
+              </div>
+              <div style="padding:9px 10px 10px;"><div style="font-size:12.5px;font-weight:700;color:#161616;line-height:1.22;">Creamy Tomato Rigatoni</div><div style="font-size:11px;font-weight:600;color:#949494;margin-top:4px;">25 min · TikTok</div></div>
+            </div>
+            <!-- card 2 -->
+            <div style="background:#fff;border-radius:16px;overflow:hidden;">
+              <div style="height:96px;background:#DCDCDA;position:relative;">
+                <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 10px,rgba(255,255,255,0.3) 10px 11px);"></div>
+                <div style="position:absolute;top:7px;right:7px;background:rgba(255,255,255,0.92);border-radius:999px;padding:2px 6px;display:flex;align-items:center;gap:2px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="#161616"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg><span style="font-size:10px;font-weight:700;color:#161616;">4.9</span></div>
+              </div>
+              <div style="padding:9px 10px 10px;"><div style="font-size:12.5px;font-weight:700;color:#161616;line-height:1.22;">Honey Garlic Salmon Bowl</div><div style="font-size:11px;font-weight:600;color:#949494;margin-top:4px;">30 min · Instagram</div></div>
+            </div>
+            <!-- card 3 -->
+            <div style="background:#fff;border-radius:16px;overflow:hidden;">
+              <div style="height:96px;background:#E0E0DE;position:relative;">
+                <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 10px,rgba(255,255,255,0.3) 10px 11px);"></div>
+              </div>
+              <div style="padding:9px 10px 10px;"><div style="font-size:12.5px;font-weight:700;color:#161616;line-height:1.22;">Green Goddess Salad</div><div style="font-size:11px;font-weight:600;color:#949494;margin-top:4px;">15 min · YouTube</div></div>
+            </div>
+            <!-- card 4 -->
+            <div style="background:#fff;border-radius:16px;overflow:hidden;">
+              <div style="height:96px;background:#E6E6E4;position:relative;">
+                <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 10px,rgba(255,255,255,0.3) 10px 11px);"></div>
+              </div>
+              <div style="padding:9px 10px 10px;"><div style="font-size:12.5px;font-weight:700;color:#161616;line-height:1.22;">Banana Oat Pancakes</div><div style="font-size:11px;font-weight:600;color:#949494;margin-top:4px;">20 min · Pinterest</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B: Full-width List -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">B — List</div>
+        <div style="background:#F6F6F4;border-radius:26px;padding:18px;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:stretch;">
+              <div style="width:72px;flex:0 0 auto;background:#E4E4E2;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 8px,rgba(255,255,255,0.3) 8px 9px);"></div></div>
+              <div style="padding:11px 12px;flex:1;"><div style="font-size:13px;font-weight:700;color:#161616;line-height:1.2;margin-bottom:4px;">Creamy Tomato Rigatoni</div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:600;color:#949494;">25 min</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><span style="font-size:11px;font-weight:600;color:#949494;">520 kcal</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><div style="display:flex;align-items:center;gap:2px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="#161616"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg><span style="font-size:11px;font-weight:700;color:#161616;">4.8</span></div></div></div>
+            </div>
+            <div style="background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:stretch;">
+              <div style="width:72px;flex:0 0 auto;background:#DCDCDA;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 8px,rgba(255,255,255,0.3) 8px 9px);"></div></div>
+              <div style="padding:11px 12px;flex:1;"><div style="font-size:13px;font-weight:700;color:#161616;line-height:1.2;margin-bottom:4px;">Honey Garlic Salmon Bowl</div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:600;color:#949494;">30 min</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><span style="font-size:11px;font-weight:600;color:#949494;">610 kcal</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><div style="display:flex;align-items:center;gap:2px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="#161616"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg><span style="font-size:11px;font-weight:700;color:#161616;">4.9</span></div></div></div>
+            </div>
+            <div style="background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:stretch;">
+              <div style="width:72px;flex:0 0 auto;background:#E0E0DE;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 8px,rgba(255,255,255,0.3) 8px 9px);"></div></div>
+              <div style="padding:11px 12px;flex:1;"><div style="font-size:13px;font-weight:700;color:#161616;line-height:1.2;margin-bottom:4px;">Green Goddess Salad</div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:600;color:#949494;">15 min</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><span style="font-size:11px;font-weight:600;color:#949494;">320 kcal</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><div style="display:flex;align-items:center;gap:2px;"><svg width="9" height="9" viewBox="0 0 24 24" fill="#161616"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg><span style="font-size:11px;font-weight:700;color:#161616;">4.6</span></div></div></div>
+            </div>
+            <div style="background:#fff;border-radius:14px;overflow:hidden;display:flex;align-items:stretch;">
+              <div style="width:72px;flex:0 0 auto;background:#E6E6E4;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 8px,rgba(255,255,255,0.3) 8px 9px);"></div></div>
+              <div style="padding:11px 12px;flex:1;"><div style="font-size:13px;font-weight:700;color:#161616;line-height:1.2;margin-bottom:4px;">Banana Oat Pancakes</div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:11px;font-weight:600;color:#949494;">20 min</span><span style="width:3px;height:3px;border-radius:50%;background:#BEBEBE;display:inline-block;"></span><span style="font-size:11px;font-weight:600;color:#949494;">380 kcal</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- C: Magazine -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">C — Magazine</div>
+        <div style="background:#F6F6F4;border-radius:26px;padding:18px;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <!-- hero card -->
+          <div style="background:#fff;border-radius:16px;overflow:hidden;margin-bottom:9px;">
+            <div style="height:140px;background:#E4E4E2;position:relative;">
+              <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 12px,rgba(255,255,255,0.3) 12px 13px);"></div>
+              <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(22,22,22,0.62),rgba(22,22,22,0));padding:12px;">
+                <div style="font-size:14px;font-weight:700;color:#fff;line-height:1.2;">Creamy Tomato Rigatoni</div>
+                <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.78);margin-top:3px;">25 min · 4.8 ★</div>
+              </div>
+            </div>
+          </div>
+          <!-- two small below -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">
+            <div style="background:#fff;border-radius:13px;overflow:hidden;">
+              <div style="height:74px;background:#DCDCDA;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 9px,rgba(255,255,255,0.3) 9px 10px);"></div></div>
+              <div style="padding:7px 8px 9px;"><div style="font-size:11.5px;font-weight:700;color:#161616;line-height:1.2;">Honey Garlic Salmon</div><div style="font-size:10px;font-weight:600;color:#949494;margin-top:3px;">30 min</div></div>
+            </div>
+            <div style="background:#fff;border-radius:13px;overflow:hidden;">
+              <div style="height:74px;background:#E0E0DE;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 9px,rgba(255,255,255,0.3) 9px 10px);"></div></div>
+              <div style="padding:7px 8px 9px;"><div style="font-size:11.5px;font-weight:700;color:#161616;line-height:1.2;">Green Goddess Salad</div><div style="font-size:10px;font-weight:600;color:#949494;margin-top:3px;">15 min</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ SECTION 2: RECIPE DETAIL STRUCTURE ═══════ -->
+  <div style="max-width:900px;margin:0 auto 64px;">
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:22px;color:#161616;letter-spacing:-0.4px;margin-bottom:6px;">2 — Recipe detail structure</div>
+    <div style="font-size:14px;font-weight:500;color:#868686;margin-bottom:28px;">How content is organized inside a recipe. Tabs keep it tight; anchor scroll gives a natural reading rhythm.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+      <!-- A: Segmented tabs (current) -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">A — Segmented tabs (current)</div>
+        <div style="background:#F6F6F4;border-radius:26px;overflow:hidden;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <!-- hero -->
+          <div style="height:130px;background:#E4E4E2;position:relative;">
+            <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 14px,rgba(255,255,255,0.3) 14px 15px);"></div>
+          </div>
+          <div style="padding:16px 16px 18px;">
+            <!-- source + title -->
+            <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;">
+              <span style="width:22px;height:22px;border-radius:50%;background:#161616;flex:0 0 auto;"></span>
+              <span style="font-size:12px;font-weight:600;color:#949494;">@pastaqueen on TikTok</span>
+            </div>
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:18px;color:#161616;letter-spacing:-0.3px;margin-bottom:10px;">Creamy Tomato Rigatoni</div>
+            <!-- serving stepper -->
+            <div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:12px;padding:10px 13px;box-shadow:0 3px 10px rgba(22,22,22,0.05);margin-bottom:12px;">
+              <span style="font-size:12.5px;font-weight:700;color:#161616;">Servings</span>
+              <div style="display:flex;align-items:center;gap:11px;">
+                <span style="width:26px;height:26px;border-radius:50%;border:1.5px solid #E8E8E8;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#161616" stroke-width="2.4" stroke-linecap="round"><path d="M6 12h12"/></svg></span>
+                <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:17px;color:#161616;">4</span>
+                <span style="width:26px;height:26px;border-radius:50%;background:#161616;display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></span>
+              </div>
+            </div>
+            <!-- tabs -->
+            <div style="display:flex;gap:3px;background:#EFEFEF;border-radius:11px;padding:3px;margin-bottom:12px;">
+              <div style="flex:1;background:#fff;border-radius:8px;padding:8px 0;text-align:center;font-size:12px;font-weight:700;color:#161616;box-shadow:0 2px 6px rgba(22,22,22,0.07);">Ingredients</div>
+              <div style="flex:1;border-radius:8px;padding:8px 0;text-align:center;font-size:12px;font-weight:700;color:#868686;">Steps</div>
+              <div style="flex:1;border-radius:8px;padding:8px 0;text-align:center;font-size:12px;font-weight:700;color:#868686;">Nutrition</div>
+            </div>
+            <!-- ingredient rows -->
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 3px;border-bottom:1px solid #F0F0EE;"><span style="width:18px;height:18px;border-radius:5px;border:2px solid #DADADA;flex:0 0 auto;"></span><span style="font-size:12.5px;font-weight:700;color:#161616;min-width:40px;">400g</span><span style="font-size:12.5px;font-weight:500;color:#3A3A3A;">Rigatoni</span></div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 3px;border-bottom:1px solid #F0F0EE;"><span style="width:18px;height:18px;border-radius:5px;border:2px solid #161616;background:#161616;flex:0 0 auto;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M5 12.5l4 4 10-10.5"/></svg></span><span style="font-size:12.5px;font-weight:700;color:#BEBEBE;min-width:40px;text-decoration:line-through;">700g</span><span style="font-size:12.5px;font-weight:500;color:#BEBEBE;text-decoration:line-through;">Passata</span></div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 3px;"><span style="width:18px;height:18px;border-radius:5px;border:2px solid #DADADA;flex:0 0 auto;"></span><span style="font-size:12.5px;font-weight:700;color:#161616;min-width:40px;">150ml</span><span style="font-size:12.5px;font-weight:500;color:#3A3A3A;">Heavy cream</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B: Anchor scroll -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">B — Anchor scroll</div>
+        <div style="background:#F6F6F4;border-radius:26px;overflow:hidden;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <div style="height:130px;background:#E4E4E2;position:relative;">
+            <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 14px,rgba(255,255,255,0.3) 14px 15px);"></div>
+          </div>
+          <div style="padding:16px 16px 18px;">
+            <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:18px;color:#161616;letter-spacing:-0.3px;margin-bottom:5px;">Creamy Tomato Rigatoni</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+              <span style="font-size:12px;font-weight:600;color:#949494;">25 min</span>
+              <span style="font-size:12px;font-weight:600;color:#949494;">4 servings</span>
+              <span style="display:flex;align-items:center;gap:2px;"><svg width="10" height="10" viewBox="0 0 24 24" fill="#161616"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.2l1-5.8L3.5 9.2l5.9-.9z"/></svg><span style="font-size:12px;font-weight:700;color:#161616;">4.8</span></span>
+            </div>
+            <!-- sticky section pill row -->
+            <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:14px;">
+              <span style="flex:0 0 auto;background:#161616;color:#fff;font-size:11.5px;font-weight:700;padding:6px 13px;border-radius:999px;">Ingredients</span>
+              <span style="flex:0 0 auto;background:#fff;color:#6A6A6A;font-size:11.5px;font-weight:700;padding:6px 13px;border-radius:999px;border:1.5px solid #E8E8E8;">Steps</span>
+              <span style="flex:0 0 auto;background:#fff;color:#6A6A6A;font-size:11.5px;font-weight:700;padding:6px 13px;border-radius:999px;border:1.5px solid #E8E8E8;">Nutrition</span>
+            </div>
+            <!-- section header -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+              <span style="font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:700;color:#161616;">Ingredients</span>
+              <span style="height:1px;flex:1;background:#E8E8E8;"></span>
+              <span style="font-size:11px;font-weight:600;color:#949494;">7 items</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 3px;border-bottom:1px solid #F0F0EE;"><span style="width:18px;height:18px;border-radius:5px;border:2px solid #DADADA;flex:0 0 auto;"></span><span style="font-size:12.5px;font-weight:700;color:#161616;min-width:40px;">400g</span><span style="font-size:12.5px;font-weight:500;color:#3A3A3A;">Rigatoni</span></div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 3px;border-bottom:1px solid #F0F0EE;"><span style="width:18px;height:18px;border-radius:5px;border:2px solid #DADADA;flex:0 0 auto;"></span><span style="font-size:12.5px;font-weight:700;color:#161616;min-width:40px;">700g</span><span style="font-size:12.5px;font-weight:500;color:#3A3A3A;">Passata</span></div>
+              <div style="display:flex;align-items:center;gap:10px;padding:9px 3px;"><span style="width:18px;height:18px;border-radius:5px;border:2px solid #DADADA;flex:0 0 auto;"></span><span style="font-size:12.5px;font-weight:700;color:#161616;min-width:40px;">150ml</span><span style="font-size:12.5px;font-weight:500;color:#3A3A3A;">Heavy cream</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════ SECTION 3: MEAL PLAN VIEW ═══════ -->
+  <div style="max-width:900px;margin:0 auto 64px;">
+    <div style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:22px;color:#161616;letter-spacing:-0.4px;margin-bottom:6px;">3 — Meal plan view</div>
+    <div style="font-size:14px;font-weight:500;color:#868686;margin-bottom:28px;">How the week is visualised. The day-selector + slots (current) scales well. A compact grid gives a bird's eye view at a glance.</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+
+      <!-- A: Day selector + slots (current) -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">A — Day selector (current)</div>
+        <div style="background:#F6F6F4;border-radius:26px;padding:18px;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <!-- week strip -->
+          <div style="display:flex;gap:5px;margin-bottom:16px;overflow:hidden;">
+            <div style="flex:1;border-radius:12px;background:#161616;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:9px;font-weight:700;color:rgba(255,255,255,0.7);">MON</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#fff;">15</span><span style="width:4px;height:4px;border-radius:50%;background:#fff;"></span></div>
+            <div style="flex:1;border-radius:12px;background:#fff;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:9px;font-weight:700;color:#949494;">TUE</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#161616;">16</span><span style="width:4px;height:4px;border-radius:50%;background:#161616;"></span></div>
+            <div style="flex:1;border-radius:12px;background:#fff;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:9px;font-weight:700;color:#949494;">WED</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#161616;">17</span><span style="width:4px;height:4px;border-radius:50%;background:#161616;"></span></div>
+            <div style="flex:1;border-radius:12px;background:#fff;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:9px;font-weight:700;color:#949494;">THU</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#161616;">18</span><span style="width:4px;height:4px;border-radius:50%;background:transparent;"></span></div>
+            <div style="flex:1;border-radius:12px;background:#fff;padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:4px;"><span style="font-size:9px;font-weight:700;color:#949494;">FRI</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:13px;font-weight:700;color:#161616;">19</span><span style="width:4px;height:4px;border-radius:50%;background:transparent;"></span></div>
+          </div>
+          <!-- slots for Mon -->
+          <div style="margin-bottom:9px;"><div style="font-size:10.5px;font-weight:700;color:#6A6A6A;letter-spacing:0.2px;margin-bottom:6px;">BREAKFAST</div>
+            <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:9px;"><div style="width:42px;height:42px;flex:0 0 auto;border-radius:10px;background:#E6E6E4;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 7px,rgba(255,255,255,0.3) 7px 8px);border-radius:10px;"></div></div><div><div style="font-size:12.5px;font-weight:700;color:#161616;">Banana Oat Pancakes</div><div style="font-size:11px;font-weight:600;color:#949494;margin-top:2px;">20 min · 380 kcal</div></div></div>
+          </div>
+          <div style="margin-bottom:9px;"><div style="font-size:10.5px;font-weight:700;color:#6A6A6A;letter-spacing:0.2px;margin-bottom:6px;">LUNCH</div>
+            <div style="display:flex;align-items:center;justify-content:center;border:1.5px dashed #DADADA;border-radius:12px;padding:14px;color:#A2A2A2;font-size:12px;font-weight:700;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>Add lunch</div>
+          </div>
+          <div><div style="font-size:10.5px;font-weight:700;color:#6A6A6A;letter-spacing:0.2px;margin-bottom:6px;">DINNER</div>
+            <div style="display:flex;align-items:center;gap:10px;background:#fff;border-radius:12px;padding:9px;"><div style="width:42px;height:42px;flex:0 0 auto;border-radius:10px;background:#E4E4E2;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 7px,rgba(255,255,255,0.3) 7px 8px);border-radius:10px;"></div></div><div><div style="font-size:12.5px;font-weight:700;color:#161616;">Creamy Tomato Rigatoni</div><div style="font-size:11px;font-weight:600;color:#949494;margin-top:2px;">25 min · 520 kcal</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- B: Compact week grid -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">B — Compact week grid</div>
+        <div style="background:#F6F6F4;border-radius:26px;padding:18px;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <!-- header row -->
+          <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:4px;margin-bottom:6px;">
+            <div></div>
+            <div style="text-align:center;font-size:10px;font-weight:700;color:#949494;">B</div>
+            <div style="text-align:center;font-size:10px;font-weight:700;color:#949494;">L</div>
+            <div style="text-align:center;font-size:10px;font-weight:700;color:#949494;">D</div>
+          </div>
+          <!-- day rows -->
+          <div style="display:flex;flex-direction:column;gap:4px;">
+            <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:4px;align-items:center;">
+              <div style="font-size:11.5px;font-weight:700;color:#161616;">Mon</div>
+              <div style="height:36px;border-radius:8px;background:#E6E6E4;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:9px;font-weight:700;color:#6A6A6A;text-align:center;padding:0 3px;line-height:1.15;">Pancakes</span></div></div>
+              <div style="height:36px;border-radius:8px;border:1.5px dashed #DADADA;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#BEBEBE" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+              <div style="height:36px;border-radius:8px;background:#E4E4E2;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:9px;font-weight:700;color:#6A6A6A;text-align:center;padding:0 3px;line-height:1.15;">Rigatoni</span></div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:4px;align-items:center;">
+              <div style="font-size:11.5px;font-weight:700;color:#161616;">Tue</div>
+              <div style="height:36px;border-radius:8px;border:1.5px dashed #DADADA;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#BEBEBE" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+              <div style="height:36px;border-radius:8px;background:#E0E0DE;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:9px;font-weight:700;color:#6A6A6A;text-align:center;padding:0 3px;line-height:1.15;">Salad</span></div></div>
+              <div style="height:36px;border-radius:8px;background:#E2E2E0;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:9px;font-weight:700;color:#6A6A6A;text-align:center;padding:0 3px;line-height:1.15;">Fajitas</span></div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:4px;align-items:center;">
+              <div style="font-size:11.5px;font-weight:700;color:#161616;">Wed</div>
+              <div style="height:36px;border-radius:8px;background:#E6E6E4;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:9px;font-weight:700;color:#6A6A6A;text-align:center;padding:0 3px;line-height:1.15;">Pancakes</span></div></div>
+              <div style="height:36px;border-radius:8px;border:1.5px dashed #DADADA;display:flex;align-items:center;justify-content:center;"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#BEBEBE" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg></div>
+              <div style="height:36px;border-radius:8px;background:#DCDCDA;position:relative;overflow:hidden;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);"></div><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;"><span style="font-size:9px;font-weight:700;color:#6A6A6A;text-align:center;padding:0 3px;line-height:1.15;">Salmon</span></div></div>
+            </div>
+            <div style="display:grid;grid-template-columns:44px 1fr 1fr 1fr;gap:4px;align-items:center;">
+              <div style="font-size:11.5px;font-weight:600;color:#949494;">Thu</div>
+              <div style="height:36px;border-radius:8px;border:1.5px dashed #DADADA;"></div>
+              <div style="height:36px;border-radius:8px;border:1.5px dashed #DADADA;"></div>
+              <div style="height:36px;border-radius:8px;border:1.5px dashed #DADADA;"></div>
+            </div>
+          </div>
+          <!-- kcal total -->
+          <div style="margin-top:13px;display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:11px;padding:9px 12px;"><span style="font-size:12px;font-weight:600;color:#949494;">Mon total</span><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px;color:#161616;">900 kcal</span></div>
+        </div>
+      </div>
+
+      <!-- C: Agenda list -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#868686;letter-spacing:0.8px;text-transform:uppercase;margin-bottom:10px;">C — Agenda list</div>
+        <div style="background:#F6F6F4;border-radius:26px;padding:18px;box-shadow:0 8px 28px rgba(22,22,22,0.08);">
+          <!-- date nav -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#BEBEBE" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5l-7 7 7 7"/></svg>
+            <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:700;font-size:16px;color:#161616;">Mon, Jun 15</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#161616" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+          </div>
+          <!-- agenda items -->
+          <div style="display:flex;flex-direction:column;gap:3px;">
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:36px;flex:0 0 auto;">
+                <span style="font-size:9.5px;font-weight:700;color:#949494;">8 AM</span>
+                <div style="width:1.5px;height:38px;background:#E8E8E8;"></div>
+              </div>
+              <div style="flex:1;display:flex;align-items:center;gap:9px;background:#fff;border-radius:12px;padding:9px;margin-bottom:4px;">
+                <div style="width:36px;height:36px;border-radius:9px;background:#E6E6E4;flex:0 0 auto;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);border-radius:9px;"></div></div>
+                <div><div style="font-size:12px;font-weight:700;color:#161616;">Banana Oat Pancakes</div><div style="font-size:10.5px;font-weight:600;color:#949494;">Breakfast · 380 kcal</div></div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:36px;flex:0 0 auto;">
+                <span style="font-size:9.5px;font-weight:700;color:#949494;">1 PM</span>
+                <div style="width:1.5px;height:38px;background:#E8E8E8;"></div>
+              </div>
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;border:1.5px dashed #DADADA;border-radius:12px;padding:11px;margin-bottom:4px;color:#BEBEBE;font-size:11.5px;font-weight:700;gap:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>Add lunch</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;width:36px;flex:0 0 auto;">
+                <span style="font-size:9.5px;font-weight:700;color:#949494;">7 PM</span>
+              </div>
+              <div style="flex:1;display:flex;align-items:center;gap:9px;background:#fff;border-radius:12px;padding:9px;">
+                <div style="width:36px;height:36px;border-radius:9px;background:#E4E4E2;flex:0 0 auto;position:relative;"><div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,0) 0 6px,rgba(255,255,255,0.3) 6px 7px);border-radius:9px;"></div></div>
+                <div><div style="font-size:12px;font-weight:700;color:#161616;">Creamy Tomato Rigatoni</div><div style="font-size:10.5px;font-weight:600;color:#949494;">Dinner · 520 kcal</div></div>
+              </div>
+            </div>
+          </div>
+          <!-- day total -->
+          <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #E8E8E8;padding-top:12px;">
+            <span style="font-size:12px;font-weight:600;color:#949494;">Day total</span>
+            <div style="display:flex;gap:12px;align-items:center;"><span style="font-family:'Bricolage Grotesque',sans-serif;font-size:16px;font-weight:700;color:#161616;">900 kcal</span><span style="font-size:11px;font-weight:600;color:#949494;">P 50g C 126g F 30g</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer note -->
+  <div style="max-width:900px;margin:0 auto;text-align:center;padding-top:8px;">
+    <div style="font-size:13px;font-weight:600;color:#A2A2A2;">The clickable prototype uses Option A for all three dimensions. Tell me which to switch.</div>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 940, &quot;height&quot;: 2200}}"></script>
+</body>
+</html>

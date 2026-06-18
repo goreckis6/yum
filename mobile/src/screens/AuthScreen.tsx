@@ -1,0 +1,158 @@
+import React, { useState } from 'react';
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../context/AuthContext';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { colors } from '../theme/colors';
+import { fonts } from '../theme/fonts';
+import { Icon } from '../components/Icon';
+
+export function AuthScreen() {
+  const insets = useSafeAreaInsets();
+  const { signIn, signUp } = useAuth();
+  const [mode, setMode] = useState<'in' | 'up'>('in');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const submit = async () => {
+    setError(null);
+    setNotice(null);
+    if (!email.trim() || password.length < 6) {
+      setError('Enter an email and a password (min 6 characters).');
+      return;
+    }
+    setBusy(true);
+    const res = mode === 'in' ? await signIn(email, password) : await signUp(email, password);
+    setBusy(false);
+    if (res.error) {
+      setError(res.error);
+      return;
+    }
+    if (mode === 'up' && 'needsConfirm' in res && res.needsConfirm) {
+      setNotice('Check your inbox to confirm your email, then sign in.');
+      setMode('in');
+    }
+  };
+
+  return (
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <View style={[styles.inner, { paddingTop: insets.top + 40 }]}>
+        <View style={styles.logo}>
+          <Icon name="heart" size={26} color="#fff" fill />
+        </View>
+        <Text style={styles.brand}>YumShare</Text>
+        <Text style={styles.subtitle}>
+          {mode === 'in' ? 'Welcome back — sign in to your recipes.' : 'Create an account to save your recipes.'}
+        </Text>
+
+        {!isSupabaseConfigured && (
+          <Text style={styles.warn}>
+            Supabase is not configured. Add EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to mobile/.env.
+          </Text>
+        )}
+
+        <Text style={styles.label}>Email</Text>
+        <TextInput
+          style={styles.field}
+          value={email}
+          onChangeText={setEmail}
+          placeholder="you@example.com"
+          placeholderTextColor={colors.gray}
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="email-address"
+          inputMode="email"
+        />
+
+        <Text style={styles.label}>Password</Text>
+        <TextInput
+          style={styles.field}
+          value={password}
+          onChangeText={setPassword}
+          placeholder="••••••••"
+          placeholderTextColor={colors.gray}
+          secureTextEntry
+        />
+
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+        {notice ? <Text style={styles.notice}>{notice}</Text> : null}
+
+        <Pressable style={[styles.submit, busy && styles.submitBusy]} onPress={submit} disabled={busy}>
+          {busy ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.submitText}>{mode === 'in' ? 'Sign in' : 'Create account'}</Text>
+          )}
+        </Pressable>
+
+        <Pressable
+          style={styles.switch}
+          onPress={() => {
+            setMode(mode === 'in' ? 'up' : 'in');
+            setError(null);
+            setNotice(null);
+          }}
+        >
+          <Text style={styles.switchText}>
+            {mode === 'in' ? "No account? Create one" : 'Already have an account? Sign in'}
+          </Text>
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  inner: { flex: 1, paddingHorizontal: 24 },
+  logo: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  brand: { fontFamily: fonts.displayExtra, fontSize: 32, color: colors.ink, letterSpacing: -0.6 },
+  subtitle: { fontSize: 15, fontWeight: '500', color: colors.grayMuted, marginTop: 6, marginBottom: 28 },
+  warn: { fontSize: 13, fontWeight: '600', color: '#B45309', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20 },
+  label: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 6 },
+  field: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 15,
+    fontWeight: '500',
+    color: colors.ink,
+    marginBottom: 16,
+  },
+  error: { fontSize: 13, fontWeight: '600', color: '#DC2626', marginBottom: 12 },
+  notice: { fontSize: 13, fontWeight: '600', color: '#15803D', marginBottom: 12 },
+  submit: {
+    backgroundColor: colors.ink,
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  submitBusy: { opacity: 0.7 },
+  submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  switch: { alignItems: 'center', paddingVertical: 18 },
+  switchText: { fontSize: 14, fontWeight: '700', color: colors.ink },
+});

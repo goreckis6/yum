@@ -1,0 +1,136 @@
+import React from 'react';
+import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
+import { colors } from '../theme/colors';
+
+export type IconName =
+  | 'link'
+  | 'camera'
+  | 'search'
+  | 'cart'
+  | 'calendar'
+  | 'mic'
+  | 'bulb'
+  | 'heart'
+  | 'grid'
+  | 'profile'
+  | 'plus'
+  | 'chevron-left';
+
+interface Props {
+  name: IconName;
+  size?: number;
+  color?: string;
+  fill?: boolean;
+}
+
+export function Icon({ name, size = 22, color = colors.ink, fill = false }: Props) {
+  const s = {
+    stroke: color,
+    strokeWidth: 1.9,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+    fill: 'none',
+  };
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      {render(name, s, color, fill)}
+    </Svg>
+  );
+}
+
+function render(name: IconName, s: object, color: string, fill: boolean) {
+  switch (name) {
+    case 'link':
+      return (
+        <>
+          <Path d="M9 15l6-6" {...s} />
+          <Path d="M11 6l1-1a4 4 0 0 1 6 6l-1 1" {...s} />
+          <Path d="M13 18l-1 1a4 4 0 0 1-6-6l1-1" {...s} />
+        </>
+      );
+    case 'camera':
+      return (
+        <>
+          <Path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z" {...s} />
+          <Circle cx={12} cy={13} r={3.5} {...s} />
+        </>
+      );
+    case 'search':
+      return (
+        <>
+          <Circle cx={11} cy={11} r={6} {...s} />
+          <Line x1={20} y1={20} x2={15.5} y2={15.5} {...s} />
+        </>
+      );
+    case 'cart':
+      return (
+        <>
+          <Path d="M3 4h2l2.2 11a1 1 0 0 0 1 .8h8.6a1 1 0 0 0 1-.8L20 7H6" {...s} />
+          <Circle cx={9} cy={20} r={1.4} fill={color} stroke="none" />
+          <Circle cx={18} cy={20} r={1.4} fill={color} stroke="none" />
+        </>
+      );
+    case 'calendar':
+      return (
+        <>
+          <Rect x={4} y={5} width={16} height={16} rx={2.5} {...s} />
+          <Line x1={4} y1={9.5} x2={20} y2={9.5} {...s} />
+          <Line x1={8} y1={3} x2={8} y2={6.5} {...s} />
+          <Line x1={16} y1={3} x2={16} y2={6.5} {...s} />
+        </>
+      );
+    case 'mic':
+      return (
+        <>
+          <Rect x={9} y={3} width={6} height={11} rx={3} {...s} />
+          <Path d="M6 11a6 6 0 0 0 12 0" {...s} />
+          <Line x1={12} y1={17} x2={12} y2={21} {...s} />
+          <Line x1={9} y1={21} x2={15} y2={21} {...s} />
+        </>
+      );
+    case 'bulb':
+      return (
+        <>
+          <Path d="M9 17a5.5 5.5 0 1 1 6 0c-.6.5-1 1.2-1 2v.5h-4V19c0-.8-.4-1.5-1-2Z" {...s} />
+          <Line x1={10} y1={22} x2={14} y2={22} {...s} />
+        </>
+      );
+    case 'heart':
+      return (
+        <Path
+          d="M12 20.5C12 20.5 3.5 15.5 3.5 9.2C3.5 6.6 5.6 4.5 8.2 4.5C9.8 4.5 11.2 5.4 12 6.7C12.8 5.4 14.2 4.5 15.8 4.5C18.4 4.5 20.5 6.6 20.5 9.2C20.5 15.5 12 20.5 12 20.5Z"
+          stroke={color}
+          strokeWidth={1.9}
+          strokeLinejoin="round"
+          fill={fill ? color : 'none'}
+        />
+      );
+    case 'grid':
+      return (
+        <>
+          <Rect x={4} y={4} width={7} height={7} rx={1.5} {...s} />
+          <Rect x={13} y={4} width={7} height={7} rx={1.5} {...s} />
+          <Rect x={4} y={13} width={7} height={7} rx={1.5} {...s} />
+          <Rect x={13} y={13} width={7} height={7} rx={1.5} {...s} />
+        </>
+      );
+    case 'profile':
+      return (
+        <>
+          <Circle cx={12} cy={9} r={3.5} {...s} />
+          <Path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6" {...s} />
+        </>
+      );
+    case 'plus':
+      return (
+        <>
+          <Line x1={12} y1={5} x2={12} y2={19} {...s} />
+          <Line x1={5} y1={12} x2={19} y2={12} {...s} />
+        </>
+      );
+    case 'chevron-left':
+      return <Polyline points="15 5 8 12 15 19" {...s} />;
+    default:
+      return null;
+  }
+}

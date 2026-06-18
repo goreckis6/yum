@@ -1,0 +1,979 @@
+import React, { useMemo, useState } from 'react';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RecipeCard } from '../components/RecipeCard';
+import { CoverArt, COVER_PRESETS } from '../components/CoverArt';
+import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet';
+import { DAYS } from '../data/seed';
+import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext';
+import { uploadImageIfLocal } from '../lib/storage';
+import { useTabNav } from '../navigation/TabContext';
+import { colors } from '../theme/colors';
+import { fonts } from '../theme/fonts';
+import { DayKey, FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
+import { RootStackParamList } from '../navigation/types';
+import { Icon } from '../components/Icon';
+
+const CHIPS: FilterChip[] = ['All', 'Favorites', 'Quick', 'Dinner', 'Breakfast', 'Lunch', 'Vegetarian', 'High-protein'];
+const HOME_TABS: { key: HomeTab; label: string }[] = [
+  { key: 'organize', label: 'Organize' },
+  { key: 'plan', label: 'Plan' },
+  { key: 'cook', label: 'Cook' },
+  { key: 'track', label: 'Track' },
+];
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Good morning';
+  if (h < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
+export function HomeScreen() {
+  const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { setTab } = useTabNav();
+  const {
+    recipes,
+    favorites,
+    mealPlan,
+    showToast,
+    addWeekToGrocery,
+    removeMeal,
+    getRecipe,
+    cookbookCovers,
+    setCookbookCover,
+    customCookbooks,
+    createCookbook,
+    deleteCookbook,
+  } = useApp();
+  const { user } = useAuth();
+  const userId = user?.id;
+  const [homeTab, setHomeTab] = useState<HomeTab>('organize');
+  const [search, setSearch] = useState('');
+  const [chip, setChip] = useState<FilterChip>('All');
+  const [activeCookbook, setActiveCookbook] = useState<string | null>(null);
+  const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
+  const [colorTarget, setColorTarget] = useState<string | null>(null);
+  const [newOpen, setNewOpen] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<DayKey>('Wed');
+  const [handsFree, setHandsFree] = useState(false);
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const book = activeCookbook ? customCookbooks.find((cb) => cb.id === activeCookbook) : null;
+    return recipes.filter((r) => {
+      const matchSearch =
+        !q ||
+        r.title.toLowerCase().includes(q) ||
+        r.ingredients.some((i) => i.n.toLowerCase().includes(q));
+      if (book) return matchSearch && book.recipeIds.includes(r.id);
+      let matchChip = true;
+      if (chip === 'Favorites') matchChip = !!favorites[r.id];
+      else if (chip === 'Quick') matchChip = r.time <= 20;
+      else if (chip !== 'All') matchChip = r.tags?.includes(chip) ?? false;
+      return matchSearch && matchChip;
+    });
+  }, [recipes, favorites, search, chip, activeCookbook, customCookbooks]);
+
+  // Cookbooks built from the user's own recipes — one per category that has
+  // recipes. A manual cover (cookbookCovers[tag]) wins; otherwise we pick a
+  // distinct photo per cookbook so two cookbooks don't show the same image.
+  const cookbooks = useMemo(() => {
+    const cats: { tag: string; title: string }[] = [
+      { tag: 'Dinner', title: 'Dinners' },
+      { tag: 'Quick', title: 'Quick & easy' },
+      { tag: 'Breakfast', title: 'Breakfast' },
+      { tag: 'Lunch', title: 'Lunch' },
+      { tag: 'Vegetarian', title: 'Vegetarian' },
+      { tag: 'High-protein', title: 'High protein' },
+    ];
+    const used = new Set<string>();
+    const pickCover = (key: string, members: typeof recipes) => {
+      let imageUrl: string | undefined;
+      let coverPreset: string | undefined;
+      let tint = colors.surfaceAlt;
+      const custom = cookbookCovers[key];
+      if (custom?.imageUrl) {
+        imageUrl = custom.imageUrl;
+      } else if (custom?.cover) {
+        coverPreset = custom.cover;
+      } else {
+        const fresh = members.find((r) => r.imageUrl && !used.has(r.imageUrl));
+        const textCover = members.find((r) => r.cover);
+        const anyPhoto = members.find((r) => r.imageUrl);
+        if (fresh?.imageUrl) {
+          imageUrl = fresh.imageUrl;
+          used.add(fresh.imageUrl);
+        } else if (textCover?.cover) {
+          coverPreset = textCover.cover;
+        } else if (anyPhoto?.imageUrl) {
+          imageUrl = anyPhoto.imageUrl;
+        } else {
+          tint = members[0]?.tint ?? colors.surfaceAlt;
+        }
+      }
+      return { imageUrl, coverPreset, tint, hasCover: !!custom };
+    };
+
+    const categoryBooks = cats
+      .map(({ tag, title }) => {
+        const inCat = recipes.filter((r) =>
+          tag === 'Quick' ? r.time <= 20 || r.tags?.includes('Quick') : r.tags?.includes(tag),
+        );
+        return { key: tag, title, count: inCat.length, isCustom: false, ...pickCover(tag, inCat) };
+      })
+      .filter((cb) => cb.count > 0);
+
+    const userBooks = customCookbooks.map((cb) => {
+      const members = recipes.filter((r) => cb.recipeIds.includes(r.id));
+      return { key: cb.id, title: cb.title, count: members.length, isCustom: true, ...pickCover(cb.id, members) };
+    });
+
+    return [...categoryBooks, ...userBooks];
+  }, [recipes, cookbookCovers, customCookbooks]);
+
+  const pickCookbookPhoto = async (tag: string, fromCamera: boolean) => {
+    const perm = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = fromCamera
+      ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
+      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+    if (result.canceled || !result.assets[0]) return;
+    const uri = userId ? await uploadImageIfLocal(result.assets[0].uri, userId) : result.assets[0].uri;
+    setCookbookCover(tag, { imageUrl: uri });
+  };
+
+  const coverOptions: SheetOption[] = coverTarget
+    ? [
+        { label: 'Choose photo', onPress: () => pickCookbookPhoto(coverTarget.key, false) },
+        { label: 'Take photo', onPress: () => pickCookbookPhoto(coverTarget.key, true) },
+        { label: 'Colour cover', onPress: () => setColorTarget(coverTarget.key) },
+        ...(coverTarget.hasCover
+          ? [{ label: 'Reset cover', destructive: true, onPress: () => setCookbookCover(coverTarget.key, null) }]
+          : []),
+        ...(coverTarget.isCustom
+          ? [{
+              label: 'Delete cookbook',
+              destructive: true,
+              onPress: () => {
+                if (activeCookbook === coverTarget.key) setActiveCookbook(null);
+                deleteCookbook(coverTarget.key);
+                showToast('Cookbook deleted');
+              },
+            }]
+          : []),
+      ]
+    : [];
+
+  const colorOptions: SheetOption[] = colorTarget
+    ? COVER_PRESETS.map((p) => ({
+        label: p.id.charAt(0).toUpperCase() + p.id.slice(1),
+        onPress: () => setCookbookCover(colorTarget, { cover: p.id }),
+      }))
+    : [];
+
+  const selPlan = mealPlan[selectedDay] || {};
+  const slots = (['Breakfast', 'Lunch', 'Dinner'] as MealSlot[]).map((slot) => {
+    const rid = selPlan[slot];
+    const rec = rid ? getRecipe(rid) : undefined;
+    return { slot, rec };
+  });
+
+  let dayKcal = 0;
+  let dayP = 0;
+  let dayC = 0;
+  let dayF = 0;
+  slots.forEach(({ rec }) => {
+    if (rec) {
+      dayKcal += rec.kcal;
+      dayP += rec.p;
+      dayC += rec.c;
+      dayF += rec.f;
+    }
+  });
+
+  const totalPlanned = Object.values(mealPlan).reduce(
+    (n, day) => n + Object.values(day || {}).filter(Boolean).length,
+    0,
+  );
+
+  const renderOrganize = () => (
+    <>
+      <Text style={styles.headline}>
+        {greeting()},{'\n'}what's cooking?
+      </Text>
+
+      <View style={styles.importRow}>
+        <Pressable style={styles.importPrimary} onPress={() => navigation.navigate('ImportUrl')}>
+          <View style={styles.importIconLight}>
+            <Icon name="link" size={20} color={colors.ink} />
+          </View>
+          <View>
+            <Text style={styles.importTitle}>Paste Recipe Link</Text>
+            <Text style={styles.importSub}>Blog, YouTube, Instagram, TikTok</Text>
+          </View>
+        </Pressable>
+        <Pressable style={styles.importSecondary} onPress={() => navigation.navigate('ScanRecipe')}>
+          <View style={styles.importIconDark}>
+            <Icon name="camera" size={20} color="#fff" />
+          </View>
+          <View>
+            <Text style={styles.importTitleDark}>Scan Recipe</Text>
+            <Text style={styles.importSubGray}>Photo, screenshot, cookbook</Text>
+          </View>
+        </Pressable>
+      </View>
+
+      <View style={styles.searchBox}>
+        <Icon name="search" size={18} color={colors.gray} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search recipes & ingredients"
+          placeholderTextColor={colors.gray}
+          value={search}
+          onChangeText={setSearch}
+        />
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
+        {CHIPS.map((c) => (
+          <Pressable
+            key={c}
+            style={[styles.chip, chip === c && !activeCookbook && styles.chipOn]}
+            onPress={() => {
+              setChip(c);
+              setActiveCookbook(null);
+            }}
+          >
+            <Text style={[styles.chipText, chip === c && styles.chipTextOn]}>
+              {TAG_ICON[c] ? `${TAG_ICON[c]} ${c}` : c}
+            </Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Your cookbooks</Text>
+        <Text style={styles.sectionLink}>See all</Text>
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cookbookRow}>
+        {cookbooks.map((cb) => (
+          <Pressable
+            key={cb.key}
+            style={styles.cookbook}
+            onPress={() => {
+              setSearch('');
+              if (cb.isCustom) {
+                setActiveCookbook(cb.key);
+                setChip('All');
+              } else {
+                setActiveCookbook(null);
+                setChip(cb.key as FilterChip);
+              }
+            }}
+            onLongPress={() => setCoverTarget({ key: cb.key, hasCover: cb.hasCover, isCustom: cb.isCustom, title: cb.title })}
+          >
+            <View style={[styles.cookbookCover, { backgroundColor: cb.tint }]}>
+              {cb.imageUrl ? (
+                <Image source={{ uri: cb.imageUrl }} style={styles.cookbookImg} resizeMode="cover" />
+              ) : cb.coverPreset ? (
+                <CoverArt cover={cb.coverPreset} title="" />
+              ) : null}
+              <View style={styles.cookbookOverlay} />
+              <Pressable
+                style={styles.cookbookEdit}
+                hitSlop={8}
+                onPress={() => setCoverTarget({ key: cb.key, hasCover: cb.hasCover, isCustom: cb.isCustom, title: cb.title })}
+              >
+                <Icon name="camera" size={14} color="#fff" />
+              </Pressable>
+              <Text style={styles.cookbookTitle} numberOfLines={2}>{cb.title}</Text>
+            </View>
+            <Text style={styles.cookbookCount}>{cb.count} recipes</Text>
+          </Pressable>
+        ))}
+
+        <Pressable key="__new_cookbook__" style={styles.cookbook} onPress={() => setNewOpen(true)}>
+          <View style={styles.cookbookAdd}>
+            <Icon name="plus" size={24} color={colors.grayMid} />
+            <Text style={styles.cookbookAddText}>New cookbook</Text>
+          </View>
+        </Pressable>
+      </ScrollView>
+
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>
+          {activeCookbook
+            ? customCookbooks.find((cb) => cb.id === activeCookbook)?.title ?? 'Cookbook'
+            : chip === 'All' && !search
+            ? 'All recipes'
+            : 'Results'}
+        </Text>
+        {activeCookbook ? (
+          <Pressable onPress={() => setActiveCookbook(null)}>
+            <Text style={styles.sectionLink}>Done</Text>
+          </Pressable>
+        ) : (
+          <Text style={styles.countLabel}>{filtered.length} recipes</Text>
+        )}
+      </View>
+
+      {filtered.length === 0 ? (
+        <Text style={styles.empty}>
+          {activeCookbook
+            ? 'Empty cookbook. Open a recipe and tap the grid icon to add it here.'
+            : 'No recipes match that search.'}
+        </Text>
+      ) : (
+        <View style={styles.grid}>
+          {filtered.map((r, idx) => (
+            <View key={r.id || `r${idx}`} style={styles.gridItem}>
+              <RecipeCard
+                title={r.title}
+                rating={r.rating}
+                timeStr={`${r.time} min`}
+                sourceApp={r.app}
+                tint={r.tint}
+                imageUrl={r.imageUrl}
+                cover={r.cover}
+                onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
+              />
+            </View>
+          ))}
+        </View>
+      )}
+    </>
+  );
+
+  const renderPlan = () => (
+    <>
+      <Text style={styles.planTitle}>This week</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekRow}>
+        {DAYS.map((d) => {
+          const plan = mealPlan[d.day] || {};
+          const hasAny = ['Breakfast', 'Lunch', 'Dinner'].some((s) => plan[s as MealSlot]);
+          const sel = selectedDay === d.day;
+          return (
+            <Pressable
+              key={d.day}
+              style={[styles.dayPill, sel && styles.dayPillOn]}
+              onPress={() => setSelectedDay(d.day)}
+            >
+              <Text style={[styles.dayPillLabel, sel && styles.dayPillLabelOn]}>{d.day}</Text>
+              <Text style={[styles.dayPillDate, sel && styles.dayPillDateOn]}>{d.date}</Text>
+              <View style={[styles.dayDot, { backgroundColor: hasAny ? (sel ? '#fff' : colors.accent) : 'transparent' }]} />
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+
+      {slots.map(({ slot, rec }) => (
+        <View key={slot} style={styles.slotBlock}>
+          <Text style={styles.slotLabel}>{slot}</Text>
+          {rec ? (
+            <Pressable
+              style={styles.slotCard}
+              onPress={() => navigation.navigate('RecipeDetail', { id: rec.id })}
+            >
+              <View style={[styles.slotThumb, { backgroundColor: rec.tint }]}>
+                <Text style={styles.slotThumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
+              </View>
+              <View style={styles.slotInfo}>
+                <Text style={styles.slotTitle}>{rec.title}</Text>
+                {rec.c > 55 && (
+                  <Pressable style={styles.highGi} onPress={() => showToast('AI Sugar Swap — optimising…')}>
+                    <Text style={styles.highGiText}>⚠ High GI · AI Swap</Text>
+                  </Pressable>
+                )}
+                <Text style={styles.slotMeta}>
+                  {rec.time} min · {rec.kcal} kcal
+                </Text>
+              </View>
+              <Pressable style={styles.removeBtn} onPress={() => removeMeal(selectedDay, slot)}>
+                <Text style={styles.removeText}>✕</Text>
+              </Pressable>
+            </Pressable>
+          ) : (
+            <Pressable
+              style={styles.addSlot}
+              onPress={() => setTab('mealplan')}
+            >
+              <Text style={styles.addSlotText}>+ Add {slot.toLowerCase()}</Text>
+            </Pressable>
+          )}
+        </View>
+      ))}
+
+      <View style={styles.dayTotal}>
+        <View>
+          <Text style={styles.dayTotalLabel}>
+            {selectedDay} {DAYS.find((d) => d.day === selectedDay)?.date} total
+          </Text>
+          <Text style={styles.dayTotalKcal}>
+            {dayKcal.toLocaleString()} <Text style={styles.kcalUnit}>kcal</Text>
+          </Text>
+        </View>
+        <View style={styles.macroRow}>
+          <Text style={styles.macro}>P {dayP}g</Text>
+          <Text style={styles.macro}>C {dayC}g</Text>
+          <Text style={styles.macro}>F {dayF}g</Text>
+        </View>
+      </View>
+
+      <Pressable style={styles.weekGroceryBtn} onPress={addWeekToGrocery}>
+        <Icon name="cart" size={18} color="#2A2A2A" />
+        <Text style={styles.weekGroceryText}>Add week to grocery list</Text>
+      </Pressable>
+    </>
+  );
+
+  const renderCook = () => (
+    <>
+      <View style={styles.cookHeader}>
+        <Text style={styles.planTitle}>Today's menu</Text>
+        <Pressable style={styles.handsFreeBtn} onPress={() => setHandsFree(!handsFree)}>
+          {handsFree ? <View style={styles.listeningDot} /> : <Icon name="mic" size={16} color="#fff" />}
+          <Text style={styles.handsFreeText}>{handsFree ? 'Listening…' : 'Hands-free'}</Text>
+        </Pressable>
+      </View>
+
+      {slots
+        .filter(({ rec }) => rec)
+        .map(({ slot, rec }) =>
+          rec ? (
+            <View key={slot} style={styles.cookCard}>
+              <View style={[styles.slotThumb, { backgroundColor: rec.tint }]}>
+                <Text style={styles.slotThumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
+              </View>
+              <View style={styles.slotInfo}>
+                <Text style={styles.slotLabel}>{slot}</Text>
+                <Text style={styles.slotTitle}>{rec.title}</Text>
+                <Text style={styles.slotMeta}>
+                  {rec.time} min · {rec.kcal} kcal
+                </Text>
+              </View>
+              <Pressable
+                style={styles.cookBtn}
+                onPress={() => navigation.navigate('RecipeDetail', { id: rec.id })}
+              >
+                <Text style={styles.cookBtnText}>Cook →</Text>
+              </Pressable>
+            </View>
+          ) : null,
+        )}
+
+      <View style={styles.exchangeCard}>
+        <Text style={styles.exchangeLabel}>EXCHANGE UNITS — TODAY</Text>
+        <View style={styles.exchangeRow}>
+          <View style={styles.exchangeCol}>
+            <Text style={styles.exchangeNum}>{(dayC / 10).toFixed(1)}</Text>
+            <Text style={styles.exchangeType}>WW</Text>
+            <Text style={styles.exchangeSub}>Carb units</Text>
+          </View>
+          <View style={styles.exchangeDivider} />
+          <View style={styles.exchangeCol}>
+            <Text style={styles.exchangeNum}>{((dayP + dayF) / 10).toFixed(1)}</Text>
+            <Text style={styles.exchangeType}>WBT</Text>
+            <Text style={styles.exchangeSub}>Protein–fat units</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.tipCard}>
+        <View style={styles.tipIcon}>
+          <Icon name="bulb" size={18} color="#fff" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.tipTitle}>Food sequencing tip</Text>
+          <Text style={styles.tipBody}>
+            Eat vegetables first → protein → carbs. Reduces blood sugar spikes by up to 40%.
+          </Text>
+        </View>
+      </View>
+    </>
+  );
+
+  const renderTrack = () => (
+    <>
+      <View style={styles.statsRow}>
+        <View style={styles.statDark}>
+          <Text style={styles.statNumLight}>7</Text>
+          <Text style={styles.statLabelLight}>day streak</Text>
+        </View>
+        <View style={styles.statLight}>
+          <Text style={styles.statNum}>{recipes.length}</Text>
+          <Text style={styles.statLabel}>recipes saved</Text>
+        </View>
+        <View style={styles.statLight}>
+          <Text style={styles.statNum}>{totalPlanned}</Text>
+          <Text style={styles.statLabel}>meals planned</Text>
+        </View>
+      </View>
+
+      <Text style={styles.achieveTitle}>Achievements</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgeRow}>
+        {[
+          { label: 'Vege Explorer', icon: '🌱', earned: true },
+          { label: 'Budget Pro', icon: '💰', earned: true },
+          { label: 'Zero Waste', icon: '♻️', earned: true },
+          { label: 'CGM Master', icon: '📈', earned: false },
+        ].map((b) => (
+          <View key={b.label} style={styles.badge}>
+            <View style={[styles.badgeIcon, !b.earned && styles.badgeIconOff]}>
+              <Text style={[styles.badgeEmoji, !b.earned && styles.badgeEmojiOff]}>{b.icon}</Text>
+            </View>
+            <Text style={[styles.badgeLabel, !b.earned && styles.badgeLabelOff]}>{b.label}</Text>
+          </View>
+        ))}
+      </ScrollView>
+
+      <Text style={styles.achieveTitle}>Glucose data</Text>
+      <View style={styles.healthCard}>
+        <Text style={styles.healthTitle}>Apple Health / Google Health</Text>
+        <Text style={styles.healthBody}>
+          Connect a data source to see how each recipe affects your glucose curve.
+        </Text>
+        <Pressable style={styles.healthBtn} onPress={() => showToast('Coming in a later phase')}>
+          <Text style={styles.healthBtnText}>Allow Health data access</Text>
+        </Pressable>
+      </View>
+    </>
+  );
+
+  return (
+    <>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <View style={styles.brand}>
+          <View style={styles.logo}>
+            <Icon name="heart" size={18} color="#fff" fill />
+          </View>
+          <Text style={styles.brandName}>YumShare</Text>
+        </View>
+        <View style={styles.syncBadge}>
+          <View style={styles.syncDot} />
+          <Text style={styles.syncText}>Synced</Text>
+        </View>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.homeTabs}>
+        {HOME_TABS.map((t) => (
+          <Pressable
+            key={t.key}
+            style={[styles.homeTab, homeTab === t.key && styles.homeTabOn]}
+            onPress={() => setHomeTab(t.key)}
+          >
+            <Text style={[styles.homeTabText, homeTab === t.key && styles.homeTabTextOn]}>{t.label}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {homeTab === 'organize' && renderOrganize()}
+      {homeTab === 'plan' && renderPlan()}
+      {homeTab === 'cook' && renderCook()}
+      {homeTab === 'track' && renderTrack()}
+    </ScrollView>
+
+    <ActionSheet
+      visible={!!coverTarget}
+      title={coverTarget?.title ?? 'Cookbook'}
+      message="Edit this cookbook"
+      options={coverOptions}
+      onClose={() => setCoverTarget(null)}
+    />
+    <ActionSheet
+      visible={!!colorTarget}
+      title="Pick a colour"
+      options={colorOptions}
+      onClose={() => setColorTarget(null)}
+    />
+    <PromptModal
+      visible={newOpen}
+      title="New cookbook"
+      placeholder="Cookbook name"
+      onCancel={() => setNewOpen(false)}
+      onConfirm={(title) => {
+        setNewOpen(false);
+        const id = createCookbook(title);
+        setActiveCookbook(id);
+        setChip('All');
+        setSearch('');
+        showToast(`Created “${title}”`);
+      }}
+    />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  logo: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logoIcon: { color: '#fff', fontSize: 16 },
+  brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: colors.ink, letterSpacing: -0.5 },
+  syncBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surface,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+  },
+  syncDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ink },
+  syncText: { fontSize: 12, fontWeight: '600', color: colors.grayLight },
+  homeTabs: { marginBottom: 20, marginHorizontal: -20, paddingHorizontal: 20 },
+  homeTab: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceAlt,
+    marginRight: 6,
+  },
+  homeTabOn: { backgroundColor: colors.ink },
+  homeTabText: { fontSize: 13.5, fontWeight: '700', color: colors.grayLight },
+  homeTabTextOn: { color: '#fff' },
+  headline: {
+    fontFamily: fonts.display,
+    fontSize: 30,
+    lineHeight: 34,
+    color: colors.ink,
+    letterSpacing: -0.8,
+    marginBottom: 16,
+  },
+  importRow: { gap: 10, marginBottom: 16 },
+  importPrimary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    backgroundColor: colors.ink,
+    borderRadius: 18,
+    padding: 14,
+  },
+  importSecondary: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 11,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.07,
+    shadowRadius: 18,
+    elevation: 2,
+  },
+  importIconLight: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importIconDark: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  importTitle: { fontSize: 13.5, fontWeight: '700', color: '#fff' },
+  importTitleDark: { fontSize: 13.5, fontWeight: '700', color: colors.ink },
+  importSub: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.55)', marginTop: 2 },
+  importSubGray: { fontSize: 11, fontWeight: '500', color: colors.grayMid, marginTop: 2 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    paddingVertical: 13,
+    marginBottom: 16,
+    shadowColor: '#211C18',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 2,
+  },
+  searchIcon: { fontSize: 16 },
+  searchInput: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.ink },
+  chipRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
+  chip: {
+    paddingVertical: 9,
+    paddingHorizontal: 15,
+    borderRadius: 999,
+    backgroundColor: colors.surfaceAlt,
+    marginRight: 8,
+  },
+  chipOn: { backgroundColor: colors.ink },
+  chipText: { fontSize: 13.5, fontWeight: '600', color: colors.ink },
+  chipTextOn: { color: '#fff' },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  sectionTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
+  sectionLink: { fontSize: 13, fontWeight: '600', color: colors.ink },
+  countLabel: { fontSize: 13, fontWeight: '600', color: colors.grayMid },
+  cookbookRow: { marginBottom: 26, marginHorizontal: -20, paddingHorizontal: 20 },
+  cookbook: { width: 142, marginRight: 12 },
+  cookbookCover: {
+    height: 96,
+    borderRadius: 18,
+    justifyContent: 'flex-end',
+    padding: 12,
+    overflow: 'hidden',
+  },
+  cookbookAdd: {
+    height: 96,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderStyle: 'dashed',
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  cookbookAddText: { fontSize: 12.5, fontWeight: '700', color: colors.grayMid },
+  cookbookImg: { ...StyleSheet.absoluteFillObject },
+  cookbookOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.32)' },
+  cookbookEdit: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cookbookTitle: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
+  cookbookCount: { fontSize: 12.5, fontWeight: '600', color: colors.grayMid, marginTop: 7 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -7 },
+  gridItem: { width: '50%', paddingHorizontal: 7 },
+  empty: { textAlign: 'center', paddingVertical: 40, fontSize: 15, fontWeight: '600', color: colors.grayMid },
+  planTitle: { fontFamily: fonts.display, fontSize: 26, color: colors.ink, marginBottom: 18 },
+  weekRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
+  dayPill: {
+    width: 50,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    marginRight: 8,
+  },
+  dayPillOn: { backgroundColor: colors.accent },
+  dayPillLabel: { fontSize: 11.5, fontWeight: '700', color: colors.grayMid },
+  dayPillLabelOn: { color: 'rgba(255,255,255,0.85)' },
+  dayPillDate: { fontFamily: fonts.display, fontSize: 17, fontWeight: '700', color: colors.ink, marginTop: 6 },
+  dayPillDateOn: { color: '#fff' },
+  dayDot: { width: 5, height: 5, borderRadius: 3, marginTop: 6 },
+  slotBlock: { marginBottom: 14 },
+  slotLabel: { fontSize: 13, fontWeight: '700', color: colors.grayLight, marginBottom: 9, paddingLeft: 2 },
+  slotCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 13,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 11,
+  },
+  slotThumb: { width: 62, height: 62, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
+  slotThumbIcon: { fontSize: 26 },
+  slotInfo: { flex: 1 },
+  slotTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
+  slotMeta: { fontSize: 12, fontWeight: '600', color: colors.grayMid, marginTop: 4 },
+  highGi: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.warning,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    marginVertical: 4,
+  },
+  highGiText: { fontSize: 11, fontWeight: '700', color: colors.warningText },
+  removeBtn: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#F3F3F3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  removeText: { color: colors.gray, fontSize: 14 },
+  addSlot: {
+    borderWidth: 1.5,
+    borderColor: '#DADADA',
+    borderStyle: 'dashed',
+    borderRadius: 18,
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  addSlotText: { fontSize: 14, fontWeight: '700', color: colors.gray },
+  dayTotal: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 6,
+  },
+  dayTotalLabel: { fontSize: 13, fontWeight: '600', color: colors.grayMid },
+  dayTotalKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: colors.ink, marginTop: 2 },
+  kcalUnit: { fontSize: 14, fontWeight: '600', color: colors.grayMid },
+  macroRow: { flexDirection: 'row', gap: 16 },
+  macro: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  weekGroceryBtn: {
+    backgroundColor: '#EBEBEB',
+    borderRadius: 16,
+    paddingVertical: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 14,
+  },
+  weekGroceryText: { fontSize: 15, fontWeight: '700', color: '#2A2A2A' },
+  cookHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  handsFreeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: colors.ink,
+    paddingVertical: 9,
+    paddingHorizontal: 15,
+    borderRadius: 999,
+  },
+  listeningDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4ADE80' },
+  handsFreeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  cookCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 11,
+    marginBottom: 10,
+  },
+  cookBtn: {
+    backgroundColor: colors.ink,
+    paddingVertical: 9,
+    paddingHorizontal: 15,
+    borderRadius: 999,
+  },
+  cookBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  exchangeCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    marginTop: 12,
+    marginBottom: 14,
+  },
+  exchangeLabel: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 12 },
+  exchangeRow: { flexDirection: 'row' },
+  exchangeCol: { flex: 1, alignItems: 'center' },
+  exchangeDivider: { width: 1, backgroundColor: '#F0F0EE' },
+  exchangeNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: colors.ink },
+  exchangeType: { fontSize: 12, fontWeight: '700', color: colors.grayLight, marginTop: 2 },
+  exchangeSub: { fontSize: 11, fontWeight: '500', color: '#BEBEBE', marginTop: 2 },
+  tipCard: {
+    flexDirection: 'row',
+    gap: 12,
+    backgroundColor: colors.surfaceAlt,
+    borderRadius: 16,
+    padding: 14,
+  },
+  tipIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tipTitle: { fontSize: 13, fontWeight: '700', color: colors.ink, marginBottom: 3 },
+  tipBody: { fontSize: 12.5, fontWeight: '500', color: colors.grayLight, lineHeight: 18 },
+  statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  statDark: {
+    flex: 1,
+    backgroundColor: colors.ink,
+    borderRadius: 18,
+    padding: 14,
+    alignItems: 'center',
+  },
+  statLight: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 14,
+    alignItems: 'center',
+  },
+  statNumLight: { fontFamily: fonts.displayExtra, fontSize: 28, color: '#fff' },
+  statNum: { fontFamily: fonts.displayExtra, fontSize: 28, color: colors.ink },
+  statLabelLight: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.55)', marginTop: 3 },
+  statLabel: { fontSize: 11, fontWeight: '700', color: colors.grayMid, marginTop: 3 },
+  achieveTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.ink, marginBottom: 12 },
+  badgeRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
+  badge: { width: 90, alignItems: 'center', marginRight: 10 },
+  badgeIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: 18,
+    backgroundColor: colors.ink,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  badgeIconOff: { backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: '#DADADA', borderStyle: 'dashed' },
+  badgeEmoji: { fontSize: 24 },
+  badgeEmojiOff: { opacity: 0.35 },
+  badgeLabel: { fontSize: 11, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  badgeLabelOff: { color: '#BEBEBE' },
+  healthCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 18,
+    padding: 15,
+    marginBottom: 14,
+  },
+  healthTitle: { fontSize: 14.5, fontWeight: '700', color: colors.ink, marginBottom: 8 },
+  healthBody: { fontSize: 12.5, fontWeight: '500', color: colors.grayLight, lineHeight: 18, marginBottom: 12 },
+  healthBtn: {
+    backgroundColor: colors.ink,
+    borderRadius: 13,
+    paddingVertical: 13,
+    alignItems: 'center',
+  },
+  healthBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+});
