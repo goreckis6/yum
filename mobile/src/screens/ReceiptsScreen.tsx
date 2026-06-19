@@ -103,9 +103,22 @@ export function ReceiptsScreen({ navigation }: Props) {
     return Array.from(set).sort();
   }, [receipts]);
 
-  const total = useMemo(() => filtered.reduce((n, r) => n + (Number(r.total) || 0), 0), [filtered]);
-  const taxTotal = useMemo(() => filtered.reduce((n, r) => n + (Number(r.tax) || 0), 0), [filtered]);
-  const currency = filtered[0]?.currency || '';
+  // Sum per currency so mixed-currency totals are never added together.
+  const byCurrency = useMemo(() => {
+    const m = new Map<string, { currency: string; total: number; tax: number; count: number }>();
+    filtered.forEach((r) => {
+      const cur = r.currency || '—';
+      const e = m.get(cur) ?? { currency: cur, total: 0, tax: 0, count: 0 };
+      e.total += Number(r.total) || 0;
+      e.tax += Number(r.tax) || 0;
+      e.count += 1;
+      m.set(cur, e);
+    });
+    return Array.from(m.values()).sort((a, b) => b.total - a.total);
+  }, [filtered]);
+  const primary = byCurrency[0];
+  const total = primary?.total ?? 0;
+  const currency = primary?.currency ?? '';
   const needsReview = useMemo(() => filtered.filter((r) => !r.total || !r.merchant).length, [filtered]);
 
   // Group the filtered receipts by day for the sectioned list.
@@ -182,11 +195,25 @@ export function ReceiptsScreen({ navigation }: Props) {
             <Text style={styles.totalLabel}>{filter === 'All' ? 'TOTAL' : `${filter.toUpperCase()} TOTAL`}</Text>
             <Text style={styles.totalCount}>{filtered.length} receipt{filtered.length === 1 ? '' : 's'}</Text>
           </View>
-          <Text style={styles.totalValue}>
-            {currency ? `${currency} ` : ''}{fmtMoney(total)}
-          </Text>
+          {byCurrency.length === 0 ? (
+            <Text style={styles.totalValue}>0.00</Text>
+          ) : (
+            byCurrency.map((e, i) => (
+              <View key={e.currency} style={styles.totalLine}>
+                <Text style={i === 0 ? styles.totalValue : styles.totalValueAlt}>
+                  {e.currency} {fmtMoney(e.total)}
+                </Text>
+                {byCurrency.length > 1 && (
+                  <Text style={styles.totalLineMeta}>
+                    {e.count} · tax {fmtMoney(e.tax)}
+                  </Text>
+                )}
+              </View>
+            ))
+          )}
           <Text style={styles.totalSub}>
-            Tax {currency} {fmtMoney(taxTotal)}  ·  {RANGE_LABEL[range]}
+            {byCurrency.length <= 1 && primary ? `Tax ${currency} ${fmtMoney(primary.tax)}  ·  ` : ''}
+            {RANGE_LABEL[range]}
           </Text>
         </View>
 
@@ -241,7 +268,7 @@ export function ReceiptsScreen({ navigation }: Props) {
             <View key={g.date} style={styles.group}>
               <View style={styles.groupHead}>
                 <Text style={styles.groupDate}>{fmtDayHeader(g.date)} · {g.items.length}</Text>
-                <Text style={styles.groupSub}>{currency} {fmtMoney(g.subtotal)}</Text>
+                <Text style={styles.groupSub}>{g.items[0]?.currency} {fmtMoney(g.subtotal)}</Text>
               </View>
               {g.items.map((r) => (
                 <Pressable key={r.id} style={styles.row} onPress={() => navigation.navigate('ReceiptDetail', { id: r.id })}>
@@ -436,6 +463,9 @@ const makeStyles = (c: ThemeColors) =>
     totalLabel: { fontSize: 12, fontWeight: '700', color: c.accent, letterSpacing: 0.5 },
     totalCount: { fontSize: 13, fontWeight: '600', color: c.grayMid },
     totalValue: { fontFamily: fonts.displayExtra, fontSize: 38, color: c.ink, letterSpacing: -1 },
+    totalValueAlt: { fontFamily: fonts.display, fontSize: 22, fontWeight: '700', color: c.ink },
+    totalLine: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 10 },
+    totalLineMeta: { fontSize: 12, fontWeight: '600', color: c.grayMid },
     totalSub: { fontSize: 13, fontWeight: '600', color: c.grayMid, marginTop: 4 },
     searchBox: {
       flexDirection: 'row',
