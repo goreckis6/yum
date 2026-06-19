@@ -78,6 +78,7 @@ export function ReceiptsScreen({ navigation }: Props) {
   const insets = useSafeAreaInsets();
   const { receipts, removeReceipt, showToast } = useApp();
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [filter, setFilter] = useState<string>('All');
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [range, setRange] = useState<DateRange>('all');
@@ -137,6 +138,24 @@ export function ReceiptsScreen({ navigation }: Props) {
   }, [filtered]);
 
   const photoCount = useMemo(() => filtered.filter((r) => !!r.imageUrl).length, [filtered]);
+
+  // Merchant autocomplete suggestions for the search box.
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    (receipts ?? []).forEach((r) => {
+      const m = r.merchant?.trim();
+      if (!m) return;
+      const lc = m.toLowerCase();
+      if (lc.includes(q) && lc !== q && !seen.has(lc)) {
+        seen.add(lc);
+        out.push(m);
+      }
+    });
+    return out.slice(0, 6);
+  }, [receipts, search]);
 
   const doExport = async () => {
     if (!filtered.length || busy) return;
@@ -225,8 +244,34 @@ export function ReceiptsScreen({ navigation }: Props) {
             placeholderTextColor={c.gray}
             value={search}
             onChangeText={setSearch}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+            returnKeyType="search"
           />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')} hitSlop={8}>
+              <Text style={styles.searchClear}>✕</Text>
+            </Pressable>
+          )}
         </View>
+
+        {searchFocused && suggestions.length > 0 && (
+          <View style={styles.suggestBox}>
+            {suggestions.map((m, i) => (
+              <Pressable
+                key={m}
+                style={[styles.suggestRow, i === suggestions.length - 1 && styles.suggestRowLast]}
+                onPress={() => {
+                  setSearch(m);
+                  setSearchFocused(false);
+                }}
+              >
+                <Icon name="search" size={15} color={c.gray} />
+                <Text style={styles.suggestText} numberOfLines={1}>{m}</Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
           <Pressable style={[styles.chip, range !== 'all' && styles.chipOn]} onPress={() => setRangeOpen(true)}>
@@ -480,6 +525,27 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: 14,
     },
     searchInput: { flex: 1, fontSize: 15, fontWeight: '500', color: c.ink },
+    searchClear: { fontSize: 14, fontWeight: '700', color: c.grayMid, paddingHorizontal: 2 },
+    suggestBox: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 14,
+      marginTop: -6,
+      marginBottom: 14,
+      overflow: 'hidden',
+    },
+    suggestRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    suggestRowLast: { borderBottomWidth: 0 },
+    suggestText: { flex: 1, fontSize: 14.5, fontWeight: '600', color: c.ink },
     chipRow: { marginBottom: 14, marginHorizontal: -20, paddingHorizontal: 20 },
     chip: { paddingVertical: 9, paddingHorizontal: 15, borderRadius: 999, backgroundColor: c.surfaceAlt, marginRight: 8 },
     chipOn: { backgroundColor: c.accent },
