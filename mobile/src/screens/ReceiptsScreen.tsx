@@ -85,7 +85,6 @@ export function ReceiptsScreen({ navigation }: Props) {
   const [exportOpen, setExportOpen] = useState(false);
   const [exportFormat, setExportFormat] = useState<'csv' | 'pdf'>('csv');
   const [includePhotos, setIncludePhotos] = useState(false);
-  const [rowTarget, setRowTarget] = useState<Receipt | null>(null);
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
@@ -156,10 +155,6 @@ export function ReceiptsScreen({ navigation }: Props) {
     label: RANGE_LABEL[key],
     onPress: () => setRange(key),
   }));
-
-  const rowOptions: SheetOption[] = rowTarget
-    ? [{ label: 'Delete receipt', destructive: true, onPress: () => { removeReceipt(rowTarget.id); showToast('Receipt deleted'); } }]
-    : [];
 
   return (
     <View style={styles.container}>
@@ -249,7 +244,7 @@ export function ReceiptsScreen({ navigation }: Props) {
                 <Text style={styles.groupSub}>{currency} {fmtMoney(g.subtotal)}</Text>
               </View>
               {g.items.map((r) => (
-                <Pressable key={r.id} style={styles.row} onPress={() => setRowTarget(r)}>
+                <Pressable key={r.id} style={styles.row} onPress={() => navigation.navigate('ReceiptDetail', { id: r.id })}>
                   {isSafeImg(r.imageUrl) ? (
                     <Image source={{ uri: r.imageUrl }} style={styles.rowThumb} resizeMode="cover" />
                   ) : (
@@ -402,14 +397,6 @@ export function ReceiptsScreen({ navigation }: Props) {
         title="Date range"
         options={rangeOptions}
         onClose={() => setRangeOpen(false)}
-      />
-
-      <ActionSheet
-        visible={!!rowTarget}
-        title={rowTarget?.merchant ?? 'Receipt'}
-        message={rowTarget ? `${rowTarget.currency} ${fmtMoney(rowTarget.total)} · ${fmtDate(rowTarget.date)}` : undefined}
-        options={rowOptions}
-        onClose={() => setRowTarget(null)}
       />
     </View>
   );

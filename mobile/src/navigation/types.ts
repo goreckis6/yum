@@ -12,6 +12,7 @@ export type RootStackParamList = {
   MealPlan: undefined;
   Profile: undefined;
   Receipts: undefined;
+  ReceiptDetail: { id: string };
   ScanReceipt: undefined;
   ReviewReceipt: { draft: import('../types').Receipt; imageBase64?: string; mimeType?: string };
 };

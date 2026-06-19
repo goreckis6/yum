@@ -28,6 +28,7 @@ import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { ReviewImportScreen } from './src/screens/ReviewImportScreen';
 import { EditRecipeScreen } from './src/screens/EditRecipeScreen';
 import { ReceiptsScreen } from './src/screens/ReceiptsScreen';
+import { ReceiptDetailScreen } from './src/screens/ReceiptDetailScreen';
 import { ScanReceiptScreen } from './src/screens/ScanReceiptScreen';
 import { ReviewReceiptScreen } from './src/screens/ReviewReceiptScreen';
 import { Toast } from './src/components/Toast';
@@ -61,6 +62,7 @@ function RootNavigator() {
         <Stack.Screen name="ReviewImport" component={ReviewImportScreen} />
         <Stack.Screen name="EditRecipe" component={EditRecipeScreen} />
         <Stack.Screen name="Receipts" component={ReceiptsScreen} />
+        <Stack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} />
         <Stack.Screen name="ScanReceipt" component={ScanReceiptScreen} />
         <Stack.Screen name="ReviewReceipt" component={ReviewReceiptScreen} />
       </Stack.Navigator>
