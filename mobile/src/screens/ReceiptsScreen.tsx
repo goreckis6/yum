@@ -157,10 +157,6 @@ export function ReceiptsScreen({ navigation }: Props) {
     onPress: () => setRange(key),
   }));
 
-  const rowOptions: SheetOption[] = rowTarget
-    ? [{ label: 'Delete receipt', destructive: true, onPress: () => { removeReceipt(rowTarget.id); showToast('Receipt deleted'); } }]
-    : [];
-
   return (
     <View style={styles.container}>
       <ScrollView
@@ -404,13 +400,48 @@ export function ReceiptsScreen({ navigation }: Props) {
         onClose={() => setRangeOpen(false)}
       />
 
-      <ActionSheet
-        visible={!!rowTarget}
-        title={rowTarget?.merchant ?? 'Receipt'}
-        message={rowTarget ? `${rowTarget.currency} ${fmtMoney(rowTarget.total)} · ${fmtDate(rowTarget.date)}` : undefined}
-        options={rowOptions}
-        onClose={() => setRowTarget(null)}
-      />
+      <Modal visible={!!rowTarget} transparent animationType="fade" onRequestClose={() => setRowTarget(null)}>
+        <Pressable style={styles.viewBackdrop} onPress={() => setRowTarget(null)}>
+          <Pressable style={[styles.viewCard, { marginBottom: insets.bottom + 10 }]} onPress={() => {}}>
+            <View style={styles.viewHandle} />
+            {isSafeImg(rowTarget?.imageUrl) ? (
+              <Image source={{ uri: rowTarget!.imageUrl }} style={styles.viewPhoto} resizeMode="contain" />
+            ) : (
+              <View style={styles.viewNoPhoto}>
+                <Icon name="receipt" size={40} color={c.gray} />
+                <Text style={styles.viewNoPhotoText}>No photo attached</Text>
+              </View>
+            )}
+
+            <Text style={styles.viewMerchant}>{rowTarget?.merchant}</Text>
+            <Text style={styles.viewMeta}>
+              {rowTarget ? `${fmtDate(rowTarget.date)} · ${rowTarget.category}` : ''}
+              {rowTarget?.tags?.length ? `  ${rowTarget.tags.map((t) => `#${t}`).join(' ')}` : ''}
+            </Text>
+            <Text style={styles.viewTotal}>{rowTarget?.currency} {rowTarget ? fmtMoney(rowTarget.total) : ''}</Text>
+            {!!rowTarget?.tax && (
+              <Text style={styles.viewTax}>incl. tax {rowTarget.currency} {fmtMoney(rowTarget.tax)}</Text>
+            )}
+
+            <View style={styles.viewBtns}>
+              <Pressable style={styles.viewClose} onPress={() => setRowTarget(null)}>
+                <Text style={styles.viewCloseText}>Close</Text>
+              </Pressable>
+              <Pressable
+                style={styles.viewDelete}
+                onPress={() => {
+                  const id = rowTarget!.id;
+                  setRowTarget(null);
+                  removeReceipt(id);
+                  showToast('Receipt deleted');
+                }}
+              >
+                <Text style={styles.viewDeleteText}>Delete</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -614,4 +645,44 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 16,
     },
     saveText: { color: c.ink, fontSize: 15, fontWeight: '700' },
+    viewBackdrop: { flex: 1, backgroundColor: c.scrim, justifyContent: 'flex-end', padding: 16 },
+    viewCard: { backgroundColor: c.bg, borderRadius: 24, padding: 16, maxHeight: '88%' },
+    viewHandle: { width: 42, height: 5, borderRadius: 3, backgroundColor: c.border, alignSelf: 'center', marginBottom: 14 },
+    viewPhoto: { width: '100%', height: 360, borderRadius: 16, backgroundColor: c.surfaceAlt, marginBottom: 16 },
+    viewNoPhoto: {
+      width: '100%',
+      height: 180,
+      borderRadius: 16,
+      backgroundColor: c.surfaceAlt,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+      marginBottom: 16,
+    },
+    viewNoPhotoText: { fontSize: 14, fontWeight: '600', color: c.grayMid },
+    viewMerchant: { fontFamily: fonts.display, fontSize: 22, color: c.ink, marginBottom: 4 },
+    viewMeta: { fontSize: 13.5, fontWeight: '500', color: c.grayMid, marginBottom: 10 },
+    viewTotal: { fontFamily: fonts.displayExtra, fontSize: 30, color: c.ink, letterSpacing: -0.5 },
+    viewTax: { fontSize: 13, fontWeight: '500', color: c.grayMid, marginTop: 2 },
+    viewBtns: { flexDirection: 'row', gap: 10, marginTop: 18 },
+    viewClose: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      paddingVertical: 15,
+      alignItems: 'center',
+    },
+    viewCloseText: { fontSize: 15, fontWeight: '700', color: c.ink },
+    viewDelete: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderWidth: 1.5,
+      borderColor: 'rgba(220,38,38,0.5)',
+      borderRadius: 16,
+      paddingVertical: 15,
+      alignItems: 'center',
+    },
+    viewDeleteText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
   });
