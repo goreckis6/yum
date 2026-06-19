@@ -41,12 +41,13 @@ export interface ExportFile {
 export async function exportReceipts(
   receipts: unknown[],
   format: 'csv' | 'pdf',
+  includePhotos = false,
 ): Promise<ExportFile> {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/receipts/export`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ receipts, format }),
+    body: JSON.stringify({ receipts, format, includePhotos }),
   });
 
   if (!res.ok) {

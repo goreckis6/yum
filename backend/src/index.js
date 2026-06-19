@@ -417,7 +417,23 @@ function receiptsToCsv(receipts) {
   return [head.join(','), ...rows].join('\n');
 }
 
-function receiptsToPdf(receipts) {
+async function fetchImageBuffer(url) {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!res.ok) return null;
+    const ab = await res.arrayBuffer();
+    return Buffer.from(ab);
+  } catch {
+    return null;
+  }
+}
+
+async function receiptsToPdf(receipts, includePhotos = false) {
+  // Pre-fetch receipt photos (if requested) before streaming the PDF.
+  const photos = includePhotos
+    ? await Promise.all(receipts.map((r) => (r.imageUrl ? fetchImageBuffer(r.imageUrl) : Promise.resolve(null))))
+    : [];
+
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({ size: 'A4', margin: 40 });
@@ -471,6 +487,27 @@ function receiptsToPdf(receipts) {
       y += 8;
       doc.fontSize(12).fillColor('#C7613C').text(`Total: ${cur} ${grand.toFixed(2)}`, startX, y);
 
+      // Optional appendix with the original receipt photos.
+      const withPhotos = photos.filter(Boolean).length;
+      if (includePhotos && withPhotos) {
+        doc.addPage();
+        doc.fontSize(16).fillColor('#241B12').text('Receipt photos', { align: 'left' });
+        doc.moveDown(0.6);
+        receipts.forEach((r, i) => {
+          const img = photos[i];
+          if (!img) return;
+          if (doc.y > 560) doc.addPage();
+          doc.fontSize(10).fillColor('#6F6356').text(`${r.merchant} · ${r.date} · ${cur} ${(r.total ?? 0).toFixed(2)}`);
+          doc.moveDown(0.3);
+          try {
+            doc.image(img, { fit: [320, 360], align: 'left' });
+          } catch {
+            doc.fontSize(9).fillColor('#9C8F7C').text('(image could not be embedded)');
+          }
+          doc.moveDown(1);
+        });
+      }
+
       doc.end();
     } catch (e) {
       reject(e);
@@ -480,14 +517,14 @@ function receiptsToPdf(receipts) {
 
 app.post('/api/receipts/export', async (req, res) => {
   try {
-    const { receipts, format = 'csv' } = req.body;
+    const { receipts, format = 'csv', includePhotos = false } = req.body;
     if (!Array.isArray(receipts) || receipts.length === 0) {
       return res.status(400).json({ error: 'receipts array is required' });
     }
     const stamp = new Date().toISOString().slice(0, 10);
 
     if (format === 'pdf') {
-      const buf = await receiptsToPdf(receipts);
+      const buf = await receiptsToPdf(receipts, includePhotos);
       return res.json({
         filename: `receipts-${stamp}.pdf`,
         mimeType: 'application/pdf',
