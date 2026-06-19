@@ -66,6 +66,7 @@ export function HomeScreen() {
   const userId = user?.id;
   const [homeTab, setHomeTab] = useState<HomeTab>('organize');
   const [search, setSearch] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
   const [chip, setChip] = useState<FilterChip>('All');
   const [activeCookbook, setActiveCookbook] = useState<string | null>(null);
   const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
@@ -90,6 +91,26 @@ export function HomeScreen() {
       return matchSearch && matchChip;
     });
   }, [recipes, favorites, search, chip, activeCookbook, customCookbooks]);
+
+  // Autocomplete suggestions: matching recipe titles, then ingredient names.
+  const suggestions = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    const add = (s?: string) => {
+      const v = s?.trim();
+      if (!v) return;
+      const lc = v.toLowerCase();
+      if (lc.includes(q) && lc !== q && !seen.has(lc)) {
+        seen.add(lc);
+        out.push(v);
+      }
+    };
+    recipes.forEach((r) => add(r.title));
+    recipes.forEach((r) => r.ingredients.forEach((i) => add(i.n)));
+    return out.slice(0, 6);
+  }, [recipes, search]);
 
   // Cookbooks built from the user's own recipes — one per category that has
   // recipes. A manual cover (cookbookCovers[tag]) wins; otherwise we pick a
@@ -231,8 +252,34 @@ export function HomeScreen() {
           placeholderTextColor={c.gray}
           value={search}
           onChangeText={setSearch}
+          onFocus={() => setSearchFocused(true)}
+          onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+          returnKeyType="search"
         />
+        {search.length > 0 && (
+          <Pressable onPress={() => setSearch('')} hitSlop={8}>
+            <Text style={styles.searchClear}>✕</Text>
+          </Pressable>
+        )}
       </View>
+
+      {searchFocused && suggestions.length > 0 && (
+        <View style={styles.suggestBox}>
+          {suggestions.map((s, i) => (
+            <Pressable
+              key={s}
+              style={[styles.suggestRow, i === suggestions.length - 1 && styles.suggestRowLast]}
+              onPress={() => {
+                setSearch(s);
+                setSearchFocused(false);
+              }}
+            >
+              <Icon name="search" size={15} color={c.gray} />
+              <Text style={styles.suggestText} numberOfLines={1}>{s}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
 
       <Pressable style={styles.importPrimary} onPress={() => navigation.navigate('ImportUrl')}>
         <View style={styles.importIconLight}>
@@ -760,6 +807,27 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   searchIcon: { fontSize: 16 },
   searchInput: { flex: 1, fontSize: 15, fontWeight: '500', color: c.ink },
+  searchClear: { fontSize: 14, fontWeight: '700', color: c.grayMid, paddingHorizontal: 2 },
+  suggestBox: {
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 14,
+    marginTop: -8,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  suggestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  suggestRowLast: { borderBottomWidth: 0 },
+  suggestText: { flex: 1, fontSize: 14.5, fontWeight: '600', color: c.ink },
   chipRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
   chip: {
     paddingVertical: 9,
