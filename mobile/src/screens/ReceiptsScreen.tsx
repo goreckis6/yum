@@ -36,6 +36,12 @@ const RANGE_LABEL: Record<DateRange, string> = {
   year: 'This year',
 };
 
+// Only http(s)/file URIs are safe for <Image>; ph:// or blob: crash the native
+// image loader on iOS ("No suitable URL request handler for blob").
+function isSafeImg(uri?: string): boolean {
+  return !!uri && /^(https?|file):/i.test(uri);
+}
+
 function fmtMoney(n: number) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
@@ -243,8 +249,8 @@ export function ReceiptsScreen({ navigation }: Props) {
                 <Text style={styles.groupSub}>{currency} {fmtMoney(g.subtotal)}</Text>
               </View>
               {g.items.map((r) => (
-                <Pressable key={r.id} style={styles.row} onLongPress={() => setRowTarget(r)}>
-                  {r.imageUrl ? (
+                <Pressable key={r.id} style={styles.row} onPress={() => setRowTarget(r)}>
+                  {isSafeImg(r.imageUrl) ? (
                     <Image source={{ uri: r.imageUrl }} style={styles.rowThumb} resizeMode="cover" />
                   ) : (
                     <View style={styles.rowIcon}>

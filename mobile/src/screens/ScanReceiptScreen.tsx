@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system/legacy';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -40,7 +41,20 @@ export function ScanReceiptScreen({ navigation }: Props) {
     const asset = result.assets[0];
     if (!asset.base64) return;
     setError(null);
-    setPhoto({ uri: asset.uri, base64: asset.base64, mimeType: asset.mimeType ?? 'image/jpeg' });
+
+    // Write the photo to a real file:// path. The picker's own uri can be a
+    // ph:// / blob: URI that crashes the native image loader ("No suitable URL
+    // request handler for blob") when rendered or read — a plain file is safe.
+    let uri = asset.uri;
+    try {
+      const dest = `${FileSystem.cacheDirectory}receipt-${Date.now()}.jpg`;
+      await FileSystem.writeAsStringAsync(dest, asset.base64, { encoding: FileSystem.EncodingType.Base64 });
+      uri = dest;
+    } catch {
+      /* keep the original uri if writing fails */
+    }
+
+    setPhoto({ uri, base64: asset.base64, mimeType: asset.mimeType ?? 'image/jpeg' });
   };
 
   const submit = async () => {
