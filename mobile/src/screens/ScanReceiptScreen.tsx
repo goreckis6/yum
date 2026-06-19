@@ -64,7 +64,7 @@ export function ScanReceiptScreen({ navigation }: Props) {
         imageUrl: photo.uri, // original photo (local uri, uploaded on save)
         createdAt: Date.now(),
       };
-      navigation.replace('ReviewReceipt', { draft });
+      navigation.replace('ReviewReceipt', { draft, imageBase64: photo.base64, mimeType: photo.mimeType });
     } catch (e: any) {
       setError(e?.message || 'Could not read the receipt. Try a clearer photo.');
     } finally {

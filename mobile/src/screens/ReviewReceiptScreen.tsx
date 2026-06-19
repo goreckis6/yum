@@ -8,7 +8,7 @@ import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { uploadImageIfLocal } from '../lib/storage';
+import { uploadImageIfLocal, uploadBase64Image } from '../lib/storage';
 import { RECEIPT_CATEGORIES, Receipt, ReceiptCategory } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewReceipt'>;
@@ -45,9 +45,16 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
     if (saving) return;
     setSaving(true);
     try {
-      const imageUrl = userId
-        ? await uploadImageIfLocal(draft.imageUrl, userId, 'receipts')
-        : draft.imageUrl;
+      // Prefer the base64 we already have from the picker (the receipt photo's
+      // ph:// uri can't be read by the File API), else fall back to the uri.
+      let imageUrl = draft.imageUrl;
+      if (userId) {
+        if (route.params.imageBase64) {
+          imageUrl = (await uploadBase64Image(route.params.imageBase64, userId, 'receipts')) ?? draft.imageUrl;
+        } else {
+          imageUrl = await uploadImageIfLocal(draft.imageUrl, userId, 'receipts');
+        }
+      }
       addReceipt({ ...draft, imageUrl });
       showToast('Saved to your receipts');
       navigation.reset({ index: 1, routes: [{ name: 'Main' }, { name: 'Receipts' }] });

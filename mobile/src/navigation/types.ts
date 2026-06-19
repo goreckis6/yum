@@ -13,7 +13,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Receipts: undefined;
   ScanReceipt: undefined;
-  ReviewReceipt: { draft: import('../types').Receipt };
+  ReviewReceipt: { draft: import('../types').Receipt; imageBase64?: string; mimeType?: string };
 };
 
 export type MainTab = 'recipes' | 'mealplan' | 'grocery' | 'profile';
