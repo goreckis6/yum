@@ -103,6 +103,9 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   // (relative to a sensible per-serving reference so the bars look balanced).
   const level = recipe.time <= 25 ? 'Easy' : recipe.time <= 45 ? 'Medium' : 'Involved';
   const pct = (grams: number, ref: number) => Math.max(6, Math.min(100, Math.round((grams / ref) * 100)));
+  // Stored nutrition is per serving → scale the displayed totals with the
+  // chosen number of servings (the bars stay per-serving proportions).
+  const nv = (v: number) => Math.round(v * servings);
 
   return (
     <>
@@ -208,9 +211,12 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <View style={styles.nutCard}>
             <View style={styles.nutHeader}>
               <Text style={styles.nutTitle}>
-                Nutrition <Text style={styles.nutTitleSub}>/ serving</Text>
+                Nutrition{' '}
+                <Text style={styles.nutTitleSub}>
+                  {servings === 1 ? '· total' : `· ${servings} servings`}
+                </Text>
               </Text>
-              <Text style={styles.nutKcal}>{recipe.kcal} kcal</Text>
+              <Text style={styles.nutKcal}>{nv(recipe.kcal)} kcal</Text>
             </View>
             <View style={styles.macroCols}>
               <View style={styles.macroCol}>
@@ -218,7 +224,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                   <View style={[styles.macroFill, { width: `${pct(recipe.p, 50)}%`, backgroundColor: c.sage }]} />
                 </View>
                 <Text style={styles.macroLabel}>
-                  <Text style={styles.macroValue}>{recipe.p}g</Text> protein
+                  <Text style={styles.macroValue}>{nv(recipe.p)}g</Text> protein
                 </Text>
               </View>
               <View style={styles.macroCol}>
@@ -226,7 +232,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                   <View style={[styles.macroFill, { width: `${pct(recipe.c, 75)}%`, backgroundColor: c.gold }]} />
                 </View>
                 <Text style={styles.macroLabel}>
-                  <Text style={styles.macroValue}>{recipe.c}g</Text> carbs
+                  <Text style={styles.macroValue}>{nv(recipe.c)}g</Text> carbs
                 </Text>
               </View>
               <View style={styles.macroCol}>
@@ -234,7 +240,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                   <View style={[styles.macroFill, { width: `${pct(recipe.f, 40)}%`, backgroundColor: c.accent }]} />
                 </View>
                 <Text style={styles.macroLabel}>
-                  <Text style={styles.macroValue}>{recipe.f}g</Text> fat
+                  <Text style={styles.macroValue}>{nv(recipe.f)}g</Text> fat
                 </Text>
               </View>
             </View>

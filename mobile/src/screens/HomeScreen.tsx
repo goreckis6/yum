@@ -250,8 +250,8 @@ export function HomeScreen() {
           <View style={styles.scanIconSage}>
             <Icon name="scan" size={22} color={c.sage} />
           </View>
-          <Text style={styles.scanTitle}>Scan food</Text>
-          <Text style={styles.scanSub}>Calories &amp; nutrition</Text>
+          <Text style={styles.scanTitle}>Scan recipe</Text>
+          <Text style={styles.scanSub}>Handwritten &amp; cards</Text>
         </Pressable>
         <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
           <View style={styles.scanIconPeach}>
