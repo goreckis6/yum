@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { extractRecipeFromImage, extractRecipeFromUrl } from '../api/recipes';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Recipe } from '../types';
 import { RootStackParamList } from '../navigation/types';
@@ -27,6 +28,8 @@ const IMAGE_MESSAGES = [
 ];
 
 export function ProcessingScreen({ navigation, route }: Props) {
+  const c = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   const [msgIndex, setMsgIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,7 +67,7 @@ export function ProcessingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={colors.ink} style={styles.spinner} />
+      <ActivityIndicator size="large" color={c.accent} style={styles.spinner} />
       <Text style={styles.title}>{error ? 'Something went wrong' : MESSAGES[msgIndex]}</Text>
       {error ? (
         <>
@@ -80,22 +83,23 @@ export function ProcessingScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-  },
-  spinner: { marginBottom: 24 },
-  title: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    color: colors.ink,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  error: { fontSize: 14, color: '#B91C1C', textAlign: 'center', marginBottom: 12 },
-  hint: { fontSize: 13, fontWeight: '500', color: colors.grayMid, textAlign: 'center' },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.bg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: 32,
+    },
+    spinner: { marginBottom: 24 },
+    title: {
+      fontFamily: fonts.display,
+      fontSize: 22,
+      color: c.ink,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    error: { fontSize: 14, color: '#B91C1C', textAlign: 'center', marginBottom: 12 },
+    hint: { fontSize: 13, fontWeight: '500', color: c.grayMid, textAlign: 'center' },
+  });

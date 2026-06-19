@@ -34,6 +34,30 @@ export interface Recipe {
   sourceUrl?: string;
 }
 
+export const RECEIPT_CATEGORIES = ['Meals', 'Groceries', 'Fuel', 'Travel', 'Office', 'Other'] as const;
+export type ReceiptCategory = typeof RECEIPT_CATEGORIES[number];
+
+export interface ReceiptItem {
+  n: string;
+  p: number;
+}
+
+export interface Receipt {
+  id: string;
+  merchant: string;
+  date: string; // ISO YYYY-MM-DD
+  total: number;
+  subtotal: number;
+  tax: number;
+  currency: string;
+  category: ReceiptCategory;
+  paymentMethod?: string;
+  tags: string[];
+  items: ReceiptItem[];
+  imageUrl?: string; // original receipt photo kept in storage
+  createdAt: number;
+}
+
 export interface GroceryItem {
   id: string;
   a: string;
@@ -59,6 +83,7 @@ export interface AppState {
   hasOnboarded: boolean;
   cookbookCovers: Record<string, CookbookCover>;
   customCookbooks: CustomCookbook[];
+  receipts: Receipt[];
 }
 
 export interface CookbookCover {

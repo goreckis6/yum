@@ -5,7 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddSheet } from '../components/AddSheet';
 import { BottomNav } from '../components/BottomNav';
 import { useApp } from '../context/AppContext';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { RootStackParamList } from './types';
 import { GroceryScreen } from '../screens/GroceryScreen';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -32,12 +32,13 @@ function ScreenHost({ tab }: { tab: MainTab }) {
 export function MainNavigator() {
   const navigation = useNavigation<Nav>();
   const { showToast } = useApp();
+  const c = useTheme();
   const [tab, setTab] = useState<MainTab>('recipes');
   const [addOpen, setAddOpen] = useState(false);
 
   return (
     <TabProvider setTab={setTab}>
-    <View style={styles.shell}>
+    <View style={[styles.shell, { backgroundColor: c.bg }]}>
       <ScreenHost tab={tab} />
 
       <BottomNav
@@ -67,5 +68,5 @@ export function MainNavigator() {
 }
 
 const styles = StyleSheet.create({
-  shell: { flex: 1, backgroundColor: colors.bg },
+  shell: { flex: 1 },
 });

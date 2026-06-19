@@ -9,7 +9,8 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ImagePicker from 'expo-image-picker';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
@@ -23,15 +24,18 @@ interface PhotoDraft {
 }
 
 export function ScanRecipeScreen({ navigation }: Props) {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const [photo, setPhoto] = useState<PhotoDraft | null>(null);
 
   const pickImage = async (fromCamera: boolean) => {
-    const perm = fromCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-
-    if (!perm.granted) return;
+    // Camera needs permission; the photo library uses the system picker which
+    // works without one, so we only gate the camera.
+    if (fromCamera) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) return;
+    }
 
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({
@@ -96,7 +100,7 @@ export function ScanRecipeScreen({ navigation }: Props) {
       ) : (
         <>
           <View style={styles.placeholder}>
-            <Icon name="camera" size={44} color={colors.gray} />
+            <Icon name="camera" size={44} color={c.gray} />
             <Text style={styles.placeholderText}>No photo selected</Text>
           </View>
 
@@ -113,10 +117,10 @@ export function ScanRecipeScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     paddingHorizontal: 20,
     paddingTop: 16,
   },
@@ -124,30 +128,30 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 22,
   },
-  backIcon: { fontSize: 28, color: colors.ink },
+  backIcon: { fontSize: 28, color: c.ink },
   title: {
     fontFamily: fonts.display,
     fontSize: 28,
     lineHeight: 32,
-    color: colors.ink,
+    color: c.ink,
     letterSpacing: -0.6,
     marginBottom: 8,
   },
   sub: {
     fontSize: 15,
     fontWeight: '500',
-    color: colors.grayMuted,
+    color: c.grayMuted,
     lineHeight: 22,
     marginBottom: 24,
   },
   placeholder: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   placeholderIcon: { fontSize: 48 },
-  placeholderText: { fontSize: 14, fontWeight: '600', color: colors.grayMid },
+  placeholderText: { fontSize: 14, fontWeight: '600', color: c.grayMid },
   previewWrap: {
     flex: 1,
     borderRadius: 20,
@@ -178,9 +182,9 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     alignItems: 'center',
   },
-  retakeBtnText: { fontSize: 13, fontWeight: '700', color: colors.ink },
+  retakeBtnText: { fontSize: 13, fontWeight: '700', color: c.ink },
   btnPrimary: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
@@ -188,11 +192,11 @@ const styles = StyleSheet.create({
   },
   btnPrimaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   btnSecondary: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 24,
   },
-  btnSecondaryText: { color: colors.ink, fontSize: 16, fontWeight: '700' },
+  btnSecondaryText: { color: c.ink, fontSize: 16, fontWeight: '700' },
 });

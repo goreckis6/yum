@@ -8,6 +8,7 @@ import {
   GroceryItem,
   MealPlan,
   MealSlot,
+  Receipt,
   Recipe,
 } from '../types';
 
@@ -41,6 +42,10 @@ interface AppContextValue extends AppState {
   deleteCookbook: (id: string) => void;
   toggleRecipeInCookbook: (cookbookId: string, recipeId: string) => void;
   getRecipe: (id: string) => Recipe | undefined;
+  addReceipt: (receipt: Receipt) => void;
+  updateReceipt: (receipt: Receipt) => void;
+  removeReceipt: (id: string) => void;
+  getReceipt: (id: string) => Receipt | undefined;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -278,6 +283,26 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     });
   }, []);
 
+  const getReceipt = useCallback(
+    (id: string) => state.receipts?.find((r) => r.id === id),
+    [state.receipts],
+  );
+
+  const addReceipt = useCallback((receipt: Receipt) => {
+    setState((s) => ({ ...s, receipts: [receipt, ...(s.receipts ?? [])] }));
+  }, []);
+
+  const updateReceipt = useCallback((receipt: Receipt) => {
+    setState((s) => ({
+      ...s,
+      receipts: (s.receipts ?? []).map((r) => (r.id === receipt.id ? receipt : r)),
+    }));
+  }, []);
+
+  const removeReceipt = useCallback((id: string) => {
+    setState((s) => ({ ...s, receipts: (s.receipts ?? []).filter((r) => r.id !== id) }));
+  }, []);
+
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -319,6 +344,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       deleteCookbook,
       toggleRecipeInCookbook,
       getRecipe,
+      addReceipt,
+      updateReceipt,
+      removeReceipt,
+      getReceipt,
     }),
     [
       state,
@@ -346,6 +375,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       deleteCookbook,
       toggleRecipeInCookbook,
       getRecipe,
+      addReceipt,
+      updateReceipt,
+      removeReceipt,
+      getReceipt,
     ],
   );
 

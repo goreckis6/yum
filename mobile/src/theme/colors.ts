@@ -1,17 +1,73 @@
-export const colors = {
-  bg: '#FAFAF7',
-  ink: '#52796F',
-  accent: '#52796F',
-  gray: '#A0B5AB',
-  grayMid: '#84A98C',
-  grayLight: '#6B8F85',
-  grayMuted: '#7A9E94',
-  border: '#CAD2C5',
+// "Larder" design system — warm cream (light) and deep brown (dark), with a
+// terracotta accent and a sage secondary. Both themes expose the exact same
+// keys so components can read `c.<key>` regardless of mode.
+
+export interface ThemeColors {
+  bg: string;
+  ink: string;
+  accent: string;
+  accentSoft: string;
+  sage: string;
+  sageSoft: string;
+  gold: string;
+  gray: string;
+  grayMid: string;
+  grayLight: string;
+  grayMuted: string;
+  border: string;
+  surface: string;
+  surfaceAlt: string;
+  tabBg: string;
+  warning: string;
+  warningText: string;
+  scrim: string;
+}
+
+export const lightColors: ThemeColors = {
+  bg: '#FBF7F1',
+  ink: '#241B12',
+  accent: '#C7613C',
+  accentSoft: '#F7E9E0',
+  sage: '#5E7150',
+  sageSoft: '#E9EEE2',
+  gold: '#D6982F',
+  gray: '#B6A993',
+  grayMid: '#9C8F7C',
+  grayLight: '#6F6356',
+  grayMuted: '#8A7C68',
+  border: '#EEE6D9',
   surface: '#FFFFFF',
-  surfaceAlt: '#EDF0EB',
-  tabBg: '#E4E8E2',
+  surfaceAlt: '#F8F3EB',
+  tabBg: '#F4EEE4',
   warning: '#FEF3C7',
   warningText: '#92400E',
+  scrim: 'rgba(27,23,18,0.45)',
 };
 
-export const tints = ['#D4DDD6', '#CAD2C5', '#D0D8CC', '#D8E0D4', '#CCD5C8'];
+export const darkColors: ThemeColors = {
+  bg: '#1A1510',
+  ink: '#F2ECE3',
+  accent: '#C7613C',
+  accentSoft: '#33271F',
+  sage: '#9DB488',
+  sageSoft: '#20291B',
+  gold: '#D6982F',
+  gray: '#A89C8A',
+  grayMid: '#B0A491',
+  grayLight: '#C6BCAD',
+  grayMuted: '#A89C8A',
+  border: '#37302A',
+  surface: '#28221B',
+  surfaceAlt: '#322B23',
+  tabBg: '#1B1712',
+  warning: '#37302A',
+  warningText: '#F3D9A8',
+  scrim: 'rgba(0,0,0,0.55)',
+};
+
+export const lightTints = ['#E9EEE2', '#F7E9E0', '#F3D9A8', '#F8F3EB', '#F4EEE4'];
+export const darkTints = ['#20291B', '#33271F', '#28221B', '#322B23', '#2A231C'];
+
+// Backwards-compatible default so any non-component module keeps working.
+export const colors = lightColors;
+export const tints = lightTints;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { Aisle } from '../types';
 
 interface Props {
@@ -324,6 +324,7 @@ function SpiceGlyph({ size, fill, shade }: { size: number; fill: string; shade: 
 }
 
 export function IngredientIcon({ name, aisle, size = 30, muted = false }: Props) {
+  const c = useTheme();
   const emoji = resolveEmoji(name, aisle);
   const inner = Math.round(size * 0.62);
   let content;
@@ -345,7 +346,7 @@ export function IngredientIcon({ name, aisle, size = 30, muted = false }: Props)
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: colors.surfaceAlt,
+        backgroundColor: c.surfaceAlt,
         alignItems: 'center',
         justifyContent: 'center',
         opacity: muted ? 0.4 : 1,

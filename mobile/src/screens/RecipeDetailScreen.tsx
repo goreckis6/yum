@@ -12,9 +12,10 @@ import { useApp } from '../context/AppContext';
 import { MealPickerSheet } from '../components/MealPickerSheet';
 import { IngredientIcon } from '../components/IngredientIcon';
 import { Icon } from '../components/Icon';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
-import { DayKey, DetailTab, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
+import { DayKey, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { isToTaste, scaleAmount } from '../utils/scale';
 import { CoverArt } from '../components/CoverArt';
@@ -36,6 +37,8 @@ function TrashIcon({ color = '#DC2626' }: { color?: string }) {
 }
 
 export function RecipeDetailScreen({ navigation, route }: Props) {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const {
     getRecipe,
     ingChecked,
@@ -70,7 +73,6 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
 
   const recipe = getRecipe(route.params.id);
   const [servings, setServings] = useState(recipe?.servings ?? 4);
-  const [tab, setTab] = useState<DetailTab>('ingredients');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickDay, setPickDay] = useState<DayKey>('Wed');
   const [pickSlot, setPickSlot] = useState<MealSlot>('Dinner');
@@ -97,11 +99,10 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   const orderedIngredients = recipe.ingredients
     .map((ing, i) => ({ ing, i }))
     .sort((a, b) => Number(isToTaste(a.ing.a)) - Number(isToTaste(b.ing.a)));
-  const totCal = recipe.kcal * servings;
-  const calsP = recipe.p * 4;
-  const calsC = recipe.c * 4;
-  const calsF = recipe.f * 9;
-  const sum = calsP + calsC + calsF || 1;
+  // Difficulty derived from total time, and a 0–100 fill for each macro bar
+  // (relative to a sensible per-serving reference so the bars look balanced).
+  const level = recipe.time <= 25 ? 'Easy' : recipe.time <= 45 ? 'Medium' : 'Involved';
+  const pct = (grams: number, ref: number) => Math.max(6, Math.min(100, Math.round((grams / ref) * 100)));
 
   return (
     <>
@@ -139,7 +140,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
               style={[styles.favBtn, isFav && styles.favBtnOn]}
               onPress={() => { toggleFavorite(recipe.id); showToast(isFav ? 'Removed from favorites' : 'Added to favorites'); }}
             >
-              <Icon name="heart" size={17} color={isFav ? '#EF4444' : colors.grayMid} fill={isFav} />
+              <Icon name="heart" size={17} color={isFav ? '#EF4444' : c.grayMid} fill={isFav} />
             </Pressable>
             <Pressable
               style={[styles.madeBtn, isMade && styles.madeBtnOn]}
@@ -173,97 +174,110 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             })}
           </View>
 
+          <View style={styles.statRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{recipe.time}′</Text>
+              <Text style={styles.statLabel}>Total</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{servings}</Text>
+              <Text style={styles.statLabel}>Serves</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{level}</Text>
+              <Text style={styles.statLabel}>Level</Text>
+            </View>
+          </View>
+
           <View style={styles.servingRow}>
             <View>
-              <Text style={styles.servingTitle}>Servings</Text>
+              <Text style={styles.servingTitle}>Adjust servings</Text>
               <Text style={styles.servingSub}>Scales nutrition & grocery</Text>
             </View>
             <View style={styles.stepper}>
               <Pressable style={styles.stepBtn} onPress={() => setServings(Math.max(1, servings - 1))}>
-                <Text>−</Text>
+                <Text style={styles.stepSign}>−</Text>
               </Pressable>
               <Text style={styles.servingNum}>{servings}</Text>
               <Pressable style={styles.stepBtnDark} onPress={() => setServings(Math.min(12, servings + 1))}>
-                <Text style={{ color: '#fff' }}>+</Text>
+                <Text style={styles.stepSignOn}>+</Text>
               </Pressable>
             </View>
           </View>
 
-          <View style={styles.tabs}>
-            {(['ingredients', 'steps', 'nutrition'] as DetailTab[]).map((t) => (
-              <Pressable
-                key={t}
-                style={[styles.tab, tab === t && styles.tabOn]}
-                onPress={() => setTab(t)}
-              >
-                <Text style={[styles.tabText, tab === t && styles.tabTextOn]}>
-                  {t.charAt(0).toUpperCase() + t.slice(1)}
+          <View style={styles.nutCard}>
+            <View style={styles.nutHeader}>
+              <Text style={styles.nutTitle}>
+                Nutrition <Text style={styles.nutTitleSub}>/ serving</Text>
+              </Text>
+              <Text style={styles.nutKcal}>{recipe.kcal} kcal</Text>
+            </View>
+            <View style={styles.macroCols}>
+              <View style={styles.macroCol}>
+                <View style={[styles.macroTrack, { backgroundColor: c.sageSoft }]}>
+                  <View style={[styles.macroFill, { width: `${pct(recipe.p, 50)}%`, backgroundColor: c.sage }]} />
+                </View>
+                <Text style={styles.macroLabel}>
+                  <Text style={styles.macroValue}>{recipe.p}g</Text> protein
                 </Text>
-              </Pressable>
+              </View>
+              <View style={styles.macroCol}>
+                <View style={[styles.macroTrack, { backgroundColor: c.accentSoft }]}>
+                  <View style={[styles.macroFill, { width: `${pct(recipe.c, 75)}%`, backgroundColor: c.gold }]} />
+                </View>
+                <Text style={styles.macroLabel}>
+                  <Text style={styles.macroValue}>{recipe.c}g</Text> carbs
+                </Text>
+              </View>
+              <View style={styles.macroCol}>
+                <View style={[styles.macroTrack, { backgroundColor: c.accentSoft }]}>
+                  <View style={[styles.macroFill, { width: `${pct(recipe.f, 40)}%`, backgroundColor: c.accent }]} />
+                </View>
+                <Text style={styles.macroLabel}>
+                  <Text style={styles.macroValue}>{recipe.f}g</Text> fat
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.sectionHead}>
+            <Text style={styles.sectionTitle}>Ingredients</Text>
+            <Pressable onPress={() => addRecipeToGrocery(recipe.id)}>
+              <Text style={styles.sectionAction}>Add all to grocery</Text>
+            </Pressable>
+          </View>
+          <View style={styles.ingList}>
+            {orderedIngredients.map(({ ing, i }) => {
+              const key = `${recipe.id}:${i}`;
+              const checked = !!ingChecked[key];
+              return (
+                <Pressable
+                  key={key}
+                  style={styles.ingRow}
+                  onPress={() => toggleIngredient(recipe.id, i)}
+                >
+                  <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+                    {checked && <Text style={styles.checkMark}>✓</Text>}
+                  </View>
+                  <IngredientIcon name={ing.n} aisle={ing.aisle} size={30} muted={checked} />
+                  <Text style={[styles.ingName, checked && styles.ingChecked]}>{ing.n}</Text>
+                  <Text style={[styles.ingAmt, checked && styles.ingChecked]}>{scaleAmount(ing.a, factor)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text style={styles.sectionTitle}>Method</Text>
+          <View style={styles.methodList}>
+            {recipe.steps.map((step, i) => (
+              <View key={i} style={styles.stepRow}>
+                <View style={styles.stepNum}>
+                  <Text style={styles.stepNumText}>{i + 1}</Text>
+                </View>
+                <Text style={styles.stepText}>{step}</Text>
+              </View>
             ))}
           </View>
-
-          {tab === 'ingredients' && (
-            <View>
-              <Text style={styles.ingHint}>{recipe.ingredients.length} ingredients · Tap to check off</Text>
-              {orderedIngredients.map(({ ing, i }) => {
-                const key = `${recipe.id}:${i}`;
-                const checked = !!ingChecked[key];
-                return (
-                  <Pressable
-                    key={key}
-                    style={styles.ingRow}
-                    onPress={() => toggleIngredient(recipe.id, i)}
-                  >
-                    <View style={[styles.checkbox, checked && styles.checkboxOn]}>
-                      {checked && <Text style={styles.checkMark}>✓</Text>}
-                    </View>
-                    <IngredientIcon name={ing.n} aisle={ing.aisle} size={30} muted={checked} />
-                    <Text style={[styles.ingAmt, checked && styles.ingChecked]}>{scaleAmount(ing.a, factor)}</Text>
-                    <Text style={[styles.ingName, checked && styles.ingChecked]}>{ing.n}</Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-          )}
-
-          {tab === 'steps' && (
-            <View>
-              {recipe.steps.map((step, i) => (
-                <View key={i} style={styles.stepRow}>
-                  <View style={styles.stepNum}>
-                    <Text style={styles.stepNumText}>{i + 1}</Text>
-                  </View>
-                  <Text style={styles.stepText}>{step}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {tab === 'nutrition' && (
-            <View style={styles.nutCard}>
-              <View style={styles.nutTop}>
-                <View>
-                  <Text style={styles.kcalBig}>{recipe.kcal}</Text>
-                  <Text style={styles.kcalLabel}>calories per serving</Text>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <Text style={styles.kcalTotal}>{totCal.toLocaleString()} kcal</Text>
-                  <Text style={styles.kcalWhole}>whole recipe</Text>
-                </View>
-              </View>
-              <View style={styles.macroBar}>
-                <View style={[styles.macroSeg, { flex: calsP, backgroundColor: '#2A2A2A' }]} />
-                <View style={[styles.macroSeg, { flex: calsC, backgroundColor: '#707070' }]} />
-                <View style={[styles.macroSeg, { flex: calsF, backgroundColor: '#B0B0B0' }]} />
-              </View>
-              <View style={styles.macroLabels}>
-                <Text style={styles.macroItem}>P {recipe.p}g ({Math.round((calsP / sum) * 100)}%)</Text>
-                <Text style={styles.macroItem}>C {recipe.c}g ({Math.round((calsC / sum) * 100)}%)</Text>
-                <Text style={styles.macroItem}>F {recipe.f}g ({Math.round((calsF / sum) * 100)}%)</Text>
-              </View>
-            </View>
-          )}
         </View>
       </ScrollView>
 
@@ -273,11 +287,11 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <Text style={styles.actionPrimaryText}>Grocery</Text>
         </Pressable>
         <Pressable style={styles.actionSecondary} onPress={() => setPickerOpen(true)}>
-          <Icon name="calendar" size={17} color={colors.ink} />
+          <Icon name="calendar" size={17} color={c.ink} />
           <Text style={styles.actionSecondaryText}>Meal Plan</Text>
         </Pressable>
         <Pressable style={styles.actionIcon} onPress={() => setAddOpen(true)}>
-          <Icon name="grid" size={17} color={colors.ink} />
+          <Icon name="grid" size={17} color={c.ink} />
         </Pressable>
         <Pressable style={styles.actionDelete} onPress={() => setDeleteOpen(true)}>
           <TrashIcon color="#DC2626" />
@@ -331,8 +345,8 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { paddingBottom: 120 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   hero: { height: 300, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 34, overflow: 'hidden' },
@@ -348,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backIcon: { fontSize: 28, color: colors.ink, marginTop: -4 },
+  backIcon: { fontSize: 28, color: c.ink, marginTop: -4 },
   editBtn: {
     position: 'absolute',
     top: 58,
@@ -360,7 +374,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  editText: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  editText: { fontSize: 14, fontWeight: '700', color: c.ink },
   heroLabel: {
     fontSize: 10,
     color: 'rgba(255,255,255,0.92)',
@@ -372,7 +386,7 @@ const styles = StyleSheet.create({
   },
   sheet: {
     marginTop: -26,
-    backgroundColor: colors.bg,
+    backgroundColor: c.bg,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     paddingHorizontal: 20,
@@ -382,7 +396,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
     paddingVertical: 8,
     paddingHorizontal: 13,
     paddingLeft: 8,
@@ -390,24 +406,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sourceDot: { width: 26, height: 26, borderRadius: 13, marginRight: 9 },
-  sourceHandle: { fontSize: 13, fontWeight: '600', color: colors.ink },
-  sourceApp: { fontSize: 13, fontWeight: '500', color: colors.grayMid },
+  sourceHandle: { fontSize: 13, fontWeight: '600', color: c.ink },
+  sourceApp: { fontSize: 13, fontWeight: '500', color: c.grayMid },
   title: {
     fontFamily: fonts.display,
     fontSize: 27,
     lineHeight: 31,
-    color: colors.ink,
+    color: c.ink,
     letterSpacing: -0.6,
     marginBottom: 12,
   },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 18, flexWrap: 'wrap' },
-  rating: { fontSize: 13.5, fontWeight: '700', color: colors.ink },
-  time: { fontSize: 13.5, fontWeight: '600', color: colors.grayLight },
+  rating: { fontSize: 13.5, fontWeight: '700', color: c.ink },
+  time: { fontSize: 13.5, fontWeight: '600', color: c.grayLight },
   favBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -417,41 +433,43 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  tagChipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  tagText: { fontSize: 12, fontWeight: '700', color: colors.grayMid },
+  tagChipOn: { backgroundColor: c.accent, borderColor: c.accent },
+  tagText: { fontSize: 12, fontWeight: '700', color: c.grayMid },
   tagTextOn: { color: '#fff' },
   madeBtn: {
     marginLeft: 'auto',
     paddingVertical: 8,
     paddingHorizontal: 13,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
   },
-  madeBtnOn: { backgroundColor: '#EFEFED' },
-  madeText: { fontSize: 13, fontWeight: '700', color: colors.grayMuted },
-  madeTextOn: { color: '#1A1A1A' },
+  madeBtnOn: { backgroundColor: c.accentSoft },
+  madeText: { fontSize: 13, fontWeight: '700', color: c.grayMuted },
+  madeTextOn: { color: c.accent },
   servingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
     borderRadius: 16,
     padding: 13,
     marginBottom: 18,
   },
-  servingTitle: { fontSize: 14, fontWeight: '700', color: colors.ink },
-  servingSub: { fontSize: 12, fontWeight: '500', color: colors.grayMid, marginTop: 1 },
+  servingTitle: { fontSize: 14, fontWeight: '700', color: c.ink },
+  servingSub: { fontSize: 12, fontWeight: '500', color: c.grayMid, marginTop: 1 },
   stepper: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   stepBtn: {
     width: 34,
     height: 34,
     borderRadius: 17,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -459,71 +477,87 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  servingNum: { fontFamily: fonts.display, fontSize: 21, fontWeight: '700', color: colors.ink, minWidth: 22, textAlign: 'center' },
-  tabs: {
-    flexDirection: 'row',
-    gap: 4,
-    backgroundColor: colors.tabBg,
+  servingNum: { fontFamily: fonts.display, fontSize: 21, fontWeight: '700', color: c.ink, minWidth: 22, textAlign: 'center' },
+  stepSign: { fontSize: 20, color: c.ink, marginTop: -2 },
+  stepSignOn: { fontSize: 20, color: '#fff', marginTop: -2 },
+  statRow: { flexDirection: 'row', gap: 10, marginBottom: 18 },
+  statBox: {
+    flex: 1,
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
     borderRadius: 14,
-    padding: 4,
-    marginBottom: 20,
+    paddingVertical: 13,
+    alignItems: 'center',
   },
-  tab: { flex: 1, paddingVertical: 10, borderRadius: 11, alignItems: 'center' },
-  tabOn: { backgroundColor: colors.surface, shadowColor: '#211C18', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 2 },
-  tabText: { fontSize: 13.5, fontWeight: '700', color: colors.grayMid },
-  tabTextOn: { color: colors.ink },
-  ingHint: { fontSize: 13, fontWeight: '600', color: colors.grayMid, marginBottom: 10 },
+  statNum: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.ink },
+  statLabel: { fontSize: 11, fontWeight: '600', color: c.grayMid, marginTop: 3 },
+  sectionHead: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 6,
+    marginTop: 4,
+  },
+  sectionTitle: { fontFamily: fonts.display, fontSize: 19, color: c.ink, marginTop: 4, marginBottom: 8 },
+  sectionAction: { fontSize: 12.5, fontWeight: '600', color: c.accent },
+  ingList: { marginBottom: 22 },
+  methodList: { marginTop: 4 },
   ingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
     paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: '#EDEDEB',
+    borderBottomColor: c.border,
   },
   checkbox: {
     width: 23,
     height: 23,
     borderRadius: 7,
     borderWidth: 2,
-    borderColor: '#D6D6D6',
+    borderColor: c.gray,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  checkboxOn: { backgroundColor: colors.ink, borderColor: colors.ink },
+  checkboxOn: { backgroundColor: c.accent, borderColor: c.accent },
   checkMark: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  ingAmt: { fontSize: 14.5, fontWeight: '700', color: colors.ink, minWidth: 62 },
-  ingName: { fontSize: 14.5, fontWeight: '500', color: '#3A3A3A', flex: 1 },
-  ingChecked: { color: '#BEBEBE', textDecorationLine: 'line-through' },
+  ingAmt: { fontSize: 14.5, fontWeight: '700', color: c.ink, minWidth: 62 },
+  ingName: { fontSize: 14.5, fontWeight: '500', color: c.ink, flex: 1 },
+  ingChecked: { color: c.grayMid, textDecorationLine: 'line-through' },
   stepRow: { flexDirection: 'row', gap: 14, marginBottom: 16 },
   stepNum: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: '#EBEBEB',
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepNumText: { fontFamily: fonts.display, fontSize: 15, fontWeight: '700', color: colors.ink },
-  stepText: { flex: 1, fontSize: 15, fontWeight: '500', lineHeight: 22, color: '#3A3A3A', paddingTop: 3 },
+  stepNumText: { fontFamily: fonts.display, fontSize: 15, fontWeight: '700', color: '#fff' },
+  stepText: { flex: 1, fontSize: 15, fontWeight: '500', lineHeight: 22, color: c.grayLight, paddingTop: 3 },
   nutCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 20,
-    padding: 20,
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 22,
   },
-  nutTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 18 },
-  kcalBig: { fontFamily: fonts.displayExtra, fontSize: 40, color: colors.ink, letterSpacing: -1 },
-  kcalLabel: { fontSize: 13, fontWeight: '600', color: colors.grayMid, marginTop: 5 },
-  kcalTotal: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  kcalWhole: { fontSize: 12, fontWeight: '600', color: colors.grayMid },
-  macroBar: { flexDirection: 'row', height: 11, borderRadius: 6, overflow: 'hidden', backgroundColor: colors.tabBg, marginBottom: 16 },
-  macroSeg: { height: '100%' },
-  macroLabels: { flexDirection: 'row', justifyContent: 'space-between' },
-  macroItem: { fontSize: 12, fontWeight: '700', color: colors.ink },
+  nutHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
+  nutTitle: { fontSize: 13.5, fontWeight: '700', color: c.ink },
+  nutTitleSub: { fontWeight: '500', color: c.grayMid },
+  nutKcal: { fontSize: 17, fontWeight: '700', color: c.accent },
+  macroCols: { flexDirection: 'row', gap: 10 },
+  macroCol: { flex: 1 },
+  macroTrack: { height: 6, borderRadius: 4, overflow: 'hidden', marginBottom: 7 },
+  macroFill: { height: '100%', borderRadius: 4 },
+  macroLabel: { fontSize: 11, color: c.grayMid },
+  macroValue: { color: c.ink, fontWeight: '700' },
   actionBar: {
     position: 'absolute',
     left: 0,
@@ -534,11 +568,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 28,
     paddingTop: 10,
-    backgroundColor: 'rgba(246,246,244,0.95)',
+    backgroundColor: c.bg,
   },
   actionPrimary: {
     flex: 1,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 13,
     flexDirection: 'row',
@@ -550,8 +584,8 @@ const styles = StyleSheet.create({
   actionSecondary: {
     flex: 1,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingVertical: 13,
     flexDirection: 'row',
@@ -559,12 +593,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 6,
   },
-  actionSecondaryText: { color: colors.ink, fontSize: 12.5, fontWeight: '700' },
+  actionSecondaryText: { color: c.ink, fontSize: 12.5, fontWeight: '700' },
   actionIcon: {
     width: 48,
     borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+    borderColor: c.border,
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingVertical: 13,
     alignItems: 'center',
@@ -572,8 +606,8 @@ const styles = StyleSheet.create({
   actionDelete: {
     width: 48,
     borderWidth: 1.5,
-    borderColor: '#FECACA',
-    backgroundColor: '#FEF2F2',
+    borderColor: 'rgba(220,38,38,0.45)',
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingVertical: 13,
     alignItems: 'center',

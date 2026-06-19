@@ -10,7 +10,8 @@ import {
 import * as Clipboard from 'expo-clipboard';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
@@ -18,6 +19,8 @@ import { Icon } from '../components/Icon';
 type Props = NativeStackScreenProps<RootStackParamList, 'ImportUrl'>;
 
 export function ImportUrlScreen({ navigation }: Props) {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const [url, setUrl] = useState('');
   const [clipboardUrl, setClipboardUrl] = useState<string | null>(null);
@@ -47,11 +50,11 @@ export function ImportUrlScreen({ navigation }: Props) {
       </Text>
 
       <View style={[styles.inputWrap, url ? styles.inputFocused : null]}>
-        <Icon name="link" size={18} color={colors.gray} />
+        <Icon name="link" size={18} color={c.gray} />
         <TextInput
           style={styles.input}
           placeholder="Paste a recipe link"
-          placeholderTextColor={colors.gray}
+          placeholderTextColor={c.gray}
           value={url}
           onChangeText={setUrl}
           autoCapitalize="none"
@@ -85,32 +88,32 @@ export function ImportUrlScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, paddingHorizontal: 20, paddingTop: 16 },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 20, paddingTop: 16 },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 22,
   },
-  backIcon: { fontSize: 28, color: colors.ink },
+  backIcon: { fontSize: 28, color: c.ink },
   title: {
     fontFamily: fonts.display,
     fontSize: 28,
     lineHeight: 32,
-    color: colors.ink,
+    color: c.ink,
     letterSpacing: -0.6,
     marginBottom: 8,
   },
-  sub: { fontSize: 15, fontWeight: '500', color: colors.grayMuted, lineHeight: 22, marginBottom: 24 },
+  sub: { fontSize: 15, fontWeight: '500', color: c.grayMuted, lineHeight: 22, marginBottom: 24 },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingLeft: 16,
     paddingRight: 6,
@@ -118,13 +121,13 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  inputFocused: { borderColor: colors.ink },
-  input: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.ink, paddingVertical: 13 },
+  inputFocused: { borderColor: c.accent },
+  input: { flex: 1, fontSize: 15, fontWeight: '500', color: c.ink, paddingVertical: 13 },
   clipboardCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 14,
     marginBottom: 24,
@@ -133,14 +136,14 @@ const styles = StyleSheet.create({
     width: 46,
     height: 46,
     borderRadius: 13,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  clipBadge: { fontSize: 11, fontWeight: '600', color: colors.grayMid, marginBottom: 3 },
+  clipBadge: { fontSize: 11, fontWeight: '600', color: c.grayMid, marginBottom: 3 },
   clipUrl: { fontSize: 13, fontWeight: '600', color: '#3A3A3A' },
   pasteBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     fontSize: 13,
     fontWeight: '700',
     color: '#fff',
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   submit: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',

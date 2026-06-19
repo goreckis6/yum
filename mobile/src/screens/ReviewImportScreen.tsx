@@ -15,7 +15,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { uploadImageIfLocal } from '../lib/storage';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Ingredient, TAG_ICON } from '../types';
 import { Icon } from '../components/Icon';
@@ -26,6 +27,8 @@ import { RootStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewImport'>;
 
 export function ReviewImportScreen({ navigation, route }: Props) {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const { addRecipe, showToast } = useApp();
   const { user } = useAuth();
   const userId = user?.id;
@@ -54,10 +57,12 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   };
 
   const pickPhoto = async (fromCamera: boolean) => {
-    const perm = fromCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    // Camera needs permission; the photo library uses the system picker which
+    // works without one, so we only gate the camera.
+    if (fromCamera) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) return;
+    }
 
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
@@ -156,7 +161,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
             </>
           ) : (
             <View style={styles.photoPlaceholder}>
-              <Icon name="camera" size={34} color={colors.grayMid} />
+              <Icon name="camera" size={34} color={c.grayMid} />
               <Text style={styles.photoPlaceholderText}>Add photo</Text>
             </View>
           )}
@@ -283,29 +288,29 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 20, paddingBottom: 40 },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
-  backIcon: { fontSize: 28, color: colors.ink },
-  eyebrow: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 4 },
-  title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink, marginBottom: 20 },
-  label: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 6 },
+  backIcon: { fontSize: 28, color: c.ink },
+  eyebrow: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 4 },
+  title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 20 },
+  label: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 6 },
   field: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 13,
     fontSize: 15,
     fontWeight: '500',
-    color: colors.ink,
+    color: c.ink,
     marginBottom: 14,
   },
   row: { flexDirection: 'row', gap: 12 },
@@ -314,7 +319,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     paddingHorizontal: 6,
     height: 48,
@@ -324,23 +329,23 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepSign: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: -2 },
-  stepValue: { fontSize: 16, fontWeight: '700', color: colors.ink },
+  stepSign: { fontSize: 22, fontWeight: '700', color: c.ink, marginTop: -2 },
+  stepValue: { fontSize: 16, fontWeight: '700', color: c.ink },
   section: {
     fontFamily: fonts.display,
     fontSize: 17,
-    color: colors.ink,
+    color: c.ink,
     marginTop: 8,
     marginBottom: 12,
   },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   ingAmt: {
     width: 72,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
@@ -348,14 +353,14 @@ const styles = StyleSheet.create({
   },
   ingName: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
   },
-  remove: { color: colors.gray, fontSize: 16, padding: 8 },
+  remove: { color: c.gray, fontSize: 16, padding: 8 },
   addIng: { marginBottom: 16 },
-  addIngText: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  addIngText: { fontSize: 14, fontWeight: '700', color: c.ink },
   stepRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
   stepNum: {
     width: 28,
@@ -365,25 +370,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 28,
     fontWeight: '700',
-    color: colors.ink,
+    color: c.ink,
   },
   stepText: { flex: 1, fontSize: 14, lineHeight: 20, color: '#3A3A3A' },
-  tagHint: { fontSize: 11, fontWeight: '600', color: colors.grayMid, marginBottom: 10, marginTop: -4 },
+  tagHint: { fontSize: 11, fontWeight: '600', color: c.grayMid, marginBottom: 10, marginTop: -4 },
   tagRow: { marginBottom: 18 },
   tagChip: {
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginRight: 8,
     borderWidth: 1.5,
     borderColor: 'transparent',
   },
-  tagChipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
-  tagText: { fontSize: 13, fontWeight: '700', color: colors.grayMid },
+  tagChipOn: { backgroundColor: c.accent, borderColor: c.accent },
+  tagText: { fontSize: 13, fontWeight: '700', color: c.grayMid },
   tagTextOn: { color: '#fff' },
   saveBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
@@ -392,7 +397,7 @@ const styles = StyleSheet.create({
   saveText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   modeRow: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 12,
     padding: 4,
     marginBottom: 12,
@@ -405,8 +410,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modeBtnOn: { backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 4, shadowOffset: { width: 0, height: 1 } },
-  modeText: { fontSize: 13, fontWeight: '700', color: colors.grayMid },
-  modeTextOn: { color: colors.ink },
+  modeText: { fontSize: 13, fontWeight: '700', color: c.grayMid },
+  modeTextOn: { color: c.ink },
   swatchRow: { marginBottom: 16 },
   swatch: {
     width: 46,
@@ -418,7 +423,7 @@ const styles = StyleSheet.create({
     borderWidth: 2.5,
     borderColor: 'transparent',
   },
-  swatchOn: { borderColor: colors.ink },
+  swatchOn: { borderColor: c.accent },
   swatchFill: { flex: 1 },
   swatchHalf: {},
   photoWrap: {
@@ -426,7 +431,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     marginBottom: 16,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
   },
   photoImg: { width: '100%', height: '100%' },
   photoEditBadge: {
@@ -438,7 +443,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  photoEditText: { fontSize: 12, fontWeight: '700', color: colors.ink },
+  photoEditText: { fontSize: 12, fontWeight: '700', color: c.ink },
   photoPlaceholder: {
     flex: 1,
     alignItems: 'center',
@@ -446,5 +451,5 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   photoPlaceholderIcon: { fontSize: 32 },
-  photoPlaceholderText: { fontSize: 13, fontWeight: '700', color: colors.grayMid },
+  photoPlaceholderText: { fontSize: 13, fontWeight: '700', color: c.grayMid },
 });

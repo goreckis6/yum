@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import * as cheerio from 'cheerio';
 import OpenAI from 'openai';
+import PDFDocument from 'pdfkit';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -30,6 +31,38 @@ const RECIPE_SCHEMA = `{
   "ingredients": [{ "a": "amount", "n": "name", "aisle": "Produce|Meat & Seafood|Dairy & Eggs|Bakery|Pantry|Frozen" }],
   "steps": ["string"]
 }`;
+
+const RECEIPT_CATEGORIES = ['Meals', 'Groceries', 'Fuel', 'Travel', 'Office', 'Other'];
+
+const RECEIPT_SCHEMA = `{
+  "merchant": "string (store / business name)",
+  "date": "string (ISO date YYYY-MM-DD of the purchase; best guess if ambiguous)",
+  "total": number (grand total paid),
+  "subtotal": number (pre-tax subtotal, 0 if unknown),
+  "tax": number (tax amount, 0 if none),
+  "currency": "string (ISO code like USD, EUR, PLN — infer from symbol/locale)",
+  "category": "string (ONE of: Meals, Groceries, Fuel, Travel, Office, Other)",
+  "paymentMethod": "string (e.g. VISA ****1234, Cash; empty if unknown)",
+  "items": [{ "n": "string (line item name)", "p": number (line price) }]
+}`;
+
+function buildMockReceipt() {
+  return {
+    merchant: 'Blue Bottle Coffee',
+    date: new Date().toISOString().slice(0, 10),
+    total: 16.82,
+    subtotal: 15.5,
+    tax: 1.32,
+    currency: 'USD',
+    category: 'Meals',
+    paymentMethod: 'VISA ****5132',
+    items: [
+      { n: 'Gibraltar', p: 5.25 },
+      { n: 'Almond Croissant', p: 4.75 },
+      { n: 'Cold Brew', p: 5.5 },
+    ],
+  };
+}
 
 function detectSource(url) {
   const u = url.toLowerCase();
@@ -293,6 +326,184 @@ app.post('/api/extract-recipe-image', async (req, res) => {
   } catch (err) {
     console.error('extract-recipe-image error:', err);
     res.status(500).json({ error: err.message || 'Failed to extract recipe from image' });
+  }
+});
+
+app.post('/api/extract-receipt-image', async (req, res) => {
+  try {
+    const { imageBase64, mimeType = 'image/jpeg' } = req.body;
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return res.status(400).json({ error: 'imageBase64 is required' });
+    }
+
+    if (!openai) {
+      await new Promise((r) => setTimeout(r, 1000));
+      return res.json({ receipt: buildMockReceipt(), demo: true });
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: `You read retail / restaurant receipts from a photo and return structured data as valid JSON matching this schema: ${RECEIPT_SCHEMA}. Read totals carefully — "total" is the final amount paid (after tax). Parse the date to ISO YYYY-MM-DD. Infer currency from the symbol or locale. Pick exactly ONE category from [${RECEIPT_CATEGORIES.join(', ')}] that best fits the merchant. If a value is not visible, use 0 for numbers and an empty string for text. Never invent line items that are not on the receipt.`,
+        },
+        {
+          role: 'user',
+          content: [
+            { type: 'text', text: 'Extract the receipt data from this image.' },
+            {
+              type: 'image_url',
+              image_url: { url: `data:${mimeType};base64,${imageBase64}`, detail: 'high' },
+            },
+          ],
+        },
+      ],
+      temperature: 0.2,
+    });
+
+    const raw = completion.choices[0]?.message?.content;
+    if (!raw) throw new Error('Empty response from OpenAI');
+    const parsed = JSON.parse(raw);
+
+    const category = RECEIPT_CATEGORIES.includes(parsed.category) ? parsed.category : 'Other';
+    res.json({
+      receipt: {
+        merchant: parsed.merchant || 'Unknown merchant',
+        date: parsed.date || new Date().toISOString().slice(0, 10),
+        total: Number(parsed.total) || 0,
+        subtotal: Number(parsed.subtotal) || 0,
+        tax: Number(parsed.tax) || 0,
+        currency: parsed.currency || 'USD',
+        category,
+        paymentMethod: parsed.paymentMethod || '',
+        items: Array.isArray(parsed.items)
+          ? parsed.items.map((it) => ({ n: String(it.n || ''), p: Number(it.p) || 0 }))
+          : [],
+      },
+      demo: false,
+    });
+  } catch (err) {
+    console.error('extract-receipt-image error:', err);
+    res.status(500).json({ error: err.message || 'Failed to read receipt' });
+  }
+});
+
+function csvCell(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function receiptsToCsv(receipts) {
+  const head = ['Merchant', 'Date', 'Category', 'Tags', 'Subtotal', 'Tax', 'Total', 'Currency', 'Payment'];
+  const rows = receipts.map((r) =>
+    [
+      r.merchant,
+      r.date,
+      r.category,
+      (r.tags || []).join(' '),
+      (r.subtotal ?? 0).toFixed(2),
+      (r.tax ?? 0).toFixed(2),
+      (r.total ?? 0).toFixed(2),
+      r.currency || '',
+      r.paymentMethod || '',
+    ]
+      .map(csvCell)
+      .join(','),
+  );
+  const grand = receipts.reduce((n, r) => n + (Number(r.total) || 0), 0);
+  rows.push(['TOTAL', '', '', '', '', '', grand.toFixed(2), receipts[0]?.currency || '', ''].map(csvCell).join(','));
+  return [head.join(','), ...rows].join('\n');
+}
+
+function receiptsToPdf(receipts) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({ size: 'A4', margin: 40 });
+      const chunks = [];
+      doc.on('data', (c) => chunks.push(c));
+      doc.on('end', () => resolve(Buffer.concat(chunks)));
+
+      const grand = receipts.reduce((n, r) => n + (Number(r.total) || 0), 0);
+      const cur = receipts[0]?.currency || '';
+
+      doc.fontSize(20).fillColor('#241B12').text('Receipts export', { continued: false });
+      doc.moveDown(0.3);
+      doc.fontSize(10).fillColor('#9C8F7C').text(`${receipts.length} receipts · ${cur} ${grand.toFixed(2)} total · generated ${new Date().toISOString().slice(0, 10)}`);
+      doc.moveDown(1);
+
+      const cols = [
+        { label: 'Merchant', w: 150 },
+        { label: 'Date', w: 75 },
+        { label: 'Category', w: 80 },
+        { label: 'Tax', w: 60 },
+        { label: 'Total', w: 70 },
+      ];
+      const startX = doc.x;
+      let y = doc.y;
+      doc.fontSize(9).fillColor('#6F6356');
+      let x = startX;
+      cols.forEach((col) => {
+        doc.text(col.label, x, y, { width: col.w });
+        x += col.w;
+      });
+      y += 16;
+      doc.moveTo(startX, y - 4).lineTo(startX + cols.reduce((n, c) => n + c.w, 0), y - 4).strokeColor('#EEE6D9').stroke();
+
+      doc.fontSize(10).fillColor('#241B12');
+      receipts.forEach((r) => {
+        if (y > 760) {
+          doc.addPage();
+          y = doc.y;
+        }
+        x = startX;
+        const cells = [r.merchant, r.date, r.category, (r.tax ?? 0).toFixed(2), `${(r.total ?? 0).toFixed(2)}`];
+        cells.forEach((cell, i) => {
+          doc.text(String(cell ?? ''), x, y, { width: cols[i].w });
+          x += cols[i].w;
+        });
+        y += 18;
+      });
+
+      y += 6;
+      doc.moveTo(startX, y).lineTo(startX + cols.reduce((n, c) => n + c.w, 0), y).strokeColor('#EEE6D9').stroke();
+      y += 8;
+      doc.fontSize(12).fillColor('#C7613C').text(`Total: ${cur} ${grand.toFixed(2)}`, startX, y);
+
+      doc.end();
+    } catch (e) {
+      reject(e);
+    }
+  });
+}
+
+app.post('/api/receipts/export', async (req, res) => {
+  try {
+    const { receipts, format = 'csv' } = req.body;
+    if (!Array.isArray(receipts) || receipts.length === 0) {
+      return res.status(400).json({ error: 'receipts array is required' });
+    }
+    const stamp = new Date().toISOString().slice(0, 10);
+
+    if (format === 'pdf') {
+      const buf = await receiptsToPdf(receipts);
+      return res.json({
+        filename: `receipts-${stamp}.pdf`,
+        mimeType: 'application/pdf',
+        base64: buf.toString('base64'),
+      });
+    }
+
+    const csv = receiptsToCsv(receipts);
+    return res.json({
+      filename: `receipts-${stamp}.csv`,
+      mimeType: 'text/csv',
+      base64: Buffer.from(csv, 'utf8').toString('base64'),
+    });
+  } catch (err) {
+    console.error('receipts export error:', err);
+    res.status(500).json({ error: err.message || 'Failed to export receipts' });
   }
 });
 

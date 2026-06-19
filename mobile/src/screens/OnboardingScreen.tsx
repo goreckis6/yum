@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
 
@@ -27,6 +28,8 @@ const SLIDES = [
 ];
 
 export function OnboardingScreen({ navigation }: Props) {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const { setHasOnboarded } = useApp();
   const [index, setIndex] = useState(0);
   const slide = SLIDES[index];
@@ -65,30 +68,30 @@ export function OnboardingScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   hero: { height: '42%' },
   body: { flex: 1, paddingHorizontal: 24, paddingTop: 28 },
-  brand: { fontFamily: fonts.displayExtra, fontSize: 22, color: colors.ink, marginBottom: 16 },
+  brand: { fontFamily: fonts.displayExtra, fontSize: 22, color: c.ink, marginBottom: 16 },
   title: {
     fontFamily: fonts.display,
     fontSize: 28,
     lineHeight: 32,
-    color: colors.ink,
+    color: c.ink,
     letterSpacing: -0.6,
     marginBottom: 10,
   },
-  sub: { fontSize: 15, fontWeight: '500', color: colors.grayMuted, lineHeight: 22 },
+  sub: { fontSize: 15, fontWeight: '500', color: c.grayMuted, lineHeight: 22 },
   dots: { flexDirection: 'row', gap: 6, marginTop: 28, marginBottom: 24 },
   dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: '#DADADA' },
-  dotOn: { width: 22, backgroundColor: colors.ink },
+  dotOn: { width: 22, backgroundColor: c.accent },
   primary: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 14,
   },
   primaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  skip: { textAlign: 'center', fontSize: 14, fontWeight: '600', color: colors.grayMid },
+  skip: { textAlign: 'center', fontSize: 14, fontWeight: '600', color: c.grayMid },
 });

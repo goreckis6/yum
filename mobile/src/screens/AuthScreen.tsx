@@ -12,11 +12,14 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Icon } from '../components/Icon';
 
 export function AuthScreen() {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { signIn, signUp } = useAuth();
   const [mode, setMode] = useState<'in' | 'up'>('in');
@@ -72,7 +75,7 @@ export function AuthScreen() {
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
-          placeholderTextColor={colors.gray}
+          placeholderTextColor={c.gray}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
@@ -85,7 +88,7 @@ export function AuthScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder="••••••••"
-          placeholderTextColor={colors.gray}
+          placeholderTextColor={c.gray}
           secureTextEntry
         />
 
@@ -117,35 +120,35 @@ export function AuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   inner: { flex: 1, paddingHorizontal: 24 },
   logo: {
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
-  brand: { fontFamily: fonts.displayExtra, fontSize: 32, color: colors.ink, letterSpacing: -0.6 },
-  subtitle: { fontSize: 15, fontWeight: '500', color: colors.grayMuted, marginTop: 6, marginBottom: 28 },
+  brand: { fontFamily: fonts.displayExtra, fontSize: 32, color: c.ink, letterSpacing: -0.6 },
+  subtitle: { fontSize: 15, fontWeight: '500', color: c.grayMuted, marginTop: 6, marginBottom: 28 },
   warn: { fontSize: 13, fontWeight: '600', color: '#B45309', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20 },
-  label: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 6 },
+  label: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 6 },
   field: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 14,
     fontSize: 15,
     fontWeight: '500',
-    color: colors.ink,
+    color: c.ink,
     marginBottom: 16,
   },
   error: { fontSize: 13, fontWeight: '600', color: '#DC2626', marginBottom: 12 },
   notice: { fontSize: 13, fontWeight: '600', color: '#15803D', marginBottom: 12 },
   submit: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
@@ -154,5 +157,5 @@ const styles = StyleSheet.create({
   submitBusy: { opacity: 0.7 },
   submitText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   switch: { alignItems: 'center', paddingVertical: 18 },
-  switchText: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  switchText: { fontSize: 14, fontWeight: '700', color: c.ink },
 });

@@ -4,7 +4,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getApiBaseUrl } from '../config/api';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme, useThemeCtx, ThemeMode } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 
 const SETTINGS = [
@@ -17,7 +18,16 @@ const SETTINGS = [
   'Privacy & terms',
 ];
 
+const THEME_OPTIONS: { key: ThemeMode; label: string }[] = [
+  { key: 'system', label: 'System' },
+  { key: 'light', label: 'Light' },
+  { key: 'dark', label: 'Dark' },
+];
+
 export function ProfileScreen() {
+  const c = useTheme();
+  const styles = makeStyles(c);
+  const { mode, setMode } = useThemeCtx();
   const { recipes, showToast } = useApp();
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
@@ -46,6 +56,22 @@ export function ProfileScreen() {
         <Text style={styles.syncBtnText}>Sync now</Text>
       </Pressable>
 
+      <Text style={styles.section}>Appearance</Text>
+      <View style={styles.segment}>
+        {THEME_OPTIONS.map((opt) => {
+          const on = mode === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              style={[styles.segmentBtn, on && styles.segmentBtnOn]}
+              onPress={() => setMode(opt.key)}
+            >
+              <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <Text style={styles.section}>Settings</Text>
       {SETTINGS.map((label) => (
         <Pressable key={label} style={styles.link} onPress={() => showToast('Settings coming in a later phase')}>
@@ -63,15 +89,15 @@ export function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
-  title: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, marginBottom: 20 },
+  title: { fontFamily: fonts.display, fontSize: 28, color: c.ink, marginBottom: 20 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 16,
     marginBottom: 14,
@@ -80,45 +106,61 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 16,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 18 },
-  name: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  email: { fontSize: 13, fontWeight: '500', color: colors.grayMid, marginTop: 2 },
+  name: { fontSize: 16, fontWeight: '700', color: c.ink },
+  email: { fontSize: 13, fontWeight: '500', color: c.grayMid, marginTop: 2 },
   statCard: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 18,
     padding: 18,
     marginBottom: 14,
   },
+  segment: {
+    flexDirection: 'row',
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 24,
+  },
+  segmentBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  segmentBtnOn: { backgroundColor: c.accent },
+  segmentText: { fontSize: 14, fontWeight: '700', color: c.grayMid },
+  segmentTextOn: { color: '#fff' },
   statNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: '#fff' },
   statLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.55)', marginTop: 4 },
-  syncLine: { fontSize: 13, fontWeight: '500', color: colors.grayMid, marginBottom: 10 },
+  syncLine: { fontSize: 13, fontWeight: '500', color: c.grayMid, marginBottom: 10 },
   syncBtn: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 12,
     marginBottom: 24,
   },
-  syncBtnText: { fontSize: 14, fontWeight: '700', color: colors.ink },
-  section: { fontFamily: fonts.display, fontSize: 17, color: colors.ink, marginBottom: 10 },
+  syncBtnText: { fontSize: 14, fontWeight: '700', color: c.ink },
+  section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 10 },
   link: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
     marginBottom: 8,
   },
-  linkText: { fontSize: 15, fontWeight: '600', color: colors.ink },
-  chevron: { fontSize: 20, color: colors.gray },
+  linkText: { fontSize: 15, fontWeight: '600', color: c.ink },
+  chevron: { fontSize: 20, color: c.gray },
   logout: { marginTop: 16, alignItems: 'center', paddingVertical: 14 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#B91C1C' },
-  apiHint: { fontSize: 11, color: colors.grayMid, textAlign: 'center', marginTop: 20 },
+  apiHint: { fontSize: 11, color: c.grayMid, textAlign: 'center', marginTop: 20 },
 });

@@ -15,7 +15,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { uploadImageIfLocal } from '../lib/storage';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Ingredient } from '../types';
 import { Icon } from '../components/Icon';
@@ -25,6 +26,8 @@ import { RootStackParamList } from '../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'EditRecipe'>;
 
 export function EditRecipeScreen({ navigation, route }: Props) {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const { getRecipe, updateRecipe, showToast } = useApp();
   const { user } = useAuth();
   const userId = user?.id;
@@ -44,10 +47,12 @@ export function EditRecipeScreen({ navigation, route }: Props) {
   }
 
   const pickPhoto = async (fromCamera: boolean) => {
-    const perm = fromCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    // Camera needs permission; the photo library uses the system picker which
+    // works without one, so we only gate the camera.
+    if (fromCamera) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) return;
+    }
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
@@ -137,7 +142,7 @@ export function EditRecipeScreen({ navigation, route }: Props) {
             </>
           ) : (
             <View style={styles.photoPlaceholder}>
-              <Icon name="camera" size={34} color={colors.grayMid} />
+              <Icon name="camera" size={34} color={c.grayMid} />
               <Text style={styles.photoPlaceholderText}>Add photo</Text>
             </View>
           )}
@@ -230,8 +235,8 @@ export function EditRecipeScreen({ navigation, route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 20, paddingBottom: 48 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
@@ -239,23 +244,23 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backIcon: { fontSize: 28, color: colors.ink },
-  saveTop: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, backgroundColor: colors.ink },
+  backIcon: { fontSize: 28, color: c.ink },
+  saveTop: { paddingHorizontal: 18, paddingVertical: 10, borderRadius: 999, backgroundColor: c.accent },
   saveTopText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  eyebrow: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 4 },
-  title: { fontFamily: fonts.display, fontSize: 26, color: colors.ink, marginBottom: 18 },
-  label: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 6 },
+  eyebrow: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 4 },
+  title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 18 },
+  label: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 6 },
   field: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     padding: 13,
     fontSize: 15,
     fontWeight: '500',
-    color: colors.ink,
+    color: c.ink,
     marginBottom: 14,
   },
   row: { flexDirection: 'row', gap: 12 },
@@ -264,7 +269,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 12,
     paddingHorizontal: 6,
     height: 48,
@@ -274,19 +279,19 @@ const styles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 10,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepSign: { fontSize: 22, fontWeight: '700', color: colors.ink, marginTop: -2 },
-  stepValue: { fontSize: 16, fontWeight: '700', color: colors.ink },
-  section: { fontFamily: fonts.display, fontSize: 17, color: colors.ink, marginTop: 8, marginBottom: 12 },
+  stepSign: { fontSize: 22, fontWeight: '700', color: c.ink, marginTop: -2 },
+  stepValue: { fontSize: 16, fontWeight: '700', color: c.ink },
+  section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginTop: 8, marginBottom: 12 },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  ingAmt: { width: 72, backgroundColor: colors.surface, borderRadius: 10, padding: 10, fontSize: 14, fontWeight: '700' },
-  ingName: { flex: 1, backgroundColor: colors.surface, borderRadius: 10, padding: 10, fontSize: 14 },
-  remove: { color: colors.gray, fontSize: 16, padding: 8 },
+  ingAmt: { width: 72, backgroundColor: c.surface, borderRadius: 10, padding: 10, fontSize: 14, fontWeight: '700' },
+  ingName: { flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 10, fontSize: 14 },
+  remove: { color: c.gray, fontSize: 16, padding: 8 },
   addBtn: { marginBottom: 16 },
-  addText: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  addText: { fontSize: 14, fontWeight: '700', color: c.ink },
   stepRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
   stepNum: {
     width: 28,
@@ -296,12 +301,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 28,
     fontWeight: '700',
-    color: colors.ink,
+    color: c.ink,
     marginTop: 4,
   },
   stepInput: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
@@ -309,18 +314,18 @@ const styles = StyleSheet.create({
     color: '#3A3A3A',
     minHeight: 44,
   },
-  saveBtn: { backgroundColor: colors.ink, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 16 },
+  saveBtn: { backgroundColor: c.accent, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginTop: 16 },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  modeRow: { flexDirection: 'row', backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 4, marginBottom: 12, gap: 4 },
+  modeRow: { flexDirection: 'row', backgroundColor: c.surfaceAlt, borderRadius: 12, padding: 4, marginBottom: 12, gap: 4 },
   modeBtn: { flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center' },
   modeBtnOn: { backgroundColor: '#fff' },
-  modeText: { fontSize: 13, fontWeight: '700', color: colors.grayMid },
-  modeTextOn: { color: colors.ink },
+  modeText: { fontSize: 13, fontWeight: '700', color: c.grayMid },
+  modeTextOn: { color: c.ink },
   swatchRow: { marginBottom: 16 },
   swatch: { width: 46, height: 46, borderRadius: 12, marginRight: 10, overflow: 'hidden', flexDirection: 'row', borderWidth: 2.5, borderColor: 'transparent' },
-  swatchOn: { borderColor: colors.ink },
+  swatchOn: { borderColor: c.accent },
   swatchFill: { flex: 1 },
-  photoWrap: { height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16, backgroundColor: colors.surface },
+  photoWrap: { height: 180, borderRadius: 16, overflow: 'hidden', marginBottom: 16, backgroundColor: c.surface },
   photoImg: { width: '100%', height: '100%' },
   photoEditBadge: {
     position: 'absolute',
@@ -331,7 +336,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 999,
   },
-  photoEditText: { fontSize: 12, fontWeight: '700', color: colors.ink },
+  photoEditText: { fontSize: 12, fontWeight: '700', color: c.ink },
   photoPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-  photoPlaceholderText: { fontSize: 13, fontWeight: '700', color: colors.grayMid },
+  photoPlaceholderText: { fontSize: 13, fontWeight: '700', color: c.grayMid },
 });

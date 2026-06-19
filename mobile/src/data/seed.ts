@@ -37,6 +37,7 @@ export const SEED_STATE: AppState = {
   favorites: {},
   cookbookCovers: {},
   customCookbooks: [],
+  receipts: [],
   recipes: [
     {
       id: 'r1',

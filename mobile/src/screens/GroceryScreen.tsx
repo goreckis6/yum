@@ -6,7 +6,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AISLE_DOT, AISLE_ORDER } from '../data/seed';
 import { useApp } from '../context/AppContext';
 import { useTabNav } from '../navigation/TabContext';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Aisle, GroceryItem } from '../types';
 import { RootStackParamList } from '../navigation/types';
@@ -24,6 +25,8 @@ const AISLE_ICON: Record<Aisle, string> = {
 };
 
 export function GroceryScreen() {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
   const { grocery, toggleGrocery, clearCheckedGrocery, showToast } = useApp();
@@ -44,7 +47,7 @@ export function GroceryScreen() {
       const extra = Object.keys(byAisle).filter((a) => !AISLE_ORDER.includes(a as typeof AISLE_ORDER[number]));
       return [...ordered, ...extra].map((name) => ({
         name,
-        dot: AISLE_DOT[name] || colors.accent,
+        dot: AISLE_DOT[name] || c.accent,
         items: byAisle[name],
       }));
     }
@@ -56,7 +59,7 @@ export function GroceryScreen() {
     });
     return Object.keys(byRecipe).map((name) => ({
       name,
-      dot: colors.accent,
+      dot: c.accent,
       items: byRecipe[name],
     }));
   }, [active, groupBy]);
@@ -148,34 +151,34 @@ export function GroceryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
-  title: { fontFamily: fonts.display, fontSize: 28, color: colors.ink, letterSpacing: -0.6 },
-  sub: { fontSize: 14, fontWeight: '600', color: colors.grayMid, marginTop: 4, marginBottom: 18 },
+  title: { fontFamily: fonts.display, fontSize: 28, color: c.ink, letterSpacing: -0.6 },
+  sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4, marginBottom: 18 },
   toggle: {
     flexDirection: 'row',
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 12,
     padding: 4,
     marginBottom: 22,
   },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   toggleOn: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     shadowColor: '#211C18',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 2,
   },
-  toggleText: { fontSize: 13.5, fontWeight: '700', color: colors.grayMid },
-  toggleTextOn: { color: colors.ink },
+  toggleText: { fontSize: 13.5, fontWeight: '700', color: c.grayMid },
+  toggleTextOn: { color: c.ink },
   empty: { alignItems: 'center', paddingVertical: 60 },
-  emptyTitle: { fontSize: 17, fontWeight: '700', color: colors.ink, marginBottom: 6 },
-  emptySub: { fontSize: 14, fontWeight: '500', color: colors.grayMid, marginBottom: 20 },
+  emptyTitle: { fontSize: 17, fontWeight: '700', color: c.ink, marginBottom: 6 },
+  emptySub: { fontSize: 14, fontWeight: '500', color: c.grayMid, marginBottom: 20 },
   browseBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     paddingVertical: 14,
     paddingHorizontal: 26,
     borderRadius: 14,
@@ -185,13 +188,13 @@ const styles = StyleSheet.create({
   groupHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   dot: { width: 8, height: 8, borderRadius: 4 },
   groupIcon: { fontSize: 16 },
-  groupName: { fontSize: 13, fontWeight: '700', color: colors.ink, flex: 1 },
-  groupCount: { fontSize: 12, fontWeight: '600', color: colors.grayMid },
+  groupName: { fontSize: 13, fontWeight: '700', color: c.ink, flex: 1 },
+  groupCount: { fontSize: 12, fontWeight: '600', color: c.grayMid },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 14,
     padding: 12,
     marginBottom: 8,
@@ -203,28 +206,28 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#DADADA',
   },
-  itemAmt: { fontSize: 14, fontWeight: '700', color: colors.ink, minWidth: 56 },
+  itemAmt: { fontSize: 14, fontWeight: '700', color: c.ink, minWidth: 56 },
   itemBody: { flex: 1 },
-  itemName: { fontSize: 14.5, fontWeight: '600', color: colors.ink },
-  itemSub: { fontSize: 12, fontWeight: '500', color: colors.grayMid, marginTop: 2 },
+  itemName: { fontSize: 14.5, fontWeight: '600', color: c.ink },
+  itemSub: { fontSize: 12, fontWeight: '500', color: c.grayMid, marginTop: 2 },
   completed: { marginTop: 8 },
   completedHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  completedTitle: { fontSize: 13, fontWeight: '700', color: colors.grayMid },
-  clearText: { fontSize: 13, fontWeight: '700', color: colors.ink },
+  completedTitle: { fontSize: 13, fontWeight: '700', color: c.grayMid },
+  clearText: { fontSize: 13, fontWeight: '700', color: c.ink },
   itemDone: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, opacity: 0.6 },
   checkboxOn: {
     width: 22,
     height: 22,
     borderRadius: 6,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   check: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  itemAmtDone: { fontSize: 14, fontWeight: '700', color: colors.grayMid, textDecorationLine: 'line-through', minWidth: 56 },
-  itemNameDone: { fontSize: 14.5, fontWeight: '500', color: colors.grayMid, textDecorationLine: 'line-through', flex: 1 },
+  itemAmtDone: { fontSize: 14, fontWeight: '700', color: c.grayMid, textDecorationLine: 'line-through', minWidth: 56 },
+  itemNameDone: { fontSize: 14.5, fontWeight: '500', color: c.grayMid, textDecorationLine: 'line-through', flex: 1 },
   orderBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',

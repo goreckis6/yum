@@ -20,7 +20,8 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { uploadImageIfLocal } from '../lib/storage';
 import { useTabNav } from '../navigation/TabContext';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { DayKey, FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
@@ -42,6 +43,8 @@ function greeting() {
 }
 
 export function HomeScreen() {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
@@ -104,7 +107,7 @@ export function HomeScreen() {
     const pickCover = (key: string, members: typeof recipes) => {
       let imageUrl: string | undefined;
       let coverPreset: string | undefined;
-      let tint = colors.surfaceAlt;
+      let tint = c.surfaceAlt;
       const custom = cookbookCovers[key];
       if (custom?.imageUrl) {
         imageUrl = custom.imageUrl;
@@ -122,7 +125,7 @@ export function HomeScreen() {
         } else if (anyPhoto?.imageUrl) {
           imageUrl = anyPhoto.imageUrl;
         } else {
-          tint = members[0]?.tint ?? colors.surfaceAlt;
+          tint = members[0]?.tint ?? c.surfaceAlt;
         }
       }
       return { imageUrl, coverPreset, tint, hasCover: !!custom };
@@ -146,10 +149,12 @@ export function HomeScreen() {
   }, [recipes, cookbookCovers, customCookbooks]);
 
   const pickCookbookPhoto = async (tag: string, fromCamera: boolean) => {
-    const perm = fromCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    // The camera genuinely needs permission; the photo library uses the system
+    // picker (PHPicker on iOS) which works without one, so we only gate camera.
+    if (fromCamera) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) return;
+    }
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85 })
       : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
@@ -218,36 +223,43 @@ export function HomeScreen() {
         {greeting()},{'\n'}what's cooking?
       </Text>
 
-      <View style={styles.importRow}>
-        <Pressable style={styles.importPrimary} onPress={() => navigation.navigate('ImportUrl')}>
-          <View style={styles.importIconLight}>
-            <Icon name="link" size={20} color={colors.ink} />
-          </View>
-          <View>
-            <Text style={styles.importTitle}>Paste Recipe Link</Text>
-            <Text style={styles.importSub}>Blog, YouTube, Instagram, TikTok</Text>
-          </View>
-        </Pressable>
-        <Pressable style={styles.importSecondary} onPress={() => navigation.navigate('ScanRecipe')}>
-          <View style={styles.importIconDark}>
-            <Icon name="camera" size={20} color="#fff" />
-          </View>
-          <View>
-            <Text style={styles.importTitleDark}>Scan Recipe</Text>
-            <Text style={styles.importSubGray}>Photo, screenshot, cookbook</Text>
-          </View>
-        </Pressable>
-      </View>
-
       <View style={styles.searchBox}>
-        <Icon name="search" size={18} color={colors.gray} />
+        <Icon name="search" size={18} color={c.gray} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search recipes & ingredients"
-          placeholderTextColor={colors.gray}
+          placeholderTextColor={c.gray}
           value={search}
           onChangeText={setSearch}
         />
+      </View>
+
+      <Pressable style={styles.importPrimary} onPress={() => navigation.navigate('ImportUrl')}>
+        <View style={styles.importIconLight}>
+          <Icon name="link" size={20} color="#fff" />
+        </View>
+        <View style={styles.importTextWrap}>
+          <Text style={styles.importTitle}>Paste a link</Text>
+          <Text style={styles.importSub}>Instagram · TikTok · YouTube · blog</Text>
+        </View>
+        <Text style={styles.importChevron}>›</Text>
+      </Pressable>
+
+      <View style={styles.scanRow}>
+        <Pressable style={styles.scanCard} onPress={() => navigation.navigate('ScanRecipe')}>
+          <View style={styles.scanIconSage}>
+            <Icon name="scan" size={22} color={c.sage} />
+          </View>
+          <Text style={styles.scanTitle}>Scan food</Text>
+          <Text style={styles.scanSub}>Calories &amp; nutrition</Text>
+        </Pressable>
+        <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
+          <View style={styles.scanIconPeach}>
+            <Icon name="receipt" size={22} color={c.accent} />
+          </View>
+          <Text style={styles.scanTitle}>Scan receipt</Text>
+          <Text style={styles.scanSub}>Spend &amp; pantry</Text>
+        </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
@@ -310,7 +322,7 @@ export function HomeScreen() {
 
         <Pressable key="__new_cookbook__" style={styles.cookbook} onPress={() => setNewOpen(true)}>
           <View style={styles.cookbookAdd}>
-            <Icon name="plus" size={24} color={colors.grayMid} />
+            <Icon name="plus" size={24} color={c.grayMid} />
             <Text style={styles.cookbookAddText}>New cookbook</Text>
           </View>
         </Pressable>
@@ -376,7 +388,7 @@ export function HomeScreen() {
             >
               <Text style={[styles.dayPillLabel, sel && styles.dayPillLabelOn]}>{d.day}</Text>
               <Text style={[styles.dayPillDate, sel && styles.dayPillDateOn]}>{d.date}</Text>
-              <View style={[styles.dayDot, { backgroundColor: hasAny ? (sel ? '#fff' : colors.accent) : 'transparent' }]} />
+              <View style={[styles.dayDot, { backgroundColor: hasAny ? (sel ? '#fff' : c.accent) : 'transparent' }]} />
             </Pressable>
           );
         })}
@@ -565,28 +577,9 @@ export function HomeScreen() {
           </View>
           <Text style={styles.brandName}>YumShare</Text>
         </View>
-        <View style={styles.syncBadge}>
-          <View style={styles.syncDot} />
-          <Text style={styles.syncText}>Synced</Text>
-        </View>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.homeTabs}>
-        {HOME_TABS.map((t) => (
-          <Pressable
-            key={t.key}
-            style={[styles.homeTab, homeTab === t.key && styles.homeTabOn]}
-            onPress={() => setHomeTab(t.key)}
-          >
-            <Text style={[styles.homeTabText, homeTab === t.key && styles.homeTabTextOn]}>{t.label}</Text>
-          </Pressable>
-        ))}
-      </ScrollView>
-
-      {homeTab === 'organize' && renderOrganize()}
-      {homeTab === 'plan' && renderPlan()}
-      {homeTab === 'cook' && renderCook()}
-      {homeTab === 'track' && renderTrack()}
+      {renderOrganize()}
     </ScrollView>
 
     <ActionSheet
@@ -620,8 +613,8 @@ export function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
@@ -629,69 +622,112 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 11,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
   logoIcon: { color: '#fff', fontSize: 16 },
-  brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: colors.ink, letterSpacing: -0.5 },
+  brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: c.ink, letterSpacing: -0.5 },
   syncBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     paddingVertical: 7,
     paddingHorizontal: 12,
     borderRadius: 999,
   },
-  syncDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: colors.ink },
-  syncText: { fontSize: 12, fontWeight: '600', color: colors.grayLight },
+  syncDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: c.sage },
+  syncText: { fontSize: 12, fontWeight: '600', color: c.grayLight },
   homeTabs: { marginBottom: 20, marginHorizontal: -20, paddingHorizontal: 20 },
   homeTab: {
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginRight: 6,
   },
-  homeTabOn: { backgroundColor: colors.ink },
-  homeTabText: { fontSize: 13.5, fontWeight: '700', color: colors.grayLight },
+  homeTabOn: { backgroundColor: c.accent },
+  homeTabText: { fontSize: 13.5, fontWeight: '700', color: c.grayLight },
   homeTabTextOn: { color: '#fff' },
   headline: {
     fontFamily: fonts.display,
     fontSize: 30,
     lineHeight: 34,
-    color: colors.ink,
+    color: c.ink,
     letterSpacing: -0.8,
     marginBottom: 16,
   },
-  importRow: { gap: 10, marginBottom: 16 },
   importPrimary: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 11,
-    backgroundColor: colors.ink,
+    gap: 13,
+    backgroundColor: c.accent,
     borderRadius: 18,
-    padding: 14,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: c.accent,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.3,
+    shadowRadius: 22,
+    elevation: 4,
   },
+  importTextWrap: { flex: 1 },
+  importChevron: { color: 'rgba(255,255,255,0.85)', fontSize: 24, fontWeight: '400' },
+  scanRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  scanCard: {
+    flex: 1,
+    backgroundColor: c.surface,
+    borderRadius: 18,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: c.border,
+    shadowColor: '#211C18',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.06,
+    shadowRadius: 16,
+    elevation: 2,
+  },
+  scanIconSage: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: c.sageSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 11,
+  },
+  scanIconPeach: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: c.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 11,
+  },
+  scanTitle: { fontSize: 14.5, fontWeight: '700', color: c.ink, marginBottom: 1 },
+  scanSub: { fontSize: 11.5, fontWeight: '500', color: c.grayMid },
   importSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 11,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
-    padding: 14,
-    shadowColor: colors.ink,
+    padding: 15,
+    borderWidth: 1,
+    borderColor: c.border,
+    shadowColor: '#211C18',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.07,
     shadowRadius: 18,
     elevation: 2,
   },
   importIconLight: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#fff',
+    width: 46,
+    height: 46,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255,255,255,0.18)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -699,19 +735,19 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  importTitle: { fontSize: 13.5, fontWeight: '700', color: '#fff' },
-  importTitleDark: { fontSize: 13.5, fontWeight: '700', color: colors.ink },
-  importSub: { fontSize: 11, fontWeight: '500', color: 'rgba(255,255,255,0.55)', marginTop: 2 },
-  importSubGray: { fontSize: 11, fontWeight: '500', color: colors.grayMid, marginTop: 2 },
+  importTitle: { fontSize: 16, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  importTitleDark: { fontSize: 13.5, fontWeight: '700', color: c.ink },
+  importSub: { fontSize: 12.5, fontWeight: '500', color: 'rgba(255,255,255,0.78)' },
+  importSubGray: { fontSize: 11, fontWeight: '500', color: c.grayMid, marginTop: 2 },
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 16,
     paddingHorizontal: 15,
     paddingVertical: 13,
@@ -723,17 +759,17 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   searchIcon: { fontSize: 16 },
-  searchInput: { flex: 1, fontSize: 15, fontWeight: '500', color: colors.ink },
+  searchInput: { flex: 1, fontSize: 15, fontWeight: '500', color: c.ink },
   chipRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
   chip: {
     paddingVertical: 9,
     paddingHorizontal: 15,
     borderRadius: 999,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     marginRight: 8,
   },
-  chipOn: { backgroundColor: colors.ink },
-  chipText: { fontSize: 13.5, fontWeight: '600', color: colors.ink },
+  chipOn: { backgroundColor: c.accent },
+  chipText: { fontSize: 13.5, fontWeight: '600', color: c.ink },
   chipTextOn: { color: '#fff' },
   sectionHeader: {
     flexDirection: 'row',
@@ -741,9 +777,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  sectionTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.ink },
-  sectionLink: { fontSize: 13, fontWeight: '600', color: colors.ink },
-  countLabel: { fontSize: 13, fontWeight: '600', color: colors.grayMid },
+  sectionTitle: { fontFamily: fonts.display, fontSize: 18, color: c.ink },
+  sectionLink: { fontSize: 13, fontWeight: '600', color: c.ink },
+  countLabel: { fontSize: 13, fontWeight: '600', color: c.grayMid },
   cookbookRow: { marginBottom: 26, marginHorizontal: -20, paddingHorizontal: 20 },
   cookbook: { width: 142, marginRight: 12 },
   cookbookCover: {
@@ -757,14 +793,14 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 18,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderStyle: 'dashed',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
   },
-  cookbookAddText: { fontSize: 12.5, fontWeight: '700', color: colors.grayMid },
+  cookbookAddText: { fontSize: 12.5, fontWeight: '700', color: c.grayMid },
   cookbookImg: { ...StyleSheet.absoluteFillObject },
   cookbookOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.32)' },
   cookbookEdit: {
@@ -779,50 +815,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cookbookTitle: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
-  cookbookCount: { fontSize: 12.5, fontWeight: '600', color: colors.grayMid, marginTop: 7 },
+  cookbookCount: { fontSize: 12.5, fontWeight: '600', color: c.grayMid, marginTop: 7 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -7 },
   gridItem: { width: '50%', paddingHorizontal: 7 },
-  empty: { textAlign: 'center', paddingVertical: 40, fontSize: 15, fontWeight: '600', color: colors.grayMid },
-  planTitle: { fontFamily: fonts.display, fontSize: 26, color: colors.ink, marginBottom: 18 },
+  empty: { textAlign: 'center', paddingVertical: 40, fontSize: 15, fontWeight: '600', color: c.grayMid },
+  planTitle: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 18 },
   weekRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
   dayPill: {
     width: 50,
     borderRadius: 16,
     paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     marginRight: 8,
   },
-  dayPillOn: { backgroundColor: colors.accent },
-  dayPillLabel: { fontSize: 11.5, fontWeight: '700', color: colors.grayMid },
+  dayPillOn: { backgroundColor: c.accent },
+  dayPillLabel: { fontSize: 11.5, fontWeight: '700', color: c.grayMid },
   dayPillLabelOn: { color: 'rgba(255,255,255,0.85)' },
-  dayPillDate: { fontFamily: fonts.display, fontSize: 17, fontWeight: '700', color: colors.ink, marginTop: 6 },
+  dayPillDate: { fontFamily: fonts.display, fontSize: 17, fontWeight: '700', color: c.ink, marginTop: 6 },
   dayPillDateOn: { color: '#fff' },
   dayDot: { width: 5, height: 5, borderRadius: 3, marginTop: 6 },
   slotBlock: { marginBottom: 14 },
-  slotLabel: { fontSize: 13, fontWeight: '700', color: colors.grayLight, marginBottom: 9, paddingLeft: 2 },
+  slotLabel: { fontSize: 13, fontWeight: '700', color: c.grayLight, marginBottom: 9, paddingLeft: 2 },
   slotCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 11,
   },
   slotThumb: { width: 62, height: 62, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   slotThumbIcon: { fontSize: 26 },
   slotInfo: { flex: 1 },
-  slotTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  slotMeta: { fontSize: 12, fontWeight: '600', color: colors.grayMid, marginTop: 4 },
+  slotTitle: { fontSize: 15, fontWeight: '700', color: c.ink },
+  slotMeta: { fontSize: 12, fontWeight: '600', color: c.grayMid, marginTop: 4 },
   highGi: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.warning,
+    backgroundColor: c.warning,
     borderRadius: 6,
     paddingHorizontal: 8,
     paddingVertical: 3,
     marginVertical: 4,
   },
-  highGiText: { fontSize: 11, fontWeight: '700', color: colors.warningText },
+  highGiText: { fontSize: 11, fontWeight: '700', color: c.warningText },
   removeBtn: {
     width: 30,
     height: 30,
@@ -831,7 +867,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  removeText: { color: colors.gray, fontSize: 14 },
+  removeText: { color: c.gray, fontSize: 14 },
   addSlot: {
     borderWidth: 1.5,
     borderColor: '#DADADA',
@@ -840,21 +876,21 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: 'center',
   },
-  addSlotText: { fontSize: 14, fontWeight: '700', color: colors.gray },
+  addSlotText: { fontSize: 14, fontWeight: '700', color: c.gray },
   dayTotal: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 16,
     marginTop: 6,
   },
-  dayTotalLabel: { fontSize: 13, fontWeight: '600', color: colors.grayMid },
-  dayTotalKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: colors.ink, marginTop: 2 },
-  kcalUnit: { fontSize: 14, fontWeight: '600', color: colors.grayMid },
+  dayTotalLabel: { fontSize: 13, fontWeight: '600', color: c.grayMid },
+  dayTotalKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: c.ink, marginTop: 2 },
+  kcalUnit: { fontSize: 14, fontWeight: '600', color: c.grayMid },
   macroRow: { flexDirection: 'row', gap: 16 },
-  macro: { fontSize: 14, fontWeight: '700', color: colors.ink },
+  macro: { fontSize: 14, fontWeight: '700', color: c.ink },
   weekGroceryBtn: {
     backgroundColor: '#EBEBEB',
     borderRadius: 16,
@@ -871,7 +907,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 7,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     paddingVertical: 9,
     paddingHorizontal: 15,
     borderRadius: 999,
@@ -882,36 +918,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 11,
     marginBottom: 10,
   },
   cookBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     paddingVertical: 9,
     paddingHorizontal: 15,
     borderRadius: 999,
   },
   cookBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   exchangeCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 16,
     marginTop: 12,
     marginBottom: 14,
   },
-  exchangeLabel: { fontSize: 12, fontWeight: '700', color: colors.grayMid, marginBottom: 12 },
+  exchangeLabel: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 12 },
   exchangeRow: { flexDirection: 'row' },
   exchangeCol: { flex: 1, alignItems: 'center' },
   exchangeDivider: { width: 1, backgroundColor: '#F0F0EE' },
-  exchangeNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: colors.ink },
-  exchangeType: { fontSize: 12, fontWeight: '700', color: colors.grayLight, marginTop: 2 },
+  exchangeNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: c.ink },
+  exchangeType: { fontSize: 12, fontWeight: '700', color: c.grayLight, marginTop: 2 },
   exchangeSub: { fontSize: 11, fontWeight: '500', color: '#BEBEBE', marginTop: 2 },
   tipCard: {
     flexDirection: 'row',
     gap: 12,
-    backgroundColor: colors.surfaceAlt,
+    backgroundColor: c.surfaceAlt,
     borderRadius: 16,
     padding: 14,
   },
@@ -919,58 +955,58 @@ const styles = StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 10,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tipTitle: { fontSize: 13, fontWeight: '700', color: colors.ink, marginBottom: 3 },
-  tipBody: { fontSize: 12.5, fontWeight: '500', color: colors.grayLight, lineHeight: 18 },
+  tipTitle: { fontSize: 13, fontWeight: '700', color: c.ink, marginBottom: 3 },
+  tipBody: { fontSize: 12.5, fontWeight: '500', color: c.grayLight, lineHeight: 18 },
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   statDark: {
     flex: 1,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 18,
     padding: 14,
     alignItems: 'center',
   },
   statLight: {
     flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 14,
     alignItems: 'center',
   },
   statNumLight: { fontFamily: fonts.displayExtra, fontSize: 28, color: '#fff' },
-  statNum: { fontFamily: fonts.displayExtra, fontSize: 28, color: colors.ink },
+  statNum: { fontFamily: fonts.displayExtra, fontSize: 28, color: c.ink },
   statLabelLight: { fontSize: 11, fontWeight: '700', color: 'rgba(255,255,255,0.55)', marginTop: 3 },
-  statLabel: { fontSize: 11, fontWeight: '700', color: colors.grayMid, marginTop: 3 },
-  achieveTitle: { fontFamily: fonts.display, fontSize: 17, color: colors.ink, marginBottom: 12 },
+  statLabel: { fontSize: 11, fontWeight: '700', color: c.grayMid, marginTop: 3 },
+  achieveTitle: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 12 },
   badgeRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
   badge: { width: 90, alignItems: 'center', marginRight: 10 },
   badgeIcon: {
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
-  badgeIconOff: { backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: '#DADADA', borderStyle: 'dashed' },
+  badgeIconOff: { backgroundColor: c.surfaceAlt, borderWidth: 1.5, borderColor: '#DADADA', borderStyle: 'dashed' },
   badgeEmoji: { fontSize: 24 },
   badgeEmojiOff: { opacity: 0.35 },
-  badgeLabel: { fontSize: 11, fontWeight: '700', color: colors.ink, textAlign: 'center' },
+  badgeLabel: { fontSize: 11, fontWeight: '700', color: c.ink, textAlign: 'center' },
   badgeLabelOff: { color: '#BEBEBE' },
   healthCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 15,
     marginBottom: 14,
   },
-  healthTitle: { fontSize: 14.5, fontWeight: '700', color: colors.ink, marginBottom: 8 },
-  healthBody: { fontSize: 12.5, fontWeight: '500', color: colors.grayLight, lineHeight: 18, marginBottom: 12 },
+  healthTitle: { fontSize: 14.5, fontWeight: '700', color: c.ink, marginBottom: 8 },
+  healthBody: { fontSize: 12.5, fontWeight: '500', color: c.grayLight, lineHeight: 18, marginBottom: 12 },
   healthBtn: {
-    backgroundColor: colors.ink,
+    backgroundColor: c.accent,
     borderRadius: 13,
     paddingVertical: 13,
     alignItems: 'center',

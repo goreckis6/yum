@@ -1,6 +1,6 @@
 import React from 'react';
 import Svg, { Circle, Line, Path, Polyline, Rect } from 'react-native-svg';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 export type IconName =
   | 'link'
@@ -14,6 +14,8 @@ export type IconName =
   | 'grid'
   | 'profile'
   | 'plus'
+  | 'scan'
+  | 'receipt'
   | 'chevron-left';
 
 interface Props {
@@ -23,9 +25,11 @@ interface Props {
   fill?: boolean;
 }
 
-export function Icon({ name, size = 22, color = colors.ink, fill = false }: Props) {
+export function Icon({ name, size = 22, color, fill = false }: Props) {
+  const c = useTheme();
+  const stroke = color ?? c.ink;
   const s = {
-    stroke: color,
+    stroke,
     strokeWidth: 1.9,
     strokeLinecap: 'round' as const,
     strokeLinejoin: 'round' as const,
@@ -33,7 +37,7 @@ export function Icon({ name, size = 22, color = colors.ink, fill = false }: Prop
   };
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      {render(name, s, color, fill)}
+      {render(name, s, stroke, fill)}
     </Svg>
   );
 }
@@ -126,6 +130,24 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
         <>
           <Line x1={12} y1={5} x2={12} y2={19} {...s} />
           <Line x1={5} y1={12} x2={19} y2={12} {...s} />
+        </>
+      );
+    case 'scan':
+      return (
+        <>
+          <Path d="M4 8V6a2 2 0 0 1 2-2h2" {...s} />
+          <Path d="M16 4h2a2 2 0 0 1 2 2v2" {...s} />
+          <Path d="M20 16v2a2 2 0 0 1-2 2h-2" {...s} />
+          <Path d="M8 20H6a2 2 0 0 1-2-2v-2" {...s} />
+          <Circle cx={12} cy={12} r={3} {...s} />
+        </>
+      );
+    case 'receipt':
+      return (
+        <>
+          <Path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21V3Z" {...s} />
+          <Line x1={9} y1={8} x2={15} y2={8} {...s} />
+          <Line x1={9} y1={12} x2={15} y2={12} {...s} />
         </>
       );
     case 'chevron-left':

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Icon } from './Icon';
 
@@ -12,6 +13,8 @@ interface Props {
 }
 
 export function AddSheet({ visible, onClose, onImportLink, onScan }: Props) {
+  const c = useTheme();
+  const styles = useMemo(() => makeStyles(c), [c]);
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
@@ -21,8 +24,8 @@ export function AddSheet({ visible, onClose, onImportLink, onScan }: Props) {
           <Text style={styles.sub}>Import from a link or scan a photo</Text>
 
           <Pressable style={styles.option} onPress={onImportLink}>
-            <View style={styles.iconDark}>
-              <Icon name="link" size={22} color={colors.ink} />
+            <View style={styles.iconOnAccent}>
+              <Icon name="link" size={22} color="#fff" />
             </View>
             <View style={styles.optionText}>
               <Text style={styles.optionTitle}>Paste Recipe Link</Text>
@@ -32,7 +35,7 @@ export function AddSheet({ visible, onClose, onImportLink, onScan }: Props) {
 
           <Pressable style={[styles.option, styles.optionLight]} onPress={onScan}>
             <View style={styles.iconLight}>
-              <Icon name="camera" size={22} color="#fff" />
+              <Icon name="camera" size={22} color={c.accent} />
             </View>
             <View style={styles.optionText}>
               <Text style={styles.optionTitleDark}>Scan Recipe</Text>
@@ -45,66 +48,69 @@ export function AddSheet({ visible, onClose, onImportLink, onScan }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(14,12,11,0.45)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.bg,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 20,
-    paddingBottom: 36,
-    paddingTop: 12,
-  },
-  handle: {
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: '#DADADA',
-    alignSelf: 'center',
-    marginBottom: 18,
-  },
-  title: {
-    fontFamily: fonts.display,
-    fontSize: 20,
-    color: colors.ink,
-    marginBottom: 3,
-  },
-  sub: { fontSize: 13.5, fontWeight: '600', color: colors.grayMid, marginBottom: 18 },
-  option: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: colors.ink,
-    borderRadius: 16,
-    padding: 15,
-    marginBottom: 10,
-  },
-  optionLight: { backgroundColor: colors.surface },
-  iconDark: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconLight: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: { fontSize: 20 },
-  iconTextLight: { fontSize: 20 },
-  optionText: { flex: 1 },
-  optionTitle: { fontSize: 15, fontWeight: '700', color: '#fff' },
-  optionTitleDark: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  optionSub: { fontSize: 12.5, fontWeight: '500', color: 'rgba(255,255,255,0.55)', marginTop: 1 },
-  optionSubGray: { fontSize: 12.5, fontWeight: '500', color: colors.grayMid, marginTop: 1 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: c.scrim,
+      justifyContent: 'flex-end',
+    },
+    sheet: {
+      backgroundColor: c.bg,
+      borderTopLeftRadius: 30,
+      borderTopRightRadius: 30,
+      paddingHorizontal: 20,
+      paddingBottom: 36,
+      paddingTop: 12,
+    },
+    handle: {
+      width: 42,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: c.border,
+      alignSelf: 'center',
+      marginBottom: 18,
+    },
+    title: {
+      fontFamily: fonts.display,
+      fontSize: 22,
+      color: c.ink,
+      marginBottom: 3,
+    },
+    sub: { fontSize: 13.5, fontWeight: '600', color: c.grayMid, marginBottom: 18 },
+    option: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      backgroundColor: c.accent,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 10,
+    },
+    optionLight: {
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    iconOnAccent: {
+      width: 46,
+      height: 46,
+      borderRadius: 13,
+      backgroundColor: 'rgba(255,255,255,0.18)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    iconLight: {
+      width: 46,
+      height: 46,
+      borderRadius: 13,
+      backgroundColor: c.accentSoft,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    optionText: { flex: 1 },
+    optionTitle: { fontSize: 15.5, fontWeight: '700', color: '#fff' },
+    optionTitleDark: { fontSize: 15.5, fontWeight: '700', color: c.ink },
+    optionSub: { fontSize: 12.5, fontWeight: '500', color: 'rgba(255,255,255,0.78)', marginTop: 1 },
+    optionSubGray: { fontSize: 12.5, fontWeight: '500', color: c.grayMid, marginTop: 1 },
+  });

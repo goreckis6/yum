@@ -1,7 +1,9 @@
+// "Larder" type system: Newsreader (serif) for display/titles, Hanken Grotesk
+// (sans) for body and UI. Keys keep their old names so existing usages map over.
 export const fonts = {
-  display: 'BricolageGrotesque_700Bold',
-  displayExtra: 'BricolageGrotesque_800ExtraBold',
-  body: 'PlusJakartaSans_500Medium',
-  bodySemi: 'PlusJakartaSans_600SemiBold',
-  bodyBold: 'PlusJakartaSans_700Bold',
+  display: 'Newsreader_600SemiBold',
+  displayExtra: 'Newsreader_700Bold',
+  body: 'HankenGrotesk_500Medium',
+  bodySemi: 'HankenGrotesk_600SemiBold',
+  bodyBold: 'HankenGrotesk_700Bold',
 };

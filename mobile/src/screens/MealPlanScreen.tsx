@@ -7,7 +7,8 @@ import { DAYS } from '../data/seed';
 import { useApp } from '../context/AppContext';
 import { useTabNav } from '../navigation/TabContext';
 import { MealPickerSheet } from '../components/MealPickerSheet';
-import { colors } from '../theme/colors';
+import { ThemeColors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { DayKey, MealSlot, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
@@ -15,6 +16,8 @@ import { RootStackParamList } from '../navigation/types';
 const SLOTS: MealSlot[] = ['Breakfast', 'Lunch', 'Dinner'];
 
 export function MealPlanScreen() {
+  const c = useTheme();
+  const styles = makeStyles(c);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
   const { mealPlan, getRecipe, assignMeal, removeMeal, addWeekToGrocery, showToast } = useApp();
@@ -53,7 +56,7 @@ export function MealPlanScreen() {
                 <View
                   style={[
                     styles.dot,
-                    { backgroundColor: hasAny ? (sel ? '#fff' : colors.accent) : 'transparent' },
+                    { backgroundColor: hasAny ? (sel ? '#fff' : c.accent) : 'transparent' },
                   ]}
                 />
               </Pressable>
@@ -146,40 +149,40 @@ export function MealPlanScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg },
+const makeStyles = (c: ThemeColors) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
-  title: { fontFamily: fonts.display, fontSize: 28, color: colors.ink },
-  sub: { fontSize: 14, fontWeight: '600', color: colors.grayMid, marginTop: 4, marginBottom: 18 },
+  title: { fontFamily: fonts.display, fontSize: 28, color: c.ink },
+  sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4, marginBottom: 18 },
   weekRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
   dayPill: {
     width: 50,
     borderRadius: 16,
     paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     marginRight: 8,
   },
-  dayPillOn: { backgroundColor: colors.accent },
-  dayLabel: { fontSize: 11.5, fontWeight: '700', color: colors.grayMid },
+  dayPillOn: { backgroundColor: c.accent },
+  dayLabel: { fontSize: 11.5, fontWeight: '700', color: c.grayMid },
   dayLabelOn: { color: 'rgba(255,255,255,0.85)' },
-  dayDate: { fontFamily: fonts.display, fontSize: 17, fontWeight: '700', color: colors.ink, marginTop: 6 },
+  dayDate: { fontFamily: fonts.display, fontSize: 17, fontWeight: '700', color: c.ink, marginTop: 6 },
   dayDateOn: { color: '#fff' },
   dot: { width: 5, height: 5, borderRadius: 3, marginTop: 6 },
   slotBlock: { marginBottom: 14 },
-  slotLabel: { fontSize: 13, fontWeight: '700', color: colors.grayLight, marginBottom: 9 },
+  slotLabel: { fontSize: 13, fontWeight: '700', color: c.grayLight, marginBottom: 9 },
   slotCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 11,
   },
   thumb: { width: 62, height: 62, borderRadius: 13, alignItems: 'center', justifyContent: 'center' },
   thumbIcon: { fontSize: 26 },
-  slotTitle: { fontSize: 15, fontWeight: '700', color: colors.ink },
-  slotMeta: { fontSize: 12, fontWeight: '600', color: colors.grayMid, marginTop: 4 },
+  slotTitle: { fontSize: 15, fontWeight: '700', color: c.ink },
+  slotMeta: { fontSize: 12, fontWeight: '600', color: c.grayMid, marginTop: 4 },
   remove: {
     width: 30,
     height: 30,
@@ -196,17 +199,17 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
     alignItems: 'center',
   },
-  addText: { fontSize: 14, fontWeight: '700', color: colors.gray },
+  addText: { fontSize: 14, fontWeight: '700', color: c.gray },
   totals: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     borderRadius: 18,
     padding: 16,
     marginTop: 6,
     marginBottom: 14,
   },
-  totalsLabel: { fontSize: 13, fontWeight: '600', color: colors.grayMid },
-  totalsKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: colors.ink, marginTop: 2 },
-  macros: { fontSize: 13, fontWeight: '600', color: colors.grayMid, marginTop: 6 },
+  totalsLabel: { fontSize: 13, fontWeight: '600', color: c.grayMid },
+  totalsKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: c.ink, marginTop: 2 },
+  macros: { fontSize: 13, fontWeight: '600', color: c.grayMid, marginTop: 6 },
   weekBtn: {
     backgroundColor: '#EBEBEB',
     borderRadius: 16,

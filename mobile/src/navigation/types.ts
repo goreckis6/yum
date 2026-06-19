@@ -11,6 +11,9 @@ export type RootStackParamList = {
   Grocery: undefined;
   MealPlan: undefined;
   Profile: undefined;
+  Receipts: undefined;
+  ScanReceipt: undefined;
+  ReviewReceipt: { draft: import('../types').Receipt };
 };
 
 export type MainTab = 'recipes' | 'mealplan' | 'grocery' | 'profile';
