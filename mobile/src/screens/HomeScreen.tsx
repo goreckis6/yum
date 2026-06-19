@@ -78,7 +78,7 @@ export function HomeScreen() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const book = activeCookbook ? customCookbooks.find((cb) => cb.id === activeCookbook) : null;
-    return recipes.filter((r) => {
+    const list = recipes.filter((r) => {
       const matchSearch =
         !q ||
         r.title.toLowerCase().includes(q) ||
@@ -90,6 +90,12 @@ export function HomeScreen() {
       else if (chip !== 'All') matchChip = r.tags?.includes(chip) ?? false;
       return matchSearch && matchChip;
     });
+    // Newest first — imported/scanned ids embed a Date.now() timestamp.
+    const ts = (id: string) => {
+      const m = id.match(/(\d{6,})/);
+      return m ? Number(m[1]) : 0;
+    };
+    return list.sort((a, b) => ts(b.id) - ts(a.id));
   }, [recipes, favorites, search, chip, activeCookbook, customCookbooks]);
 
   // Autocomplete suggestions: matching recipe titles, then ingredient names.
