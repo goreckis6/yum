@@ -4,6 +4,7 @@ import cors from 'cors';
 import * as cheerio from 'cheerio';
 import OpenAI from 'openai';
 import PDFDocument from 'pdfkit';
+import sharp from 'sharp';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -514,6 +515,25 @@ async function receiptsToPdf(receipts, includePhotos = false) {
     }
   });
 }
+
+app.post('/api/resize-image', async (req, res) => {
+  try {
+    const { base64, maxWidth = 1080, quality = 70 } = req.body;
+    if (!base64 || typeof base64 !== 'string') {
+      return res.status(400).json({ error: 'base64 is required' });
+    }
+    const input = Buffer.from(base64, 'base64');
+    const out = await sharp(input)
+      .rotate() // respect EXIF orientation
+      .resize({ width: maxWidth, withoutEnlargement: true })
+      .jpeg({ quality })
+      .toBuffer();
+    res.json({ base64: out.toString('base64'), mimeType: 'image/jpeg' });
+  } catch (err) {
+    console.error('resize-image error:', err);
+    res.status(500).json({ error: err.message || 'Failed to resize image' });
+  }
+});
 
 app.post('/api/receipts/export', async (req, res) => {
   try {

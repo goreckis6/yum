@@ -21,7 +21,20 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
   const { user } = useAuth();
   const userId = user?.id;
   const [draft, setDraft] = useState<Receipt>(route.params.draft);
+  const [tagInput, setTagInput] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const addTag = () => {
+    const t = tagInput.trim().replace(/^#/, '').toLowerCase();
+    if (!t || draft.tags.includes(t)) {
+      setTagInput('');
+      return;
+    }
+    setDraft((d) => ({ ...d, tags: [...d.tags, t] }));
+    setTagInput('');
+  };
+
+  const removeTag = (t: string) => setDraft((d) => ({ ...d, tags: d.tags.filter((x) => x !== t) }));
 
   const setNum = (key: 'total' | 'tax' | 'subtotal', text: string) => {
     const v = parseFloat(text.replace(',', '.'));
@@ -120,6 +133,33 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
         })}
       </View>
 
+      <Text style={styles.label}>Tags</Text>
+      <View style={styles.tagWrap}>
+        {draft.tags.map((t) => (
+          <Pressable key={t} style={styles.tagChip} onPress={() => removeTag(t)}>
+            <Text style={styles.tagText}>#{t}</Text>
+            <Text style={styles.tagX}>✕</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={styles.tagInputRow}>
+        <Text style={styles.tagHash}>#</Text>
+        <TextInput
+          style={styles.tagInput}
+          value={tagInput}
+          onChangeText={setTagInput}
+          placeholder="add a tag (e.g. family, trip-nyc)"
+          placeholderTextColor={c.gray}
+          autoCapitalize="none"
+          autoCorrect={false}
+          onSubmitEditing={addTag}
+          returnKeyType="done"
+        />
+        <Pressable style={styles.tagAddBtn} onPress={addTag}>
+          <Text style={styles.tagAddText}>Add</Text>
+        </Pressable>
+      </View>
+
       {draft.items?.length ? (
         <>
           <Text style={styles.label}>Items</Text>
@@ -196,6 +236,34 @@ const makeStyles = (c: ThemeColors) =>
     chipOn: { backgroundColor: c.accent, borderColor: c.accent },
     chipText: { fontSize: 13.5, fontWeight: '700', color: c.grayMid },
     chipTextOn: { color: '#fff' },
+    tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+    tagChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      backgroundColor: c.accentSoft,
+      paddingVertical: 7,
+      paddingHorizontal: 12,
+      borderRadius: 999,
+    },
+    tagText: { fontSize: 13, fontWeight: '700', color: c.accent },
+    tagX: { fontSize: 11, fontWeight: '700', color: c.accent },
+    tagInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 18 },
+    tagHash: { fontSize: 16, fontWeight: '700', color: c.grayMid },
+    tagInput: {
+      flex: 1,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      fontSize: 14.5,
+      fontWeight: '600',
+      color: c.ink,
+    },
+    tagAddBtn: { backgroundColor: c.surfaceAlt, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12 },
+    tagAddText: { fontSize: 14, fontWeight: '700', color: c.ink },
     itemsCard: {
       backgroundColor: c.surface,
       borderWidth: 1,
