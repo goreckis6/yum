@@ -77,7 +77,7 @@ export function ProcessingScreen({ navigation, route }: Props) {
           </Pressable>
         </>
       ) : (
-        <Text style={styles.hint}>Powered by OpenAI via your local backend</Text>
+        <Text style={styles.hint}>Reading the caption and building your recipe…</Text>
       )}
     </View>
   );
