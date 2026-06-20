@@ -16,7 +16,8 @@ export type IconName =
   | 'plus'
   | 'scan'
   | 'receipt'
-  | 'chevron-left';
+  | 'chevron-left'
+  | 'chevron-down';
 
 interface Props {
   name: IconName;
@@ -153,6 +154,8 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
       );
     case 'chevron-left':
       return <Polyline points="15 5 8 12 15 19" {...s} />;
+    case 'chevron-down':
+      return <Polyline points="6 9 12 15 18 9" {...s} />;
     default:
       return null;
   }
