@@ -311,15 +311,15 @@ export function HomeScreen() {
           <View style={styles.scanIconSage}>
             <Icon name="scan" size={22} color={c.sage} />
           </View>
-          <Text style={styles.scanTitle}>Scan recipe</Text>
+          <Text style={styles.scanTitle}>Save a recipe</Text>
           <Text style={styles.scanSub}>Photo, card or note</Text>
         </Pressable>
         <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
           <View style={styles.scanIconPeach}>
             <Icon name="receipt" size={22} color={c.accent} />
           </View>
-          <Text style={styles.scanTitle}>Scan receipt</Text>
-          <Text style={styles.scanSub}>Track spending</Text>
+          <Text style={styles.scanTitle}>Track spending</Text>
+          <Text style={styles.scanSub}>Snap a bill</Text>
         </Pressable>
       </View>
 
