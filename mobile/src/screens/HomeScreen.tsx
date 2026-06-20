@@ -70,6 +70,7 @@ export function HomeScreen() {
   const [chip, setChip] = useState<FilterChip>('All');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az' | 'rating'>('newest');
   const [sortOpen, setSortOpen] = useState(false);
+  const [showAllCookbooks, setShowAllCookbooks] = useState(false);
   const SORT_LABEL = { newest: 'Newest', oldest: 'Oldest', az: 'A–Z', rating: 'Top rated' } as const;
   const [activeCookbook, setActiveCookbook] = useState<string | null>(null);
   const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
@@ -252,6 +253,53 @@ export function HomeScreen() {
     0,
   );
 
+  const cookbookCards = () => (
+    <>
+      {cookbooks.map((cb) => (
+        <Pressable
+          key={cb.key}
+          style={styles.cookbook}
+          onPress={() => {
+            setSearch('');
+            if (cb.isCustom) {
+              setActiveCookbook(cb.key);
+              setChip('All');
+            } else {
+              setActiveCookbook(null);
+              setChip(cb.key as FilterChip);
+            }
+          }}
+          onLongPress={() => setCoverTarget({ key: cb.key, hasCover: cb.hasCover, isCustom: cb.isCustom, title: cb.title })}
+        >
+          <View style={[styles.cookbookCover, { backgroundColor: cb.tint }]}>
+            {cb.imageUrl ? (
+              <Image source={{ uri: cb.imageUrl }} style={styles.cookbookImg} resizeMode="cover" />
+            ) : cb.coverPreset ? (
+              <CoverArt cover={cb.coverPreset} title="" />
+            ) : null}
+            <View style={styles.cookbookOverlay} />
+            <Pressable
+              style={styles.cookbookEdit}
+              hitSlop={8}
+              onPress={() => setCoverTarget({ key: cb.key, hasCover: cb.hasCover, isCustom: cb.isCustom, title: cb.title })}
+            >
+              <Icon name="camera" size={14} color="#fff" />
+            </Pressable>
+            <Text style={styles.cookbookTitle} numberOfLines={2}>{cb.title}</Text>
+          </View>
+          <Text style={styles.cookbookCount}>{cb.count} recipes</Text>
+        </Pressable>
+      ))}
+
+      <Pressable key="__new_cookbook__" style={styles.cookbook} onPress={() => setNewOpen(true)}>
+        <View style={styles.cookbookAdd}>
+          <Icon name="plus" size={24} color={c.grayMid} />
+          <Text style={styles.cookbookAddText}>New cookbook</Text>
+        </View>
+      </Pressable>
+    </>
+  );
+
   const renderOrganize = () => (
     <>
       <Text style={styles.headline}>
@@ -342,52 +390,17 @@ export function HomeScreen() {
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Your cookbooks</Text>
-        <Text style={styles.sectionLink}>See all</Text>
-      </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cookbookRow}>
-        {cookbooks.map((cb) => (
-          <Pressable
-            key={cb.key}
-            style={styles.cookbook}
-            onPress={() => {
-              setSearch('');
-              if (cb.isCustom) {
-                setActiveCookbook(cb.key);
-                setChip('All');
-              } else {
-                setActiveCookbook(null);
-                setChip(cb.key as FilterChip);
-              }
-            }}
-            onLongPress={() => setCoverTarget({ key: cb.key, hasCover: cb.hasCover, isCustom: cb.isCustom, title: cb.title })}
-          >
-            <View style={[styles.cookbookCover, { backgroundColor: cb.tint }]}>
-              {cb.imageUrl ? (
-                <Image source={{ uri: cb.imageUrl }} style={styles.cookbookImg} resizeMode="cover" />
-              ) : cb.coverPreset ? (
-                <CoverArt cover={cb.coverPreset} title="" />
-              ) : null}
-              <View style={styles.cookbookOverlay} />
-              <Pressable
-                style={styles.cookbookEdit}
-                hitSlop={8}
-                onPress={() => setCoverTarget({ key: cb.key, hasCover: cb.hasCover, isCustom: cb.isCustom, title: cb.title })}
-              >
-                <Icon name="camera" size={14} color="#fff" />
-              </Pressable>
-              <Text style={styles.cookbookTitle} numberOfLines={2}>{cb.title}</Text>
-            </View>
-            <Text style={styles.cookbookCount}>{cb.count} recipes</Text>
-          </Pressable>
-        ))}
-
-        <Pressable key="__new_cookbook__" style={styles.cookbook} onPress={() => setNewOpen(true)}>
-          <View style={styles.cookbookAdd}>
-            <Icon name="plus" size={24} color={c.grayMid} />
-            <Text style={styles.cookbookAddText}>New cookbook</Text>
-          </View>
+        <Pressable onPress={() => setShowAllCookbooks((v) => !v)} hitSlop={8}>
+          <Text style={styles.sectionLink}>{showAllCookbooks ? 'Show less' : 'See all'}</Text>
         </Pressable>
-      </ScrollView>
+      </View>
+      {showAllCookbooks ? (
+        <View style={styles.cookbookGrid}>{cookbookCards()}</View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cookbookRow}>
+          {cookbookCards()}
+        </ScrollView>
+      )}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>
@@ -891,6 +904,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   sortText: { fontSize: 12.5, fontWeight: '700', color: c.ink },
   cookbookRow: { marginBottom: 26, marginHorizontal: -20, paddingHorizontal: 20 },
+  cookbookGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 20 },
   cookbook: { width: 142, marginRight: 12 },
   cookbookCover: {
     height: 96,
