@@ -145,9 +145,10 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
     case 'receipt':
       return (
         <>
-          <Path d="M6 3h12v18l-2-1.4L14 21l-2-1.4L10 21l-2-1.4L6 21V3Z" {...s} />
-          <Line x1={9} y1={8} x2={15} y2={8} {...s} />
-          <Line x1={9} y1={12} x2={15} y2={12} {...s} />
+          <Path d="M5 3.5h14v17l-2.3-1.4-2.4 1.4-2.3-1.4-2.4 1.4-2.3-1.4L5 20.5V3.5Z" {...s} />
+          <Line x1={8.5} y1={8} x2={15.5} y2={8} {...s} />
+          <Line x1={8.5} y1={11.5} x2={15.5} y2={11.5} {...s} />
+          <Line x1={8.5} y1={15} x2={13} y2={15} {...s} />
         </>
       );
     case 'chevron-left':

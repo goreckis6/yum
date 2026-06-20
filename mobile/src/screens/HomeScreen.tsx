@@ -311,15 +311,15 @@ export function HomeScreen() {
           <View style={styles.scanIconSage}>
             <Icon name="scan" size={22} color={c.sage} />
           </View>
-          <Text style={styles.scanTitle}>Save a recipe</Text>
+          <Text style={styles.scanTitle}>Add recipe</Text>
           <Text style={styles.scanSub}>Photo, card or note</Text>
         </Pressable>
         <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
-          <View style={styles.scanIconPeach}>
-            <Icon name="receipt" size={22} color={c.accent} />
+          <View style={styles.scanIconGold}>
+            <Icon name="receipt" size={22} color={c.gold} />
           </View>
           <Text style={styles.scanTitle}>Track spending</Text>
-          <Text style={styles.scanSub}>Snap a bill</Text>
+          <Text style={styles.scanSub}>Scan a receipt</Text>
         </Pressable>
       </View>
 
@@ -775,11 +775,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 11,
   },
-  scanIconPeach: {
+  scanIconGold: {
     width: 42,
     height: 42,
     borderRadius: 12,
-    backgroundColor: c.accentSoft,
+    backgroundColor: c.warning,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 11,
