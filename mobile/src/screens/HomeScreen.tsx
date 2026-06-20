@@ -68,6 +68,9 @@ export function HomeScreen() {
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [chip, setChip] = useState<FilterChip>('All');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az' | 'rating'>('newest');
+  const [sortOpen, setSortOpen] = useState(false);
+  const SORT_LABEL = { newest: 'Newest', oldest: 'Oldest', az: 'A–Z', rating: 'Top rated' } as const;
   const [activeCookbook, setActiveCookbook] = useState<string | null>(null);
   const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
   const [colorTarget, setColorTarget] = useState<string | null>(null);
@@ -90,13 +93,18 @@ export function HomeScreen() {
       else if (chip !== 'All') matchChip = r.tags?.includes(chip) ?? false;
       return matchSearch && matchChip;
     });
-    // Newest first — imported/scanned ids embed a Date.now() timestamp.
+    // Imported/scanned ids embed a Date.now() timestamp for recency ordering.
     const ts = (id: string) => {
       const m = id.match(/(\d{6,})/);
       return m ? Number(m[1]) : 0;
     };
-    return list.sort((a, b) => ts(b.id) - ts(a.id));
-  }, [recipes, favorites, search, chip, activeCookbook, customCookbooks]);
+    return list.sort((a, b) => {
+      if (sortBy === 'oldest') return ts(a.id) - ts(b.id);
+      if (sortBy === 'az') return a.title.localeCompare(b.title);
+      if (sortBy === 'rating') return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+      return ts(b.id) - ts(a.id); // newest
+    });
+  }, [recipes, favorites, search, chip, activeCookbook, customCookbooks, sortBy]);
 
   // Autocomplete suggestions: matching recipe titles, then ingredient names.
   const suggestions = useMemo(() => {
@@ -394,7 +402,13 @@ export function HomeScreen() {
             <Text style={styles.sectionLink}>Done</Text>
           </Pressable>
         ) : (
-          <Text style={styles.countLabel}>{filtered.length} recipes</Text>
+          <View style={styles.sortRow}>
+            <Pressable style={styles.sortBtn} onPress={() => setSortOpen(true)} hitSlop={8}>
+              <Text style={styles.sortText}>{SORT_LABEL[sortBy]} ⌄</Text>
+            </Pressable>
+            <Text style={styles.countDot}>·</Text>
+            <Text style={styles.countLabel}>{filtered.length} recipes</Text>
+          </View>
         )}
       </View>
 
@@ -648,6 +662,17 @@ export function HomeScreen() {
       options={colorOptions}
       onClose={() => setColorTarget(null)}
     />
+    <ActionSheet
+      visible={sortOpen}
+      title="Sort recipes"
+      options={[
+        { label: 'Newest first', onPress: () => setSortBy('newest') },
+        { label: 'Oldest first', onPress: () => setSortBy('oldest') },
+        { label: 'Name (A–Z)', onPress: () => setSortBy('az') },
+        { label: 'Top rated', onPress: () => setSortBy('rating') },
+      ]}
+      onClose={() => setSortOpen(false)}
+    />
     <PromptModal
       visible={newOpen}
       title="New cookbook"
@@ -854,6 +879,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   sectionTitle: { fontFamily: fonts.display, fontSize: 18, color: c.ink },
   sectionLink: { fontSize: 13, fontWeight: '600', color: c.ink },
   countLabel: { fontSize: 13, fontWeight: '600', color: c.grayMid },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  sortBtn: {},
+  sortText: { fontSize: 13, fontWeight: '700', color: c.accent },
+  countDot: { fontSize: 13, fontWeight: '600', color: c.gray },
   cookbookRow: { marginBottom: 26, marginHorizontal: -20, paddingHorizontal: 20 },
   cookbook: { width: 142, marginRight: 12 },
   cookbookCover: {
