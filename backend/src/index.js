@@ -76,7 +76,7 @@ function detectSource(url) {
 
 // Instagram/Facebook/Threads only embed the full caption in their og: meta
 // tags when the request comes from a known social-scraper user-agent.
-const SOCIAL_HOSTS = ['instagram.com', 'facebook.com', 'fb.watch', 'threads.net'];
+const SOCIAL_HOSTS = ['instagram.com', 'facebook.com', 'fb.watch', 'threads.net', 'tiktok.com'];
 
 function isSocialUrl(url) {
   try {
@@ -87,7 +87,64 @@ function isSocialUrl(url) {
   }
 }
 
+function isTikTokUrl(url) {
+  try {
+    return new URL(url).hostname.replace('www.', '').endsWith('tiktok.com');
+  } catch {
+    return false;
+  }
+}
+
+// TikTok doesn't expose the caption in og: tags, but its official oEmbed
+// endpoint returns the full description, author and thumbnail. Short vm.tiktok
+// links are resolved to their canonical URL first.
+async function fetchTikTok(url) {
+  const BROWSER_UA =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+  let finalUrl = url;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    });
+    finalUrl = res.url || url;
+  } catch {
+    /* keep original url */
+  }
+
+  const handleMatch = finalUrl.match(/@([A-Za-z0-9._]+)/);
+  const handle = handleMatch ? `@${handleMatch[1]}` : '@creator';
+
+  let caption = '';
+  let author = '';
+  let thumb = '';
+  try {
+    const o = await fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(finalUrl)}`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (o.ok) {
+      const j = await o.json();
+      caption = j.title || '';
+      author = j.author_name || '';
+      thumb = j.thumbnail_url || '';
+    }
+  } catch {
+    /* oembed unavailable — fall back to empty caption */
+  }
+
+  return {
+    jsonLd: '',
+    og: { title: author, description: caption, image: thumb },
+    captionText: caption,
+    bodyText: caption,
+    handle,
+  };
+}
+
 async function fetchPageText(url) {
+  if (isTikTokUrl(url)) return fetchTikTok(url);
   const social = isSocialUrl(url);
   const userAgent = social
     ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
@@ -214,7 +271,7 @@ async function extractWithOpenAI(url, pageContent) {
     sourceUrl: url,
     imageUrl: parsed.imageUrl || pageContent.og.image || undefined,
     app: parsed.app || source.app,
-    handle: parsed.handle || source.handle,
+    handle: pageContent.handle || parsed.handle || source.handle,
   };
 }
 
