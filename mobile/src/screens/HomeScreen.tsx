@@ -403,11 +403,11 @@ export function HomeScreen() {
           </Pressable>
         ) : (
           <View style={styles.sortRow}>
-            <Pressable style={styles.sortBtn} onPress={() => setSortOpen(true)} hitSlop={8}>
-              <Text style={styles.sortText}>{SORT_LABEL[sortBy]} ⌄</Text>
-            </Pressable>
-            <Text style={styles.countDot}>·</Text>
             <Text style={styles.countLabel}>{filtered.length} recipes</Text>
+            <Pressable style={styles.sortBtn} onPress={() => setSortOpen(true)} hitSlop={8}>
+              <Text style={styles.sortText}>{SORT_LABEL[sortBy]}</Text>
+              <Text style={styles.sortCaret}>⌄</Text>
+            </Pressable>
           </View>
         )}
       </View>
@@ -879,10 +879,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   sectionTitle: { fontFamily: fonts.display, fontSize: 18, color: c.ink },
   sectionLink: { fontSize: 13, fontWeight: '600', color: c.ink },
   countLabel: { fontSize: 13, fontWeight: '600', color: c.grayMid },
-  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 7 },
-  sortBtn: {},
-  sortText: { fontSize: 13, fontWeight: '700', color: c.accent },
-  countDot: { fontSize: 13, fontWeight: '600', color: c.gray },
+  sortRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  sortBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: c.surfaceAlt,
+    paddingVertical: 6,
+    paddingHorizontal: 11,
+    borderRadius: 999,
+  },
+  sortText: { fontSize: 12.5, fontWeight: '700', color: c.ink },
+  sortCaret: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginTop: -2 },
   cookbookRow: { marginBottom: 26, marginHorizontal: -20, paddingHorizontal: 20 },
   cookbook: { width: 142, marginRight: 12 },
   cookbookCover: {
