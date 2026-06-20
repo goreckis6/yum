@@ -109,7 +109,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
       arr.push(entry);
       map.set(g, arr);
     });
-    return Array.from(map.entries()).sort((a, b) => (a[0] === '' ? -1 : b[0] === '' ? 1 : 0));
+    return Array.from(map.entries()); // keep the recipe's own section order
   })();
   const hasGroups = ingredientGroups.some(([g]) => g !== '');
   // Difficulty derived from total time, and a 0–100 fill for each macro bar
@@ -268,7 +268,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <View style={styles.ingList}>
             {ingredientGroups.map(([group, items]) => (
               <View key={group || '__main__'}>
-                {hasGroups && group !== '' && <Text style={styles.ingGroupHead}>{group}</Text>}
+                {hasGroups && <Text style={styles.ingGroupHead}>{group || 'Other'}</Text>}
                 {items.map(({ ing, i }) => {
                   const key = `${recipe.id}:${i}`;
                   const checked = !!ingChecked[key];
