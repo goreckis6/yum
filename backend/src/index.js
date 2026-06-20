@@ -193,11 +193,8 @@ async function fetchPageText(url) {
   // For social posts the og:title is the richest source (full caption text)
   const captionText = social ? `${og.title}\n${og.description}` : '';
 
-  // Instagram/TikTok REEL covers bake a play-button + caption overlay into
-  // og:image, so they don't make good clean thumbnails. Drop the image for
-  // reels (photo posts under /p/ keep their clean og:image).
-  const isReel = /\/(reel|reels|tv)\//i.test(url);
-  if (isReel) og.image = '';
+  // Keep the post's og:image as the default cover (even reels) — the review
+  // screen lets the user swap it for a camera/gallery photo if they prefer.
 
   return {
     jsonLd: jsonLd.join('\n').slice(0, 8000),
