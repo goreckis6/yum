@@ -29,7 +29,7 @@ const RECIPE_SCHEMA = `{
   "p": number (protein grams),
   "c": number (carbs grams),
   "f": number (fat grams),
-  "ingredients": [{ "a": "amount", "n": "name", "aisle": "Produce|Meat & Seafood|Dairy & Eggs|Bakery|Pantry|Frozen" }],
+  "ingredients": [{ "a": "amount", "n": "name", "aisle": "Produce|Meat & Seafood|Dairy & Eggs|Bakery|Pantry|Frozen", "group": "string (the recipe's own sub-section heading for this ingredient, e.g. 'Marinade', 'For the sauce', 'Topping'; empty string for the main ingredient list)" }],
   "steps": ["string"]
 }`;
 
@@ -250,7 +250,7 @@ async function extractWithOpenAI(url, pageContent) {
     messages: [
       {
         role: 'system',
-        content: `You extract structured recipes from web page content. Return valid JSON matching this schema: ${RECIPE_SCHEMA}. Estimate nutrition per serving if not provided, but PREFER any nutrition numbers stated in the text (e.g. "B:" protein, "T:" fat, "W:" carbs in Polish). Keep ingredient and step text in the SAME language as the source. Use realistic aisle categories. The "caption" field, when present, is the author's full post description and is the most reliable source of ingredients and steps — extract from it carefully. Only invent a recipe if no real content is available. For "tags": pick EXACTLY ONE best-fit category from [Quick, Dinner, Breakfast, Lunch, Vegetarian, High-protein]. Quick = under 20 min. Only return one tag.`,
+        content: `You extract structured recipes from web page content. Return valid JSON matching this schema: ${RECIPE_SCHEMA}. Estimate nutrition per serving if not provided, but PREFER any nutrition numbers stated in the text (e.g. "B:" protein, "T:" fat, "W:" carbs in Polish). Keep ingredient and step text in the SAME language as the source. Use realistic aisle categories. The "caption" field, when present, is the author's full post description and is the most reliable source of ingredients and steps — extract from it carefully. If the recipe groups ingredients under sub-headings (e.g. "Marinade", "For the sauce", "Topping"), set each ingredient's "group" to that heading; use an empty string for ingredients in the main list. Only invent a recipe if no real content is available. For "tags": pick EXACTLY ONE best-fit category from [Quick, Dinner, Breakfast, Lunch, Vegetarian, High-protein]. Quick = under 20 min. Only return one tag.`,
       },
       {
         role: 'user',
@@ -345,7 +345,7 @@ app.post('/api/extract-recipe-image', async (req, res) => {
       messages: [
         {
           role: 'system',
-          content: `You extract structured recipes from food photos or recipe screenshots. Return valid JSON matching this schema: ${RECIPE_SCHEMA}. If the image shows a finished dish with no text, estimate a reasonable recipe for what you see. If the image shows a recipe card, blog post, or handwritten recipe, extract it faithfully. Keep ingredient and step text in the SAME language visible in the image (default Polish if unclear). Estimate nutrition if not visible. Use realistic aisle categories. For "tags": pick EXACTLY ONE best-fit category from [Quick, Dinner, Breakfast, Lunch, Vegetarian, High-protein]. Quick = under 20 min. Only return one tag.`,
+          content: `You extract structured recipes from food photos or recipe screenshots. Return valid JSON matching this schema: ${RECIPE_SCHEMA}. If the image shows a finished dish with no text, estimate a reasonable recipe for what you see. If the image shows a recipe card, blog post, or handwritten recipe, extract it faithfully. Keep ingredient and step text in the SAME language visible in the image (default Polish if unclear). Estimate nutrition if not visible. Use realistic aisle categories. If the recipe groups ingredients under sub-headings (e.g. "Marinade", "For the sauce"), set each ingredient's "group" to that heading; empty string for the main list. For "tags": pick EXACTLY ONE best-fit category from [Quick, Dinner, Breakfast, Lunch, Vegetarian, High-protein]. Quick = under 20 min. Only return one tag.`,
         },
         {
           role: 'user',

@@ -10,6 +10,7 @@ export interface Ingredient {
   a: string;
   n: string;
   aisle: Aisle;
+  group?: string; // optional section label, e.g. "Marinade", "For the sauce"
 }
 
 export interface Recipe {

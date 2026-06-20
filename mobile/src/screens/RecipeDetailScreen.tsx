@@ -99,6 +99,19 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   const orderedIngredients = recipe.ingredients
     .map((ing, i) => ({ ing, i }))
     .sort((a, b) => Number(isToTaste(a.ing.a)) - Number(isToTaste(b.ing.a)));
+  // Group ingredients by their sub-section label ("Marinade", "For the sauce"…),
+  // keeping the main (unlabelled) list first.
+  const ingredientGroups = (() => {
+    const map = new Map<string, { ing: typeof recipe.ingredients[number]; i: number }[]>();
+    orderedIngredients.forEach((entry) => {
+      const g = entry.ing.group?.trim() || '';
+      const arr = map.get(g) ?? [];
+      arr.push(entry);
+      map.set(g, arr);
+    });
+    return Array.from(map.entries()).sort((a, b) => (a[0] === '' ? -1 : b[0] === '' ? 1 : 0));
+  })();
+  const hasGroups = ingredientGroups.some(([g]) => g !== '');
   // Difficulty derived from total time, and a 0–100 fill for each macro bar
   // (relative to a sensible per-serving reference so the bars look balanced).
   const level = recipe.time <= 25 ? 'Easy' : recipe.time <= 45 ? 'Medium' : 'Involved';
@@ -253,24 +266,29 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             </Pressable>
           </View>
           <View style={styles.ingList}>
-            {orderedIngredients.map(({ ing, i }) => {
-              const key = `${recipe.id}:${i}`;
-              const checked = !!ingChecked[key];
-              return (
-                <Pressable
-                  key={key}
-                  style={styles.ingRow}
-                  onPress={() => toggleIngredient(recipe.id, i)}
-                >
-                  <View style={[styles.checkbox, checked && styles.checkboxOn]}>
-                    {checked && <Text style={styles.checkMark}>✓</Text>}
-                  </View>
-                  <IngredientIcon name={ing.n} aisle={ing.aisle} size={30} muted={checked} />
-                  <Text style={[styles.ingName, checked && styles.ingChecked]}>{ing.n}</Text>
-                  <Text style={[styles.ingAmt, checked && styles.ingChecked]}>{scaleAmount(ing.a, factor)}</Text>
-                </Pressable>
-              );
-            })}
+            {ingredientGroups.map(([group, items]) => (
+              <View key={group || '__main__'}>
+                {hasGroups && group !== '' && <Text style={styles.ingGroupHead}>{group}</Text>}
+                {items.map(({ ing, i }) => {
+                  const key = `${recipe.id}:${i}`;
+                  const checked = !!ingChecked[key];
+                  return (
+                    <Pressable
+                      key={key}
+                      style={styles.ingRow}
+                      onPress={() => toggleIngredient(recipe.id, i)}
+                    >
+                      <View style={[styles.checkbox, checked && styles.checkboxOn]}>
+                        {checked && <Text style={styles.checkMark}>✓</Text>}
+                      </View>
+                      <IngredientIcon name={ing.n} aisle={ing.aisle} size={30} muted={checked} />
+                      <Text style={[styles.ingName, checked && styles.ingChecked]}>{ing.n}</Text>
+                      <Text style={[styles.ingAmt, checked && styles.ingChecked]}>{scaleAmount(ing.a, factor)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
           </View>
 
           <Text style={styles.sectionTitle}>Method</Text>
@@ -512,6 +530,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   sectionTitle: { fontFamily: fonts.display, fontSize: 19, color: c.ink, marginTop: 4, marginBottom: 8 },
   sectionAction: { fontSize: 12.5, fontWeight: '600', color: c.accent },
   ingList: { marginBottom: 22 },
+  ingGroupHead: {
+    fontSize: 12.5,
+    fontWeight: '700',
+    color: c.accent,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    marginTop: 14,
+    marginBottom: 2,
+  },
   methodList: { marginTop: 4 },
   ingRow: {
     flexDirection: 'row',
