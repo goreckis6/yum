@@ -260,15 +260,17 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           </View>
 
           <View style={styles.sectionHead}>
-            <Text style={styles.sectionTitle}>Ingredients</Text>
+            <Text style={styles.sectionTitle}>
+              {hasGroups ? ingredientGroups[0][0] || 'Ingredients' : 'Ingredients'}
+            </Text>
             <Pressable onPress={() => addRecipeToGrocery(recipe.id)}>
               <Text style={styles.sectionAction}>Add all to grocery</Text>
             </Pressable>
           </View>
           <View style={styles.ingList}>
-            {ingredientGroups.map(([group, items]) => (
+            {ingredientGroups.map(([group, items], gi) => (
               <View key={group || '__main__'}>
-                {hasGroups && <Text style={styles.ingGroupHead}>{group || 'Other'}</Text>}
+                {hasGroups && gi > 0 && <Text style={styles.ingGroupHead}>{group || 'Other'}</Text>}
                 {items.map(({ ing, i }) => {
                   const key = `${recipe.id}:${i}`;
                   const checked = !!ingChecked[key];

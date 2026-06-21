@@ -247,26 +247,48 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         })}
       </ScrollView>
 
-      <Text style={styles.section}>Ingredients</Text>
-      {draft.ingredients.map((ing, i) => (
-        <View key={i} style={styles.ingRow}>
-          <TextInput
-            style={styles.ingAmt}
-            value={ing.a}
-            onChangeText={(a) => updateIngredient(i, { a })}
-            placeholder="amount"
-          />
-          <TextInput
-            style={styles.ingName}
-            value={ing.n}
-            onChangeText={(n) => updateIngredient(i, { n })}
-            placeholder="ingredient"
-          />
-          <Pressable onPress={() => removeIngredient(i)}>
-            <Text style={styles.remove}>✕</Text>
-          </Pressable>
-        </View>
-      ))}
+      {(() => {
+        // Group the editable ingredients by their section, keeping original
+        // indices so edit/remove still target the right item.
+        const map = new Map<string, { ing: Ingredient; i: number }[]>();
+        draft.ingredients.forEach((ing, i) => {
+          const g = ing.group?.trim() || '';
+          const arr = map.get(g) ?? [];
+          arr.push({ ing, i });
+          map.set(g, arr);
+        });
+        const groups = Array.from(map.entries());
+        const has = groups.some(([g]) => g !== '');
+        return (
+          <>
+            <Text style={styles.section}>{has ? groups[0][0] || 'Ingredients' : 'Ingredients'}</Text>
+            {groups.map(([g, items], gi) => (
+              <View key={g || '__main__'}>
+                {has && gi > 0 && <Text style={styles.ingGroupHead}>{g || 'Other'}</Text>}
+                {items.map(({ ing, i }) => (
+                  <View key={i} style={styles.ingRow}>
+                    <TextInput
+                      style={styles.ingAmt}
+                      value={ing.a}
+                      onChangeText={(a) => updateIngredient(i, { a })}
+                      placeholder="amount"
+                    />
+                    <TextInput
+                      style={styles.ingName}
+                      value={ing.n}
+                      onChangeText={(n) => updateIngredient(i, { n })}
+                      placeholder="ingredient"
+                    />
+                    <Pressable onPress={() => removeIngredient(i)}>
+                      <Text style={styles.remove}>✕</Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+            ))}
+          </>
+        );
+      })()}
       <Pressable style={styles.addIng} onPress={addIngredient}>
         <Text style={styles.addIngText}>+ Add ingredient</Text>
       </Pressable>
@@ -340,6 +362,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: 8,
     marginBottom: 12,
   },
+  ingGroupHead: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginTop: 14, marginBottom: 10 },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   ingAmt: {
     width: 72,
