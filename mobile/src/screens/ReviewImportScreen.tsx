@@ -33,13 +33,11 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   const { user } = useAuth();
   const userId = user?.id;
   const insets = useSafeAreaInsets();
-  // Normalize the imported recipe to a 1-serving baseline so the stepper
-  // defaults to 1 and scaling up from there is correct.
+  // Keep the recipe's ingredients EXACTLY as extracted (original amounts) and
+  // its own serving count. The user only scales later via the stepper.
   const [draft, setDraft] = useState(() => {
     const d = route.params.draft;
-    if (!d.servings || d.servings === 1) return { ...d, servings: 1 };
-    const f = 1 / d.servings;
-    return { ...d, servings: 1, ingredients: d.ingredients.map((ing) => ({ ...ing, a: scaleAmount(ing.a, f) })) };
+    return { ...d, servings: d.servings && d.servings > 0 ? d.servings : 1 };
   });
   const [coverMode, setCoverMode] = useState<'photo' | 'text'>(
     route.params.draft.imageUrl ? 'photo' : route.params.draft.cover ? 'text' : 'photo',
