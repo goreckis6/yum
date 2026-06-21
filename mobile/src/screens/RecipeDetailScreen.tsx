@@ -531,13 +531,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   sectionAction: { fontSize: 12.5, fontWeight: '600', color: c.accent },
   ingList: { marginBottom: 22 },
   ingGroupHead: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: c.accent,
-    letterSpacing: 0.3,
-    textTransform: 'uppercase',
-    marginTop: 14,
-    marginBottom: 2,
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: c.ink,
+    marginTop: 18,
+    marginBottom: 4,
   },
   methodList: { marginTop: 4 },
   ingRow: {
