@@ -10,11 +10,13 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { uploadImageIfLocal, uploadBase64Image } from '../lib/storage';
 import { RECEIPT_CATEGORIES, Receipt, ReceiptCategory } from '../types';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewReceipt'>;
 
 export function ReviewReceiptScreen({ navigation, route }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { addReceipt, showToast } = useApp();
@@ -56,7 +58,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
         }
       }
       addReceipt({ ...draft, imageUrl });
-      showToast('Saved to your receipts');
+      showToast(t('reviewReceipt.saved'));
       navigation.reset({ index: 1, routes: [{ name: 'Main' }, { name: 'Receipts' }] });
     } finally {
       setSaving(false);
@@ -69,15 +71,15 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 
-      <Text style={styles.eyebrow}>Review receipt</Text>
-      <Text style={styles.title}>Check the details</Text>
+      <Text style={styles.eyebrow}>{t('reviewReceipt.eyebrow')}</Text>
+      <Text style={styles.title}>{t('reviewReceipt.title')}</Text>
 
       {draft.imageUrl ? (
         <Image source={{ uri: draft.imageUrl }} style={styles.photo} resizeMode="cover" />
       ) : null}
 
       <View style={styles.totalCard}>
-        <Text style={styles.totalLabel}>TOTAL</Text>
+        <Text style={styles.totalLabel}>{t('receipts.total')}</Text>
         <View style={styles.totalRow}>
           <TextInput
             style={styles.currencyInput}
@@ -95,7 +97,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <Text style={styles.label}>Merchant</Text>
+      <Text style={styles.label}>{t('reviewReceipt.merchant')}</Text>
       <TextInput
         style={styles.field}
         value={draft.merchant}
@@ -104,7 +106,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>Date</Text>
+          <Text style={styles.label}>{t('reviewReceipt.date')}</Text>
           <TextInput
             style={styles.field}
             value={draft.date}
@@ -114,7 +116,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
           />
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>Tax</Text>
+          <Text style={styles.label}>{t('reviewReceipt.tax')}</Text>
           <TextInput
             style={styles.field}
             value={String(draft.tax)}
@@ -124,7 +126,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <Text style={styles.label}>Category</Text>
+      <Text style={styles.label}>{t('reviewReceipt.category')}</Text>
       <View style={styles.chips}>
         {RECEIPT_CATEGORIES.map((cat) => {
           const on = draft.category === cat;
@@ -140,7 +142,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
         })}
       </View>
 
-      <Text style={styles.label}>Tags</Text>
+      <Text style={styles.label}>{t('reviewReceipt.tags')}</Text>
       <View style={styles.tagWrap}>
         {draft.tags.map((t) => (
           <Pressable key={t} style={styles.tagChip} onPress={() => removeTag(t)}>
@@ -155,7 +157,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
           style={styles.tagInput}
           value={tagInput}
           onChangeText={setTagInput}
-          placeholder="add a tag (e.g. family, trip-nyc)"
+          placeholder={t('reviewReceipt.addTag')}
           placeholderTextColor={c.gray}
           autoCapitalize="none"
           autoCorrect={false}
@@ -163,13 +165,13 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
           returnKeyType="done"
         />
         <Pressable style={styles.tagAddBtn} onPress={addTag}>
-          <Text style={styles.tagAddText}>Add</Text>
+          <Text style={styles.tagAddText}>{t('common.add')}</Text>
         </Pressable>
       </View>
 
       {draft.items?.length ? (
         <>
-          <Text style={styles.label}>Items</Text>
+          <Text style={styles.label}>{t('reviewReceipt.items')}</Text>
           <View style={styles.itemsCard}>
             {draft.items.map((it, i) => (
               <View key={i} style={[styles.itemRow, i === draft.items.length - 1 && styles.itemRowLast]}>
@@ -182,7 +184,7 @@ export function ReviewReceiptScreen({ navigation, route }: Props) {
       ) : null}
 
       <Pressable style={[styles.saveBtn, saving && styles.saveDisabled]} onPress={save} disabled={saving}>
-        <Text style={styles.saveText}>{saving ? 'Saving…' : 'Save to my receipts'}</Text>
+        <Text style={styles.saveText}>{saving ? `${t('common.save')}…` : t('reviewReceipt.save')}</Text>
       </Pressable>
     </ScrollView>
   );

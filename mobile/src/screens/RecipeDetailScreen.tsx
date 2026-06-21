@@ -18,6 +18,7 @@ import { fonts } from '../theme/fonts';
 import { DayKey, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { cleanStep, isToTaste, scaleAmount } from '../utils/scale';
+import { useI18n } from '../i18n/I18nContext';
 import { CoverArt } from '../components/CoverArt';
 import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet';
 import Svg, { Path, Line } from 'react-native-svg';
@@ -38,6 +39,7 @@ function TrashIcon({ color = '#DC2626' }: { color?: string }) {
 
 export function RecipeDetailScreen({ navigation, route }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const {
     getRecipe,
@@ -114,7 +116,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   const hasGroups = ingredientGroups.some(([g]) => g !== '');
   // Difficulty derived from total time, and a 0–100 fill for each macro bar
   // (relative to a sensible per-serving reference so the bars look balanced).
-  const level = recipe.time <= 25 ? 'Easy' : recipe.time <= 45 ? 'Medium' : 'Involved';
+  const level = t(recipe.time <= 25 ? 'recipe.levelEasy' : recipe.time <= 45 ? 'recipe.levelMedium' : 'recipe.levelInvolved');
   const pct = (grams: number, ref: number) => Math.max(6, Math.min(100, Math.round((grams / ref) * 100)));
   // Stored nutrition is per serving → scale the displayed totals with the
   // chosen number of servings (the bars stay per-serving proportions).
@@ -136,7 +138,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             style={styles.editBtn}
             onPress={() => navigation.navigate('EditRecipe', { id: recipe.id })}
           >
-            <Text style={styles.editText}>Edit</Text>
+            <Text style={styles.editText}>{t('recipe.edit')}</Text>
           </Pressable>
         </View>
 
@@ -163,7 +165,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
               onPress={() => toggleMade(recipe.id)}
             >
               <Text style={[styles.madeText, isMade && styles.madeTextOn]}>
-                {isMade ? '✓ Made it' : 'Made it?'}
+                {isMade ? t('recipe.madeIt') : t('recipe.madeItQ')}
               </Text>
             </Pressable>
           </View>
@@ -193,22 +195,22 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <View style={styles.statRow}>
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{recipe.time}′</Text>
-              <Text style={styles.statLabel}>Total</Text>
+              <Text style={styles.statLabel}>{t('recipe.total')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{servings}</Text>
-              <Text style={styles.statLabel}>Serves</Text>
+              <Text style={styles.statLabel}>{t('recipe.serves')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{level}</Text>
-              <Text style={styles.statLabel}>Level</Text>
+              <Text style={styles.statLabel}>{t('recipe.level')}</Text>
             </View>
           </View>
 
           <View style={styles.servingRow}>
             <View>
-              <Text style={styles.servingTitle}>Adjust servings</Text>
-              <Text style={styles.servingSub}>Scales nutrition & grocery</Text>
+              <Text style={styles.servingTitle}>{t('recipe.adjustServings')}</Text>
+              <Text style={styles.servingSub}>{t('recipe.scalesNote')}</Text>
             </View>
             <View style={styles.stepper}>
               <Pressable style={styles.stepBtn} onPress={() => setServings(Math.max(1, servings - 1))}>
@@ -224,9 +226,9 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <View style={styles.nutCard}>
             <View style={styles.nutHeader}>
               <Text style={styles.nutTitle}>
-                Nutrition{' '}
+                {t('recipe.nutrition')}{' '}
                 <Text style={styles.nutTitleSub}>
-                  {servings === 1 ? '· total' : `· ${servings} servings`}
+                  {servings === 1 ? t('recipe.servingsTotal') : t('recipe.servingsN', { n: servings })}
                 </Text>
               </Text>
               <Text style={styles.nutKcal}>{nv(recipe.kcal)} kcal</Text>
@@ -237,7 +239,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                   <View style={[styles.macroFill, { width: `${pct(recipe.p, 50)}%`, backgroundColor: c.sage }]} />
                 </View>
                 <Text style={styles.macroLabel}>
-                  <Text style={styles.macroValue}>{nv(recipe.p)}g</Text> protein
+                  <Text style={styles.macroValue}>{nv(recipe.p)}g</Text> {t('recipe.protein')}
                 </Text>
               </View>
               <View style={styles.macroCol}>
@@ -245,7 +247,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                   <View style={[styles.macroFill, { width: `${pct(recipe.c, 75)}%`, backgroundColor: c.gold }]} />
                 </View>
                 <Text style={styles.macroLabel}>
-                  <Text style={styles.macroValue}>{nv(recipe.c)}g</Text> carbs
+                  <Text style={styles.macroValue}>{nv(recipe.c)}g</Text> {t('recipe.carbs')}
                 </Text>
               </View>
               <View style={styles.macroCol}>
@@ -253,7 +255,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                   <View style={[styles.macroFill, { width: `${pct(recipe.f, 40)}%`, backgroundColor: c.accent }]} />
                 </View>
                 <Text style={styles.macroLabel}>
-                  <Text style={styles.macroValue}>{nv(recipe.f)}g</Text> fat
+                  <Text style={styles.macroValue}>{nv(recipe.f)}g</Text> {t('recipe.fat')}
                 </Text>
               </View>
             </View>
@@ -261,10 +263,10 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
 
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>
-              {hasGroups ? ingredientGroups[0][0] || 'Ingredients' : 'Ingredients'}
+              {hasGroups ? ingredientGroups[0][0] || t('recipe.ingredients') : t('recipe.ingredients')}
             </Text>
             <Pressable onPress={() => addRecipeToGrocery(recipe.id)}>
-              <Text style={styles.sectionAction}>Add all to grocery</Text>
+              <Text style={styles.sectionAction}>{t('recipe.addAllToGrocery')}</Text>
             </Pressable>
           </View>
           <View style={styles.ingList}>
@@ -293,7 +295,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             ))}
           </View>
 
-          <Text style={styles.sectionTitle}>Method</Text>
+          <Text style={styles.sectionTitle}>{t('recipe.method')}</Text>
           <View style={styles.methodList}>
             {recipe.steps.map((step, i) => (
               <View key={i} style={styles.stepRow}>
@@ -310,11 +312,11 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
       <View style={styles.actionBar}>
         <Pressable style={styles.actionPrimary} onPress={() => addRecipeToGrocery(recipe.id)}>
           <Icon name="cart" size={17} color="#fff" />
-          <Text style={styles.actionPrimaryText}>Grocery</Text>
+          <Text style={styles.actionPrimaryText}>{t('recipe.grocery')}</Text>
         </Pressable>
         <Pressable style={styles.actionSecondary} onPress={() => setPickerOpen(true)}>
           <Icon name="calendar" size={17} color={c.ink} />
-          <Text style={styles.actionSecondaryText}>Meal Plan</Text>
+          <Text style={styles.actionSecondaryText}>{t('recipe.mealPlan')}</Text>
         </Pressable>
         <Pressable style={styles.actionIcon} onPress={() => setAddOpen(true)}>
           <Icon name="grid" size={17} color={c.ink} />

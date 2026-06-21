@@ -7,6 +7,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Recipe } from '../types';
 import { RootStackParamList } from '../navigation/types';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
 
@@ -29,6 +30,7 @@ const IMAGE_MESSAGES = [
 
 export function ProcessingScreen({ navigation, route }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
   const [msgIndex, setMsgIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -68,16 +70,16 @@ export function ProcessingScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <ActivityIndicator size="large" color={c.accent} style={styles.spinner} />
-      <Text style={styles.title}>{error ? 'Something went wrong' : MESSAGES[msgIndex]}</Text>
+      <Text style={styles.title}>{error ? t('processing.error') : MESSAGES[msgIndex]}</Text>
       {error ? (
         <>
           <Text style={styles.error}>{error}</Text>
           <Pressable onPress={() => navigation.goBack()}>
-            <Text style={styles.hint}>Tap to go back</Text>
+            <Text style={styles.hint}>{t('processing.back')}</Text>
           </Pressable>
         </>
       ) : (
-        <Text style={styles.hint}>Reading the caption and building your recipe…</Text>
+        <Text style={styles.hint}>{t('processing.hint')}</Text>
       )}
     </View>
   );

@@ -14,6 +14,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanRecipe'>;
 
@@ -25,6 +26,7 @@ interface PhotoDraft {
 
 export function ScanRecipeScreen({ navigation }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const [photo, setPhoto] = useState<PhotoDraft | null>(null);
@@ -74,10 +76,8 @@ export function ScanRecipeScreen({ navigation }: Props) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 
-      <Text style={styles.title}>Scan recipe</Text>
-      <Text style={styles.sub}>
-        Take a photo or pick from your gallery — a recipe card, screenshot, cookbook page, or finished dish.
-      </Text>
+      <Text style={styles.title}>{t('scanRecipe.title')}</Text>
+      <Text style={styles.sub}>{t('scanRecipe.sub')}</Text>
 
       {photo ? (
         <>
@@ -85,31 +85,31 @@ export function ScanRecipeScreen({ navigation }: Props) {
             <Image source={{ uri: photo.uri }} style={styles.preview} resizeMode="cover" />
             <View style={styles.previewActions}>
               <Pressable style={styles.retakeBtn} onPress={() => pickImage(true)}>
-                <Text style={styles.retakeBtnText}>Retake</Text>
+                <Text style={styles.retakeBtnText}>{t('scanReceipt.retake')}</Text>
               </Pressable>
               <Pressable style={styles.retakeBtn} onPress={() => pickImage(false)}>
-                <Text style={styles.retakeBtnText}>Change photo</Text>
+                <Text style={styles.retakeBtnText}>{t('scanReceipt.changePhoto')}</Text>
               </Pressable>
             </View>
           </View>
 
           <Pressable style={styles.btnPrimary} onPress={submit}>
-            <Text style={styles.btnPrimaryText}>Extract recipe</Text>
+            <Text style={styles.btnPrimaryText}>{t('scanRecipe.extract')}</Text>
           </Pressable>
         </>
       ) : (
         <>
           <View style={styles.placeholder}>
             <Icon name="camera" size={44} color={c.gray} />
-            <Text style={styles.placeholderText}>No photo selected</Text>
+            <Text style={styles.placeholderText}>{t('scanRecipe.none')}</Text>
           </View>
 
           <Pressable style={styles.btnPrimary} onPress={() => pickImage(true)}>
-            <Text style={styles.btnPrimaryText}>Take photo</Text>
+            <Text style={styles.btnPrimaryText}>{t('scanReceipt.take')}</Text>
           </Pressable>
 
           <Pressable style={styles.btnSecondary} onPress={() => pickImage(false)}>
-            <Text style={styles.btnSecondaryText}>Choose from gallery</Text>
+            <Text style={styles.btnSecondaryText}>{t('scanReceipt.gallery')}</Text>
           </Pressable>
         </>
       )}

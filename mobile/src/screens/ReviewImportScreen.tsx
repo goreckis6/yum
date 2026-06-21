@@ -23,11 +23,13 @@ import { Icon } from '../components/Icon';
 import { CoverArt, COVER_PRESETS } from '../components/CoverArt';
 import { cleanStep, scaleAmount } from '../utils/scale';
 import { RootStackParamList } from '../navigation/types';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewImport'>;
 
 export function ReviewImportScreen({ navigation, route }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const { addRecipe, showToast } = useApp();
   const { user } = useAuth();
@@ -96,7 +98,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   const addIngredient = () => {
     setDraft({
       ...draft,
-      ingredients: [...draft.ingredients, { a: '', n: 'New ingredient', aisle: 'Pantry' }],
+      ingredients: [...draft.ingredients, { a: '', n: t('reviewImport.newIngredient'), aisle: 'Pantry' }],
     });
   };
 
@@ -111,7 +113,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       cover: coverMode === 'text' ? draft.cover ?? COVER_PRESETS[0].id : undefined,
     };
     addRecipe(recipe);
-    showToast('Saved to your library');
+    showToast(t('reviewImport.saved'));
     navigation.reset({
       index: 1,
       routes: [
@@ -127,15 +129,15 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 
-      <Text style={styles.eyebrow}>Review import</Text>
-      <Text style={styles.title}>Check before saving</Text>
+      <Text style={styles.eyebrow}>{t('reviewImport.eyebrow')}</Text>
+      <Text style={styles.title}>{t('reviewImport.title')}</Text>
 
       <View style={styles.modeRow}>
         <Pressable
           style={[styles.modeBtn, coverMode === 'photo' && styles.modeBtnOn]}
           onPress={() => setCoverMode('photo')}
         >
-          <Text style={[styles.modeText, coverMode === 'photo' && styles.modeTextOn]}>Photo</Text>
+          <Text style={[styles.modeText, coverMode === 'photo' && styles.modeTextOn]}>{t('reviewImport.photo')}</Text>
         </Pressable>
         <Pressable
           style={[styles.modeBtn, coverMode === 'text' && styles.modeBtnOn]}
@@ -144,7 +146,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
             if (!draft.cover) setDraft({ ...draft, cover: COVER_PRESETS[0].id });
           }}
         >
-          <Text style={[styles.modeText, coverMode === 'text' && styles.modeTextOn]}>Text cover</Text>
+          <Text style={[styles.modeText, coverMode === 'text' && styles.modeTextOn]}>{t('reviewImport.textCover')}</Text>
         </Pressable>
       </View>
 
@@ -154,13 +156,13 @@ export function ReviewImportScreen({ navigation, route }: Props) {
             <>
               <Image source={{ uri: draft.imageUrl }} style={styles.photoImg} resizeMode="cover" />
               <View style={styles.photoEditBadge}>
-                <Text style={styles.photoEditText}>Change photo</Text>
+                <Text style={styles.photoEditText}>{t('scanReceipt.changePhoto')}</Text>
               </View>
             </>
           ) : (
             <View style={styles.photoPlaceholder}>
               <Icon name="camera" size={34} color={c.grayMid} />
-              <Text style={styles.photoPlaceholderText}>Add photo</Text>
+              <Text style={styles.photoPlaceholderText}>{t('reviewImport.addPhoto')}</Text>
             </View>
           )}
         </Pressable>
@@ -184,7 +186,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         </>
       )}
 
-      <Text style={styles.label}>Title</Text>
+      <Text style={styles.label}>{t('reviewImport.titleField')}</Text>
       <TextInput
         style={styles.field}
         value={draft.title}
@@ -193,7 +195,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
 
       <View style={styles.row}>
         <View style={styles.half}>
-          <Text style={styles.label}>Servings</Text>
+          <Text style={styles.label}>{t('reviewImport.servings')}</Text>
           <View style={styles.stepper}>
             <Pressable
               style={styles.stepBtn}
@@ -213,7 +215,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
           </View>
         </View>
         <View style={styles.half}>
-          <Text style={styles.label}>Time (min)</Text>
+          <Text style={styles.label}>{t('reviewImport.time')}</Text>
           <TextInput
             style={styles.field}
             keyboardType="number-pad"
@@ -223,8 +225,8 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         </View>
       </View>
 
-      <Text style={styles.label}>Categories</Text>
-      <Text style={styles.tagHint}>AI suggested · tap to toggle</Text>
+      <Text style={styles.label}>{t('reviewImport.categories')}</Text>
+      <Text style={styles.tagHint}>{t('reviewImport.catHint')}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tagRow}>
         {(['Quick', 'Dinner', 'Breakfast', 'Lunch', 'Vegetarian', 'High-protein'] as const).map((tag) => {
           const on = draft.tags?.includes(tag);
@@ -261,7 +263,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         const has = groups.some(([g]) => g !== '');
         return (
           <>
-            <Text style={styles.section}>{has ? groups[0][0] || 'Ingredients' : 'Ingredients'}</Text>
+            <Text style={styles.section}>{has ? groups[0][0] || t('recipe.ingredients') : t('recipe.ingredients')}</Text>
             {groups.map(([g, items], gi) => (
               <View key={g || '__main__'}>
                 {has && gi > 0 && <Text style={styles.ingGroupHead}>{g || 'Other'}</Text>}
@@ -271,13 +273,13 @@ export function ReviewImportScreen({ navigation, route }: Props) {
                       style={styles.ingAmt}
                       value={ing.a}
                       onChangeText={(a) => updateIngredient(i, { a })}
-                      placeholder="amount"
+                      placeholder={t('reviewImport.amount')}
                     />
                     <TextInput
                       style={styles.ingName}
                       value={ing.n}
                       onChangeText={(n) => updateIngredient(i, { n })}
-                      placeholder="ingredient"
+                      placeholder={t('reviewImport.ingredient')}
                     />
                     <Pressable onPress={() => removeIngredient(i)}>
                       <Text style={styles.remove}>✕</Text>
@@ -290,10 +292,10 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         );
       })()}
       <Pressable style={styles.addIng} onPress={addIngredient}>
-        <Text style={styles.addIngText}>+ Add ingredient</Text>
+        <Text style={styles.addIngText}>{t('reviewImport.addIngredient')}</Text>
       </Pressable>
 
-      <Text style={styles.section}>Steps</Text>
+      <Text style={styles.section}>{t('reviewImport.steps')}</Text>
       {draft.steps.map((step, i) => (
         <View key={i} style={styles.stepRow}>
           <Text style={styles.stepNum}>{i + 1}</Text>
@@ -302,7 +304,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       ))}
 
       <Pressable style={styles.saveBtn} onPress={save}>
-        <Text style={styles.saveText}>Save to library</Text>
+        <Text style={styles.saveText}>{t('reviewImport.saveLibrary')}</Text>
       </Pressable>
     </ScrollView>
   );

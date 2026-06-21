@@ -11,6 +11,7 @@ import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
 import { extractReceiptFromImage } from '../api/receipts';
 import { Receipt } from '../types';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanReceipt'>;
 
@@ -22,6 +23,7 @@ interface PhotoDraft {
 
 export function ScanReceiptScreen({ navigation }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const [photo, setPhoto] = useState<PhotoDraft | null>(null);
@@ -80,7 +82,7 @@ export function ScanReceiptScreen({ navigation }: Props) {
       };
       navigation.replace('ReviewReceipt', { draft, imageBase64: photo.base64, mimeType: photo.mimeType });
     } catch (e: any) {
-      setError(e?.message || 'Could not read the receipt. Try a clearer photo.');
+      setError(e?.message || t('scanReceipt.error'));
     } finally {
       setBusy(false);
     }
@@ -92,10 +94,8 @@ export function ScanReceiptScreen({ navigation }: Props) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 
-      <Text style={styles.title}>Scan receipt</Text>
-      <Text style={styles.sub}>
-        Snap the whole receipt — we read the merchant, date, total and tax, and keep the original photo.
-      </Text>
+      <Text style={styles.title}>{t('scanReceipt.title')}</Text>
+      <Text style={styles.sub}>{t('scanReceipt.sub')}</Text>
 
       {photo ? (
         <>
@@ -104,17 +104,17 @@ export function ScanReceiptScreen({ navigation }: Props) {
             {!busy && (
               <View style={styles.previewActions}>
                 <Pressable style={styles.retakeBtn} onPress={() => pickImage(true)}>
-                  <Text style={styles.retakeBtnText}>Retake</Text>
+                  <Text style={styles.retakeBtnText}>{t('scanReceipt.retake')}</Text>
                 </Pressable>
                 <Pressable style={styles.retakeBtn} onPress={() => pickImage(false)}>
-                  <Text style={styles.retakeBtnText}>Change photo</Text>
+                  <Text style={styles.retakeBtnText}>{t('scanReceipt.changePhoto')}</Text>
                 </Pressable>
               </View>
             )}
             {busy && (
               <View style={styles.busyOverlay}>
                 <ActivityIndicator size="large" color="#fff" />
-                <Text style={styles.busyText}>Reading the receipt…</Text>
+                <Text style={styles.busyText}>{t('scanReceipt.reading')}</Text>
               </View>
             )}
           </View>
@@ -122,20 +122,20 @@ export function ScanReceiptScreen({ navigation }: Props) {
           {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <Pressable style={[styles.btnPrimary, busy && styles.btnDisabled]} onPress={submit} disabled={busy}>
-            <Text style={styles.btnPrimaryText}>{busy ? 'Reading…' : 'Read receipt'}</Text>
+            <Text style={styles.btnPrimaryText}>{busy ? t('scanReceipt.reading') : t('scanReceipt.read')}</Text>
           </Pressable>
         </>
       ) : (
         <>
           <View style={styles.placeholder}>
             <Icon name="receipt" size={44} color={c.gray} />
-            <Text style={styles.placeholderText}>No receipt selected</Text>
+            <Text style={styles.placeholderText}>{t('scanReceipt.none')}</Text>
           </View>
           <Pressable style={styles.btnPrimary} onPress={() => pickImage(true)}>
-            <Text style={styles.btnPrimaryText}>Take photo</Text>
+            <Text style={styles.btnPrimaryText}>{t('scanReceipt.take')}</Text>
           </Pressable>
           <Pressable style={styles.btnSecondary} onPress={() => pickImage(false)}>
-            <Text style={styles.btnSecondaryText}>Choose from gallery</Text>
+            <Text style={styles.btnSecondaryText}>{t('scanReceipt.gallery')}</Text>
           </Pressable>
         </>
       )}

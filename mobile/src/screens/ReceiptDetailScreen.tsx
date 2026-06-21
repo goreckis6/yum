@@ -9,6 +9,7 @@ import { RootStackParamList } from '../navigation/types';
 import { useApp } from '../context/AppContext';
 import { Icon } from '../components/Icon';
 import { ActionSheet } from '../components/ActionSheet';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReceiptDetail'>;
 
@@ -28,6 +29,7 @@ function fmtDate(iso: string) {
 
 export function ReceiptDetailScreen({ navigation, route }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { getReceipt, removeReceipt, showToast } = useApp();
@@ -38,9 +40,9 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
   if (!receipt) {
     return (
       <View style={[styles.container, styles.center]}>
-        <Text style={styles.missing}>Receipt not found</Text>
+        <Text style={styles.missing}>{t('receiptDetail.notFound')}</Text>
         <Pressable style={styles.closeBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.closeText}>Go back</Text>
+          <Text style={styles.closeText}>{t('receiptDetail.goBack')}</Text>
         </Pressable>
       </View>
     );
@@ -57,13 +59,13 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
             <Image source={{ uri: receipt.imageUrl }} style={styles.photo} resizeMode="cover" />
             <View style={styles.zoomHint}>
               <Icon name="search" size={14} color="#fff" />
-              <Text style={styles.zoomHintText}>Tap to zoom</Text>
+              <Text style={styles.zoomHintText}>{t('receiptDetail.tapZoom')}</Text>
             </View>
           </Pressable>
         ) : (
           <View style={[styles.noPhoto, { paddingTop: insets.top + 40 }]}>
             <Icon name="receipt" size={44} color={c.gray} />
-            <Text style={styles.noPhotoText}>No photo attached</Text>
+            <Text style={styles.noPhotoText}>{t('receiptDetail.noPhoto')}</Text>
           </View>
         )}
 
@@ -77,22 +79,22 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
           <Text style={styles.date}>{fmtDate(receipt.date)}</Text>
 
           <View style={styles.totalCard}>
-            <Text style={styles.totalLabel}>TOTAL</Text>
+            <Text style={styles.totalLabel}>{t('receipts.total')}</Text>
             <Text style={styles.totalValue}>{receipt.currency} {fmtMoney(receipt.total)}</Text>
             <View style={styles.totalSubRow}>
-              <Text style={styles.totalSub}>Subtotal {receipt.currency} {fmtMoney(receipt.subtotal)}</Text>
-              <Text style={styles.totalSub}>Tax {receipt.currency} {fmtMoney(receipt.tax)}</Text>
+              <Text style={styles.totalSub}>{t('receiptDetail.subtotal')} {receipt.currency} {fmtMoney(receipt.subtotal)}</Text>
+              <Text style={styles.totalSub}>{t('reviewReceipt.tax')} {receipt.currency} {fmtMoney(receipt.tax)}</Text>
             </View>
           </View>
 
           <View style={styles.metaRow}>
             <View style={styles.metaCell}>
-              <Text style={styles.metaLabel}>Category</Text>
+              <Text style={styles.metaLabel}>{t('reviewReceipt.category')}</Text>
               <Text style={styles.metaValue}>{receipt.category}</Text>
             </View>
             {!!receipt.paymentMethod && (
               <View style={styles.metaCell}>
-                <Text style={styles.metaLabel}>Payment</Text>
+                <Text style={styles.metaLabel}>{t('receiptDetail.payment')}</Text>
                 <Text style={styles.metaValue}>{receipt.paymentMethod}</Text>
               </View>
             )}
@@ -110,7 +112,7 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
 
           {receipt.items?.length ? (
             <>
-              <Text style={styles.sectionTitle}>Items</Text>
+              <Text style={styles.sectionTitle}>{t('reviewReceipt.items')}</Text>
               <View style={styles.itemsCard}>
                 {receipt.items.map((it, i) => (
                   <View key={i} style={[styles.itemRow, i === receipt.items.length - 1 && styles.itemRowLast]}>
@@ -123,7 +125,7 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
           ) : null}
 
           <Pressable style={styles.deleteBtn} onPress={() => setDeleteOpen(true)}>
-            <Text style={styles.deleteText}>Delete receipt</Text>
+            <Text style={styles.deleteText}>{t('receipts.deleteTitle')}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -150,15 +152,15 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
 
       <ActionSheet
         visible={deleteOpen}
-        title="Delete receipt"
-        message="Remove this receipt from your records?"
+        title={t('receipts.deleteTitle')}
+        message={t('receipts.deleteMsg')}
         options={[
           {
-            label: 'Delete',
+            label: t('common.delete'),
             destructive: true,
             onPress: () => {
               removeReceipt(receipt.id);
-              showToast('Receipt deleted');
+              showToast(t('receipts.deleteTitle'));
               navigation.goBack();
             },
           },

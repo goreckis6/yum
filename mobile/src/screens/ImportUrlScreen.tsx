@@ -15,11 +15,13 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
+import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ImportUrl'>;
 
 export function ImportUrlScreen({ navigation }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const [url, setUrl] = useState('');
@@ -44,16 +46,14 @@ export function ImportUrlScreen({ navigation }: Props) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 
-      <Text style={styles.title}>Paste recipe link</Text>
-      <Text style={styles.sub}>
-        Paste a link from any blog, YouTube, Instagram or TikTok. We read the caption and pull out the full recipe.
-      </Text>
+      <Text style={styles.title}>{t('importUrl.title')}</Text>
+      <Text style={styles.sub}>{t('importUrl.sub')}</Text>
 
       <View style={[styles.inputWrap, url ? styles.inputFocused : null]}>
         <Icon name="link" size={18} color={c.gray} />
         <TextInput
           style={styles.input}
-          placeholder="Paste a recipe link"
+          placeholder={t('importUrl.placeholder')}
           placeholderTextColor={c.gray}
           value={url}
           onChangeText={setUrl}
@@ -69,12 +69,12 @@ export function ImportUrlScreen({ navigation }: Props) {
             <Icon name="link" size={18} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.clipBadge}>Detected in clipboard</Text>
+            <Text style={styles.clipBadge}>{t('importUrl.clipboard')}</Text>
             <Text style={styles.clipUrl} numberOfLines={1}>
               {clipboardUrl}
             </Text>
           </View>
-          <Text style={styles.pasteBtn}>Paste</Text>
+          <Text style={styles.pasteBtn}>{t('importUrl.paste')}</Text>
         </Pressable>
       )}
 
@@ -82,7 +82,7 @@ export function ImportUrlScreen({ navigation }: Props) {
         style={[styles.submit, !(url || clipboardUrl) && styles.submitDisabled]}
         onPress={submit}
       >
-        <Text style={styles.submitText}>Read the recipe</Text>
+        <Text style={styles.submitText}>{t('importUrl.read')}</Text>
       </Pressable>
     </View>
   );

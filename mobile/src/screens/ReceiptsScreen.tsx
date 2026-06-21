@@ -24,16 +24,18 @@ import { ActionSheet, SheetOption } from '../components/ActionSheet';
 import { Icon } from '../components/Icon';
 import { exportReceipts } from '../api/receipts';
 import { RECEIPT_CATEGORIES, Receipt } from '../types';
+import { useI18n } from '../i18n/I18nContext';
+import type { TKey } from '../i18n/translations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Receipts'>;
 type DateRange = 'all' | 'month' | '30d' | 'year';
 
 const FILTERS = ['All', ...RECEIPT_CATEGORIES] as const;
-const RANGE_LABEL: Record<DateRange, string> = {
-  all: 'All dates',
-  month: 'This month',
-  '30d': 'Last 30 days',
-  year: 'This year',
+const RANGE_KEY: Record<DateRange, TKey> = {
+  all: 'receipts.allDates',
+  month: 'receipts.thisMonth',
+  '30d': 'receipts.last30',
+  year: 'receipts.thisYear',
 };
 
 // Only http(s)/file URIs are safe for <Image>; ph:// or blob: crash the native
@@ -74,6 +76,7 @@ function inRange(iso: string, range: DateRange) {
 
 export function ReceiptsScreen({ navigation }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { receipts, removeReceipt, showToast } = useApp();
@@ -177,14 +180,14 @@ export function ReceiptsScreen({ navigation }: Props) {
       }
       setExportOpen(false);
     } catch (e: any) {
-      showToast(e?.message || 'Export failed');
+      showToast(e?.message || t('export.failed'));
     } finally {
       setBusy(false);
     }
   };
 
-  const rangeOptions: SheetOption[] = (Object.keys(RANGE_LABEL) as DateRange[]).map((key) => ({
-    label: RANGE_LABEL[key],
+  const rangeOptions: SheetOption[] = (Object.keys(RANGE_KEY) as DateRange[]).map((key) => ({
+    label: t(RANGE_KEY[key]),
     onPress: () => setRange(key),
   }));
 
@@ -198,11 +201,11 @@ export function ReceiptsScreen({ navigation }: Props) {
           <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
             <Text style={styles.backIcon}>‹</Text>
           </Pressable>
-          <Text style={styles.brand}>Receipts</Text>
+          <Text style={styles.brand}>{t('receipts.title')}</Text>
           {filtered.length > 0 ? (
             <Pressable style={styles.exportBtn} onPress={() => setExportOpen(true)}>
               <Icon name="link" size={15} color={c.ink} />
-              <Text style={styles.exportText}>Export</Text>
+              <Text style={styles.exportText}>{t('receipts.export')}</Text>
             </Pressable>
           ) : (
             <View style={{ width: 40 }} />
@@ -211,8 +214,8 @@ export function ReceiptsScreen({ navigation }: Props) {
 
         <View style={styles.totalCard}>
           <View style={styles.totalTop}>
-            <Text style={styles.totalLabel}>{filter === 'All' ? 'TOTAL' : `${filter.toUpperCase()} TOTAL`}</Text>
-            <Text style={styles.totalCount}>{filtered.length} receipt{filtered.length === 1 ? '' : 's'}</Text>
+            <Text style={styles.totalLabel}>{filter === 'All' ? t('receipts.total') : `${filter.toUpperCase()} ${t('receipts.total')}`}</Text>
+            <Text style={styles.totalCount}>{t('receipts.receiptsCount', { n: filtered.length })}</Text>
           </View>
           {byCurrency.length === 0 ? (
             <Text style={styles.totalValue}>0.00</Text>
@@ -232,7 +235,7 @@ export function ReceiptsScreen({ navigation }: Props) {
           )}
           <Text style={styles.totalSub}>
             {byCurrency.length <= 1 && primary ? `Tax ${currency} ${fmtMoney(primary.tax)}  ·  ` : ''}
-            {RANGE_LABEL[range]}
+            {t(RANGE_KEY[range])}
           </Text>
         </View>
 
@@ -240,7 +243,7 @@ export function ReceiptsScreen({ navigation }: Props) {
           <Icon name="search" size={18} color={c.gray} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by merchant"
+            placeholder={t('receipts.searchPlaceholder')}
             placeholderTextColor={c.gray}
             value={search}
             onChangeText={setSearch}
@@ -275,7 +278,7 @@ export function ReceiptsScreen({ navigation }: Props) {
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
           <Pressable style={[styles.chip, range !== 'all' && styles.chipOn]} onPress={() => setRangeOpen(true)}>
-            <Text style={[styles.chipText, range !== 'all' && styles.chipTextOn]}>{RANGE_LABEL[range]} ▾</Text>
+            <Text style={[styles.chipText, range !== 'all' && styles.chipTextOn]}>{t(RANGE_KEY[range])} ▾</Text>
           </Pressable>
           {allTags.map((t) => {
             const on = tagFilter === t;
@@ -298,15 +301,15 @@ export function ReceiptsScreen({ navigation }: Props) {
 
         {needsReview > 0 && (
           <Text style={styles.reviewNote}>
-            ● {needsReview} receipt{needsReview === 1 ? '' : 's'} {needsReview === 1 ? 'has' : 'have'} a field to double-check
+            ● {needsReview === 1 ? t('receipts.needsReview1') : t('receipts.needsReview', { n: needsReview })}
           </Text>
         )}
 
         {filtered.length === 0 ? (
           <View style={styles.empty}>
             <Icon name="receipt" size={42} color={c.gray} />
-            <Text style={styles.emptyTitle}>No receipts yet</Text>
-            <Text style={styles.emptySub}>Tap Capture to scan your first receipt</Text>
+            <Text style={styles.emptyTitle}>{t('receipts.empty')}</Text>
+            <Text style={styles.emptySub}>{t('receipts.emptySub')}</Text>
           </View>
         ) : (
           groups.map((g) => (
@@ -347,7 +350,7 @@ export function ReceiptsScreen({ navigation }: Props) {
         onPress={() => navigation.navigate('ScanReceipt')}
       >
         <Icon name="camera" size={20} color="#fff" />
-        <Text style={styles.captureText}>Capture</Text>
+        <Text style={styles.captureText}>{t('receipts.capture')}</Text>
       </Pressable>
 
       <Modal visible={exportOpen} transparent animationType="slide" onRequestClose={() => setExportOpen(false)}>
@@ -355,34 +358,34 @@ export function ReceiptsScreen({ navigation }: Props) {
           <Pressable style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]} onPress={() => {}}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHead}>
-              <Text style={styles.sheetTitle}>Export</Text>
+              <Text style={styles.sheetTitle}>{t('export.title')}</Text>
               <Pressable style={styles.closeBtn} onPress={() => !busy && setExportOpen(false)}>
                 <Text style={styles.closeIcon}>✕</Text>
               </Pressable>
             </View>
 
             <ScrollView style={styles.sheetScroll} showsVerticalScrollIndicator={false}>
-              <Text style={styles.sheetLabel}>SCOPE</Text>
+              <Text style={styles.sheetLabel}>{t('export.scope')}</Text>
               <View style={styles.scopeCard}>
                 <Pressable style={styles.scopeRow} onPress={() => setRangeOpen(true)}>
                   <Icon name="calendar" size={18} color={c.grayMid} />
-                  <Text style={styles.scopeLabel}>Date range</Text>
-                  <Text style={styles.scopeValue}>{RANGE_LABEL[range]} ›</Text>
+                  <Text style={styles.scopeLabel}>{t('receipts.dateRange')}</Text>
+                  <Text style={styles.scopeValue}>{t(RANGE_KEY[range])} ›</Text>
                 </Pressable>
                 <View style={styles.scopeDivider} />
                 <View style={styles.scopeRow}>
                   <Icon name="grid" size={18} color={c.grayMid} />
-                  <Text style={styles.scopeLabel}>Categories</Text>
-                  <Text style={styles.scopeValue}>{filter === 'All' ? 'All categories' : filter}</Text>
+                  <Text style={styles.scopeLabel}>{t('export.categories')}</Text>
+                  <Text style={styles.scopeValue}>{filter === 'All' ? t('export.allCategories') : filter}</Text>
                 </View>
               </View>
 
-              <Text style={styles.sheetLabel}>FORMAT</Text>
+              <Text style={styles.sheetLabel}>{t('export.format')}</Text>
               <Pressable style={[styles.fmtCard, exportFormat === 'csv' && styles.fmtCardOn]} onPress={() => setExportFormat('csv')}>
                 <View style={styles.fmtIcon}><Icon name="receipt" size={20} color={c.accent} /></View>
                 <View style={styles.fmtBody}>
                   <Text style={styles.fmtTitle}>CSV <Text style={styles.fmtExt}>.csv</Text></Text>
-                  <Text style={styles.fmtDesc}>Opens in Numbers, Excel or Google Sheets</Text>
+                  <Text style={styles.fmtDesc}>{t('export.csvDesc')}</Text>
                 </View>
                 <View style={[styles.radio, exportFormat === 'csv' && styles.radioOn]}>
                   {exportFormat === 'csv' && <Text style={styles.radioTick}>✓</Text>}
@@ -393,23 +396,23 @@ export function ReceiptsScreen({ navigation }: Props) {
                 <View style={styles.fmtIcon}><Icon name="receipt" size={20} color={c.accent} /></View>
                 <View style={styles.fmtBody}>
                   <Text style={styles.fmtTitle}>PDF <Text style={styles.fmtExt}>.pdf</Text></Text>
-                  <Text style={styles.fmtDesc}>Printable summary with photos — for a client or your records</Text>
+                  <Text style={styles.fmtDesc}>{t('export.pdfDesc')}</Text>
                 </View>
                 <View style={[styles.radio, exportFormat === 'pdf' && styles.radioOn]}>
                   {exportFormat === 'pdf' && <Text style={styles.radioTick}>✓</Text>}
                 </View>
               </Pressable>
 
-              <Text style={styles.sheetLabel}>RECEIPT IMAGES</Text>
+              <Text style={styles.sheetLabel}>{t('export.receiptImages')}</Text>
               <View style={[styles.photoRow, exportFormat !== 'pdf' && styles.photoRowDim]}>
                 <View style={styles.fmtBody}>
-                  <Text style={styles.fmtTitle}>Include receipt photos</Text>
+                  <Text style={styles.fmtTitle}>{t('export.includePhotos')}</Text>
                   <Text style={styles.fmtDesc}>
                     {exportFormat !== 'pdf'
-                      ? 'Only available in PDF export'
+                      ? t('export.onlyPdf')
                       : photoCount > 0
-                      ? `${photoCount} photo${photoCount === 1 ? '' : 's'} attached in this range`
-                      : 'No photos attached in this range'}
+                      ? t('export.photosAttached', { n: photoCount })
+                      : t('export.noPhotos')}
                   </Text>
                 </View>
                 <Switch
@@ -421,12 +424,12 @@ export function ReceiptsScreen({ navigation }: Props) {
                 />
               </View>
 
-              <Text style={styles.sheetLabel}>PREVIEW · {filtered.length} ROW{filtered.length === 1 ? '' : 'S'}</Text>
+              <Text style={styles.sheetLabel}>{t('export.preview', { n: filtered.length })}</Text>
               <View style={styles.previewCard}>
                 <View style={styles.previewHead}>
-                  <Text style={[styles.previewHeadCell, styles.previewMerchant]}>MERCHANT</Text>
-                  <Text style={[styles.previewHeadCell, styles.previewDate]}>DATE</Text>
-                  <Text style={[styles.previewHeadCell, styles.previewTotal]}>TOTAL</Text>
+                  <Text style={[styles.previewHeadCell, styles.previewMerchant]}>{t('export.merchant')}</Text>
+                  <Text style={[styles.previewHeadCell, styles.previewDate]}>{t('export.date')}</Text>
+                  <Text style={[styles.previewHeadCell, styles.previewTotal]}>{t('export.totalCol')}</Text>
                 </View>
                 {filtered.slice(0, 4).map((r) => (
                   <View key={r.id} style={styles.previewRow}>
@@ -437,7 +440,9 @@ export function ReceiptsScreen({ navigation }: Props) {
                 ))}
                 <View style={styles.previewFootRow}>
                   <Text style={styles.previewMore}>
-                    {filtered.length > 4 ? `+ ${filtered.length - 4} more · ${filtered.length} rows` : `${filtered.length} rows`}
+                    {filtered.length > 4
+                      ? t('export.more', { n: filtered.length - 4, total: filtered.length })
+                      : t('export.rows', { n: filtered.length })}
                   </Text>
                   <Text style={styles.previewGrand}>{currency} {fmtMoney(total)}</Text>
                 </View>
@@ -451,13 +456,13 @@ export function ReceiptsScreen({ navigation }: Props) {
                 ) : (
                   <>
                     <Icon name="link" size={17} color="#fff" />
-                    <Text style={styles.shareText}>Share…</Text>
+                    <Text style={styles.shareText}>{t('export.share')}</Text>
                   </>
                 )}
               </Pressable>
               <Pressable style={[styles.saveBtn, busy && styles.shareDisabled]} onPress={doExport} disabled={busy}>
                 <Icon name="grid" size={17} color={c.ink} />
-                <Text style={styles.saveText}>Save to Files</Text>
+                <Text style={styles.saveText}>{t('export.saveToFiles')}</Text>
               </Pressable>
             </View>
           </Pressable>
@@ -466,7 +471,7 @@ export function ReceiptsScreen({ navigation }: Props) {
 
       <ActionSheet
         visible={rangeOpen}
-        title="Date range"
+        title={t('receipts.dateRange')}
         options={rangeOptions}
         onClose={() => setRangeOpen(false)}
       />
