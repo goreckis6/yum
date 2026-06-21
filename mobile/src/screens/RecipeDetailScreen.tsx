@@ -559,8 +559,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   checkboxOn: { backgroundColor: c.accent, borderColor: c.accent },
   checkMark: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  ingAmt: { fontSize: 14.5, fontWeight: '700', color: c.ink, minWidth: 62 },
-  ingName: { fontSize: 14.5, fontWeight: '500', color: c.ink, flex: 1 },
+  ingAmt: { fontSize: 14.5, fontWeight: '700', color: c.ink, flexShrink: 0, textAlign: 'right', paddingLeft: 8 },
+  ingName: { fontSize: 14.5, fontWeight: '500', color: c.ink, flex: 1, flexShrink: 1 },
   ingChecked: { color: c.grayMid, textDecorationLine: 'line-through' },
   stepRow: { flexDirection: 'row', gap: 14, marginBottom: 16 },
   stepNum: {
