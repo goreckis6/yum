@@ -21,7 +21,7 @@ import { fonts } from '../theme/fonts';
 import { Ingredient, TAG_ICON } from '../types';
 import { Icon } from '../components/Icon';
 import { CoverArt, COVER_PRESETS } from '../components/CoverArt';
-import { scaleAmount } from '../utils/scale';
+import { cleanStep, scaleAmount } from '../utils/scale';
 import { RootStackParamList } from '../navigation/types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewImport'>;
@@ -297,7 +297,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       {draft.steps.map((step, i) => (
         <View key={i} style={styles.stepRow}>
           <Text style={styles.stepNum}>{i + 1}</Text>
-          <Text style={styles.stepText}>{step}</Text>
+          <Text style={styles.stepText}>{cleanStep(step)}</Text>
         </View>
       ))}
 

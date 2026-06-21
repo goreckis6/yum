@@ -9,6 +9,12 @@ export function isToTaste(amount: string): boolean {
   return !/\d/.test(a); // no number at all → unmeasured
 }
 
+// Strip a leading step number the source already wrote ("1.", "2)", "Step 3:")
+// so it doesn't duplicate the UI's own numbered badge.
+export function cleanStep(s: string): string {
+  return (s || '').replace(/^\s*(?:step\s*)?\d+\s*[.)\-:–]\s*/i, '').trim();
+}
+
 // Cooking-friendly fractions, written in plain ASCII so they render in any font.
 const FRACTIONS: [number, string][] = [
   [0, ''],

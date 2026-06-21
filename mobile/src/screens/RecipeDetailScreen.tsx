@@ -17,7 +17,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { DayKey, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
-import { isToTaste, scaleAmount } from '../utils/scale';
+import { cleanStep, isToTaste, scaleAmount } from '../utils/scale';
 import { CoverArt } from '../components/CoverArt';
 import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet';
 import Svg, { Path, Line } from 'react-native-svg';
@@ -300,7 +300,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                 <View style={styles.stepNum}>
                   <Text style={styles.stepNumText}>{i + 1}</Text>
                 </View>
-                <Text style={styles.stepText}>{step}</Text>
+                <Text style={styles.stepText}>{cleanStep(step)}</Text>
               </View>
             ))}
           </View>
