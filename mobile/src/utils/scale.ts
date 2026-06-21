@@ -9,34 +9,76 @@ export function isToTaste(amount: string): boolean {
   return !/\d/.test(a); // no number at all → unmeasured
 }
 
+// Cooking-friendly fractions, written in plain ASCII so they render in any font.
+const FRACTIONS: [number, string][] = [
+  [0, ''],
+  [0.125, '1/8'],
+  [0.25, '1/4'],
+  [0.333, '1/3'],
+  [0.5, '1/2'],
+  [0.667, '2/3'],
+  [0.75, '3/4'],
+  [1, ''],
+];
+
+// Format a number the way a cook expects: whole numbers, simple fractions
+// ("1/2"), or mixed numbers ("1 1/2"); falls back to one decimal.
 export function fmtNum(n: number): string {
-  const r = Math.round(n * 100) / 100;
-  if (Math.abs(r - Math.round(r)) < 0.05) return String(Math.round(r));
-  const whole = Math.floor(r);
+  if (!isFinite(n)) return '';
+  const r = Math.round(n * 1000) / 1000;
+  const whole = Math.floor(r + 1e-9);
   const frac = r - whole;
-  const fractions: [number, string][] = [
-    [0.25, '¼'], [0.333, '⅓'], [0.5, '½'], [0.667, '⅔'], [0.75, '¾'],
-  ];
-  for (const [v, glyph] of fractions) {
-    if (Math.abs(frac - v) < 0.06) return (whole > 0 ? whole : '') + glyph;
+
+  let best: [number, string] = [0, ''];
+  let bestDist = 1;
+  for (const [v, g] of FRACTIONS) {
+    const d = Math.abs(frac - v);
+    if (d < bestDist) {
+      bestDist = d;
+      best = [v, g];
+    }
   }
+
+  if (bestDist < 0.06) {
+    const [v, glyph] = best;
+    const w = whole + (v === 1 ? 1 : 0);
+    if (!glyph) return String(w); // whole number
+    return w > 0 ? `${w} ${glyph}` : glyph; // "1 1/2" or "1/2"
+  }
+
+  // Non-standard fraction → keep it readable with one decimal.
   return String(Math.round(r * 10) / 10);
 }
 
-// Scale the leading quantity in an amount string by `factor`.
-// "340 g" → "170 g", "do smaku" → unchanged.
+// One quantity token, which may be a mixed number ("1 1/2"), a fraction
+// ("1/2"), or a decimal/integer ("1.5", "2").
+const QTY = String.raw`\d+\s+\d+\s*/\s*\d+|\d+\s*/\s*\d+|\d*\.?\d+`;
+
+function parseQty(raw: string): number {
+  const s = raw.trim();
+  let m = s.match(/^(\d+)\s+(\d+)\s*\/\s*(\d+)$/); // mixed "1 1/2"
+  if (m) return Number(m[1]) + Number(m[2]) / Number(m[3]);
+  m = s.match(/^(\d+)\s*\/\s*(\d+)$/); // fraction "1/2"
+  if (m) return Number(m[1]) / Number(m[2]);
+  return parseFloat(s);
+}
+
+// Scale the leading quantity (or range) in an amount string by `factor`.
+// "340 g" → "170 g", "1 1/2 cups" → "3 cups", "2-3 eggs" → "4-6 eggs",
+// "do smaku" → unchanged.
 export function scaleAmount(amount: string, factor: number): string {
   if (factor === 1 || !amount) return amount;
-  const m = amount.match(/^\s*(\d+\s*\/\s*\d+|\d*\.?\d+)/);
+  const lead = new RegExp(String.raw`^\s*(${QTY})(\s*[-–—]\s*(${QTY}))?`);
+  const m = amount.match(lead);
   if (!m) return amount;
-  const raw = m[1];
-  let val: number;
-  if (raw.includes('/')) {
-    const [n, d] = raw.split('/').map((x) => parseFloat(x.trim()));
-    val = d ? n / d : n;
-  } else {
-    val = parseFloat(raw);
+
+  const first = parseQty(m[1]);
+  if (!isFinite(first)) return amount;
+
+  let out = fmtNum(first * factor);
+  if (m[3]) {
+    const second = parseQty(m[3]);
+    if (isFinite(second)) out += `–${fmtNum(second * factor)}`;
   }
-  if (!isFinite(val)) return amount;
-  return fmtNum(val * factor) + amount.slice(m[0].length);
+  return out + amount.slice(m[0].length);
 }
