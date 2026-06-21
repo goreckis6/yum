@@ -37,7 +37,8 @@
           "photosPermission": "YumShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
           "cameraPermission": "YumShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
         }
-      ]
+      ],
+      "expo-localization"
     ]
   }
 }

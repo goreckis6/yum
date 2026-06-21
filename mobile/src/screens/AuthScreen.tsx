@@ -16,9 +16,11 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Icon } from '../components/Icon';
+import { useI18n } from '../i18n/I18nContext';
 
 export function AuthScreen() {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { signIn, signUp } = useAuth();
@@ -60,7 +62,7 @@ export function AuthScreen() {
         </View>
         <Text style={styles.brand}>YumShare</Text>
         <Text style={styles.subtitle}>
-          {mode === 'in' ? 'Welcome back — sign in to your recipes.' : 'Create an account to save your recipes.'}
+          {mode === 'in' ? t('auth.welcome') : t('auth.signUp')}
         </Text>
 
         {!isSupabaseConfigured && (
@@ -69,12 +71,12 @@ export function AuthScreen() {
           </Text>
         )}
 
-        <Text style={styles.label}>Email</Text>
+        <Text style={styles.label}>{t('auth.email')}</Text>
         <TextInput
           style={styles.field}
           value={email}
           onChangeText={setEmail}
-          placeholder="you@example.com"
+          placeholder={t('auth.emailPlaceholder')}
           placeholderTextColor={c.gray}
           autoCapitalize="none"
           autoCorrect={false}
@@ -82,7 +84,7 @@ export function AuthScreen() {
           inputMode="email"
         />
 
-        <Text style={styles.label}>Password</Text>
+        <Text style={styles.label}>{t('auth.password')}</Text>
         <TextInput
           style={styles.field}
           value={password}
@@ -99,7 +101,7 @@ export function AuthScreen() {
           {busy ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.submitText}>{mode === 'in' ? 'Sign in' : 'Create account'}</Text>
+            <Text style={styles.submitText}>{mode === 'in' ? t('auth.signIn') : t('auth.signUp')}</Text>
           )}
         </Pressable>
 
@@ -112,7 +114,7 @@ export function AuthScreen() {
           }}
         >
           <Text style={styles.switchText}>
-            {mode === 'in' ? "No account? Create one" : 'Already have an account? Sign in'}
+            {mode === 'in' ? t('auth.noAccount') : t('auth.haveAccount')}
           </Text>
         </Pressable>
       </View>

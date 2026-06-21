@@ -20,6 +20,7 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { MainNavigator } from './src/navigation/MainNavigator';
 import { RootStackParamList } from './src/navigation/types';
 import { ThemeProvider, useTheme, useThemeCtx } from './src/theme/ThemeContext';
+import { I18nProvider } from './src/i18n/I18nContext';
 import { ImportUrlScreen } from './src/screens/ImportUrlScreen';
 import { ScanRecipeScreen } from './src/screens/ScanRecipeScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
@@ -90,12 +91,14 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <ThemedStatusBar />
-          <Gate />
-        </AuthProvider>
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ThemedStatusBar />
+            <Gate />
+          </AuthProvider>
+        </ThemeProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }

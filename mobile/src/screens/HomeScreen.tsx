@@ -23,6 +23,7 @@ import { useTabNav } from '../navigation/TabContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { useI18n } from '../i18n/I18nContext';
 import { DayKey, FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
@@ -35,15 +36,16 @@ const HOME_TABS: { key: HomeTab; label: string }[] = [
   { key: 'track', label: 'Track' },
 ];
 
-function greeting() {
+function greetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'home.greetingEvening' {
   const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 17) return 'Good afternoon';
-  return 'Good evening';
+  if (h < 12) return 'home.greetingMorning';
+  if (h < 17) return 'home.greetingAfternoon';
+  return 'home.greetingEvening';
 }
 
 export function HomeScreen() {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -71,7 +73,12 @@ export function HomeScreen() {
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'az' | 'rating'>('newest');
   const [sortOpen, setSortOpen] = useState(false);
   const [showAllCookbooks, setShowAllCookbooks] = useState(false);
-  const SORT_LABEL = { newest: 'Newest', oldest: 'Oldest', az: 'A–Z', rating: 'Top rated' } as const;
+  const SORT_LABEL = {
+    newest: t('home.sort.newest'),
+    oldest: t('home.sort.oldest'),
+    az: t('home.sort.az'),
+    rating: t('home.sort.rating'),
+  } as const;
   const [activeCookbook, setActiveCookbook] = useState<string | null>(null);
   const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
   const [colorTarget, setColorTarget] = useState<string | null>(null);
@@ -287,14 +294,14 @@ export function HomeScreen() {
             </Pressable>
             <Text style={styles.cookbookTitle} numberOfLines={2}>{cb.title}</Text>
           </View>
-          <Text style={styles.cookbookCount}>{cb.count} recipes</Text>
+          <Text style={styles.cookbookCount}>{t('home.recipesCount', { n: cb.count })}</Text>
         </Pressable>
       ))}
 
       <Pressable key="__new_cookbook__" style={styles.cookbook} onPress={() => setNewOpen(true)}>
         <View style={styles.cookbookAdd}>
           <Icon name="plus" size={24} color={c.grayMid} />
-          <Text style={styles.cookbookAddText}>New cookbook</Text>
+          <Text style={styles.cookbookAddText}>{t('home.newCookbook')}</Text>
         </View>
       </Pressable>
     </>
@@ -303,14 +310,14 @@ export function HomeScreen() {
   const renderOrganize = () => (
     <>
       <Text style={styles.headline}>
-        {greeting()},{'\n'}what's cooking?
+        {t(greetingKey())},{'\n'}{t('home.whatsCooking')}
       </Text>
 
       <View style={styles.searchBox}>
         <Icon name="search" size={18} color={c.gray} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search recipes & ingredients"
+          placeholder={t('home.searchPlaceholder')}
           placeholderTextColor={c.gray}
           value={search}
           onChangeText={setSearch}
@@ -348,8 +355,8 @@ export function HomeScreen() {
           <Icon name="link" size={20} color="#fff" />
         </View>
         <View style={styles.importTextWrap}>
-          <Text style={styles.importTitle}>Paste a link</Text>
-          <Text style={styles.importSub}>Instagram · TikTok · YouTube · blog</Text>
+          <Text style={styles.importTitle}>{t('home.pasteLink')}</Text>
+          <Text style={styles.importSub}>{t('home.pasteLinkSub')}</Text>
         </View>
         <Text style={styles.importChevron}>›</Text>
       </Pressable>
@@ -359,15 +366,15 @@ export function HomeScreen() {
           <View style={styles.scanIconSage}>
             <Icon name="scan" size={22} color={c.sage} />
           </View>
-          <Text style={styles.scanTitle}>Add recipe</Text>
-          <Text style={styles.scanSub}>Photo, card or note</Text>
+          <Text style={styles.scanTitle}>{t('home.addRecipe')}</Text>
+          <Text style={styles.scanSub}>{t('home.addRecipeSub')}</Text>
         </Pressable>
         <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
           <View style={styles.scanIconGold}>
             <Icon name="receipt" size={22} color={c.gold} />
           </View>
-          <Text style={styles.scanTitle}>Track spending</Text>
-          <Text style={styles.scanSub}>Scan a receipt</Text>
+          <Text style={styles.scanTitle}>{t('home.trackSpending')}</Text>
+          <Text style={styles.scanSub}>{t('home.trackSpendingSub')}</Text>
         </Pressable>
       </View>
 
@@ -389,9 +396,9 @@ export function HomeScreen() {
       </ScrollView>
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Your cookbooks</Text>
+        <Text style={styles.sectionTitle}>{t('home.yourCookbooks')}</Text>
         <Pressable onPress={() => setShowAllCookbooks((v) => !v)} hitSlop={8}>
-          <Text style={styles.sectionLink}>{showAllCookbooks ? 'Show less' : 'See all'}</Text>
+          <Text style={styles.sectionLink}>{showAllCookbooks ? t('common.showLess') : t('common.seeAll')}</Text>
         </Pressable>
       </View>
       {showAllCookbooks ? (
@@ -407,16 +414,16 @@ export function HomeScreen() {
           {activeCookbook
             ? customCookbooks.find((cb) => cb.id === activeCookbook)?.title ?? 'Cookbook'
             : chip === 'All' && !search
-            ? 'All recipes'
-            : 'Results'}
+            ? t('home.allRecipes')
+            : t('home.results')}
         </Text>
         {activeCookbook ? (
           <Pressable onPress={() => setActiveCookbook(null)}>
-            <Text style={styles.sectionLink}>Done</Text>
+            <Text style={styles.sectionLink}>{t('common.done')}</Text>
           </Pressable>
         ) : (
           <View style={styles.sortRow}>
-            <Text style={styles.countLabel}>{filtered.length} recipes</Text>
+            <Text style={styles.countLabel}>{t('home.recipesCount', { n: filtered.length })}</Text>
             <Pressable style={styles.sortBtn} onPress={() => setSortOpen(true)} hitSlop={8}>
               <Text style={styles.sortText}>{SORT_LABEL[sortBy]}</Text>
               <Icon name="chevron-down" size={13} color={c.grayMid} />
@@ -427,9 +434,7 @@ export function HomeScreen() {
 
       {filtered.length === 0 ? (
         <Text style={styles.empty}>
-          {activeCookbook
-            ? 'Empty cookbook. Open a recipe and tap the grid icon to add it here.'
-            : 'No recipes match that search.'}
+          {activeCookbook ? t('home.emptyCookbook') : t('home.noResults')}
         </Text>
       ) : (
         <View style={styles.grid}>
@@ -677,18 +682,18 @@ export function HomeScreen() {
     />
     <ActionSheet
       visible={sortOpen}
-      title="Sort recipes"
+      title={t('home.sortTitle')}
       options={[
-        { label: 'Newest first', onPress: () => setSortBy('newest') },
-        { label: 'Oldest first', onPress: () => setSortBy('oldest') },
-        { label: 'Name (A–Z)', onPress: () => setSortBy('az') },
-        { label: 'Top rated', onPress: () => setSortBy('rating') },
+        { label: t('home.sort.newest'), onPress: () => setSortBy('newest') },
+        { label: t('home.sort.oldest'), onPress: () => setSortBy('oldest') },
+        { label: t('home.sort.az'), onPress: () => setSortBy('az') },
+        { label: t('home.sort.rating'), onPress: () => setSortBy('rating') },
       ]}
       onClose={() => setSortOpen(false)}
     />
     <PromptModal
       visible={newOpen}
-      title="New cookbook"
+      title={t('home.newCookbook')}
       placeholder="Cookbook name"
       onCancel={() => setNewOpen(false)}
       onConfirm={(title) => {

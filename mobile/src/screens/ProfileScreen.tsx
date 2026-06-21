@@ -7,34 +7,32 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme, useThemeCtx, ThemeMode } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { useI18n } from '../i18n/I18nContext';
+import { Lang } from '../i18n/translations';
 
-const SETTINGS = [
-  'Account settings',
-  'Units & preferences',
-  'Notifications',
-  'Default servings',
-  'Data export',
-  'Help & support',
-  'Privacy & terms',
-];
-
-const THEME_OPTIONS: { key: ThemeMode; label: string }[] = [
-  { key: 'system', label: 'System' },
-  { key: 'light', label: 'Light' },
-  { key: 'dark', label: 'Dark' },
+const LANG_OPTIONS: { key: Lang; label: string }[] = [
+  { key: 'en', label: 'English' },
+  { key: 'pl', label: 'Polski' },
 ];
 
 export function ProfileScreen() {
   const c = useTheme();
+  const { t, lang, setLang } = useI18n();
   const styles = makeStyles(c);
   const { mode, setMode } = useThemeCtx();
   const { recipes, showToast } = useApp();
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
 
+  const THEME_OPTIONS: { key: ThemeMode; label: string }[] = [
+    { key: 'system', label: t('profile.system') },
+    { key: 'light', label: t('profile.light') },
+    { key: 'dark', label: t('profile.dark') },
+  ];
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
-      <Text style={styles.title}>Profile</Text>
+      <Text style={styles.title}>{t('profile.title')}</Text>
 
       <View style={styles.card}>
         <View style={styles.avatar}>
@@ -56,7 +54,7 @@ export function ProfileScreen() {
         <Text style={styles.syncBtnText}>Sync now</Text>
       </Pressable>
 
-      <Text style={styles.section}>Appearance</Text>
+      <Text style={styles.section}>{t('profile.appearance')}</Text>
       <View style={styles.segment}>
         {THEME_OPTIONS.map((opt) => {
           const on = mode === opt.key;
@@ -72,16 +70,24 @@ export function ProfileScreen() {
         })}
       </View>
 
-      <Text style={styles.section}>Settings</Text>
-      {SETTINGS.map((label) => (
-        <Pressable key={label} style={styles.link} onPress={() => showToast('Settings coming in a later phase')}>
-          <Text style={styles.linkText}>{label}</Text>
-          <Text style={styles.chevron}>›</Text>
-        </Pressable>
-      ))}
+      <Text style={styles.section}>{t('profile.language')}</Text>
+      <View style={styles.segment}>
+        {LANG_OPTIONS.map((opt) => {
+          const on = lang === opt.key;
+          return (
+            <Pressable
+              key={opt.key}
+              style={[styles.segmentBtn, on && styles.segmentBtnOn]}
+              onPress={() => setLang(opt.key)}
+            >
+              <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
       <Pressable style={styles.logout} onPress={() => signOut()}>
-        <Text style={styles.logoutText}>Log out</Text>
+        <Text style={styles.logoutText}>{t('profile.signOut')}</Text>
       </Pressable>
 
       <Text style={styles.apiHint}>API: {getApiBaseUrl()}</Text>

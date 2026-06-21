@@ -4,6 +4,7 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Icon, IconName } from './Icon';
+import { useI18n } from '../i18n/I18nContext';
 
 type TabKey = 'recipes' | 'mealplan' | 'grocery' | 'profile';
 
@@ -42,17 +43,18 @@ function NavItem({
 
 export function BottomNav({ active, onRecipes, onMeal, onGrocery, onProfile, onAdd }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
   return (
     <View style={styles.wrap}>
       <View style={styles.bar}>
-        <NavItem label="Recipes" active={active === 'recipes'} onPress={onRecipes} icon="heart" styles={styles} c={c} />
-        <NavItem label="Plan" active={active === 'mealplan'} onPress={onMeal} icon="grid" styles={styles} c={c} />
+        <NavItem label={t('nav.recipes')} active={active === 'recipes'} onPress={onRecipes} icon="heart" styles={styles} c={c} />
+        <NavItem label={t('nav.planner')} active={active === 'mealplan'} onPress={onMeal} icon="grid" styles={styles} c={c} />
         <Pressable style={styles.addBtn} onPress={onAdd}>
           <Icon name="plus" size={26} color="#fff" />
         </Pressable>
-        <NavItem label="Grocery" active={active === 'grocery'} onPress={onGrocery} icon="cart" styles={styles} c={c} />
-        <NavItem label="Profile" active={active === 'profile'} onPress={onProfile} icon="profile" styles={styles} c={c} />
+        <NavItem label={t('nav.grocery')} active={active === 'grocery'} onPress={onGrocery} icon="cart" styles={styles} c={c} />
+        <NavItem label={t('nav.profile')} active={active === 'profile'} onPress={onProfile} icon="profile" styles={styles} c={c} />
       </View>
     </View>
   );
