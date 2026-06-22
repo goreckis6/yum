@@ -6,29 +6,20 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
+import { useI18n } from '../i18n/I18nContext';
+import type { TKey } from '../i18n/translations';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
-const SLIDES = [
-  {
-    title: 'Save recipes from anywhere',
-    body: 'Paste a link from any blog, Instagram or Pinterest — we pull out the full recipe automatically.',
-    tint: '#E4E4E2',
-  },
-  {
-    title: 'Plan your whole week',
-    body: 'Drop recipes into breakfast, lunch and dinner and watch the nutrition add up.',
-    tint: '#DCDCDA',
-  },
-  {
-    title: 'Grocery lists, sorted',
-    body: 'Every ingredient consolidated and grouped by aisle. One tap to add to your list.',
-    tint: '#E6E6E4',
-  },
+const SLIDES: { title: TKey; body: TKey; tint: string }[] = [
+  { title: 'onboarding.t1', body: 'onboarding.b1', tint: '#E4E4E2' },
+  { title: 'onboarding.t2', body: 'onboarding.b2', tint: '#DCDCDA' },
+  { title: 'onboarding.t3', body: 'onboarding.b3', tint: '#E6E6E4' },
 ];
 
 export function OnboardingScreen({ navigation }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const { setHasOnboarded } = useApp();
   const [index, setIndex] = useState(0);
@@ -44,8 +35,8 @@ export function OnboardingScreen({ navigation }: Props) {
       <View style={[styles.hero, { backgroundColor: slide.tint }]} />
       <View style={styles.body}>
         <Text style={styles.brand}>YumShare</Text>
-        <Text style={styles.title}>{slide.title}</Text>
-        <Text style={styles.sub}>{slide.body}</Text>
+        <Text style={styles.title}>{t(slide.title)}</Text>
+        <Text style={styles.sub}>{t(slide.body)}</Text>
 
         <View style={styles.dots}>
           {SLIDES.map((_, i) => (
@@ -57,11 +48,11 @@ export function OnboardingScreen({ navigation }: Props) {
           style={styles.primary}
           onPress={() => (index < 2 ? setIndex(index + 1) : finish())}
         >
-          <Text style={styles.primaryText}>{index < 2 ? 'Next' : 'Get started'}</Text>
+          <Text style={styles.primaryText}>{index < 2 ? t('onboarding.next') : t('onboarding.start')}</Text>
         </Pressable>
 
         <Pressable onPress={finish}>
-          <Text style={styles.skip}>Skip</Text>
+          <Text style={styles.skip}>{t('onboarding.skip')}</Text>
         </Pressable>
       </View>
     </View>

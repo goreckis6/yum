@@ -203,6 +203,61 @@ export const en = {
   'reviewImport.saved': 'Saved to your library',
   'reviewImport.amount': 'amount',
   'reviewImport.ingredient': 'ingredient',
+
+  // grocery
+  'grocery.title': 'Grocery list',
+  'grocery.itemsToPickup': '{n} items to pick up',
+  'grocery.byAisle': 'By aisle',
+  'grocery.byRecipe': 'By recipe',
+  'grocery.empty': 'Your list is empty',
+  'grocery.emptySub': 'Add ingredients from any recipe',
+  'grocery.browse': 'Browse recipes',
+  'grocery.inBasket': 'In the basket ({n})',
+  'grocery.clear': 'Clear',
+  'grocery.order': 'Order groceries →',
+
+  // aisles
+  'aisle.Produce': 'Produce',
+  'aisle.Meat & Seafood': 'Meat & Seafood',
+  'aisle.Dairy & Eggs': 'Dairy & Eggs',
+  'aisle.Bakery': 'Bakery',
+  'aisle.Pantry': 'Pantry',
+  'aisle.Frozen': 'Frozen',
+
+  // meal slots
+  'slot.Breakfast': 'Breakfast',
+  'slot.Lunch': 'Lunch',
+  'slot.Dinner': 'Dinner',
+  'slot.addBreakfast': '+ Add breakfast',
+  'slot.addLunch': '+ Add lunch',
+  'slot.addDinner': '+ Add dinner',
+
+  // day short labels
+  'day.Mon': 'Mon',
+  'day.Tue': 'Tue',
+  'day.Wed': 'Wed',
+  'day.Thu': 'Thu',
+  'day.Fri': 'Fri',
+  'day.Sat': 'Sat',
+  'day.Sun': 'Sun',
+
+  // meal plan
+  'mealplan.title': 'Meal plan',
+  'mealplan.sub': 'Plan breakfast, lunch & dinner for the week',
+  'mealplan.dayTotal': '{day} {date} total',
+  'mealplan.addWeek': 'Add week to grocery list',
+  'mealplan.pickLibrary': 'Pick from library',
+
+  // onboarding
+  'onboarding.t1': 'Save recipes from anywhere',
+  'onboarding.b1': 'Paste a link from any blog, Instagram or Pinterest — we pull out the full recipe automatically.',
+  'onboarding.t2': 'Plan your whole week',
+  'onboarding.b2': 'Drop recipes into breakfast, lunch and dinner and watch the nutrition add up.',
+  'onboarding.t3': 'Grocery lists, sorted',
+  'onboarding.b3': 'Every ingredient consolidated and grouped by aisle. One tap to add to your list.',
+  'onboarding.next': 'Next',
+  'onboarding.start': 'Get started',
+  'onboarding.skip': 'Skip',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -392,6 +447,55 @@ export const pl: Record<TKey, string> = {
   'reviewImport.saved': 'Zapisano w bibliotece',
   'reviewImport.amount': 'ilość',
   'reviewImport.ingredient': 'składnik',
+
+  'grocery.title': 'Lista zakupów',
+  'grocery.itemsToPickup': '{n} rzeczy do kupienia',
+  'grocery.byAisle': 'Wg alejki',
+  'grocery.byRecipe': 'Wg przepisu',
+  'grocery.empty': 'Lista jest pusta',
+  'grocery.emptySub': 'Dodaj składniki z dowolnego przepisu',
+  'grocery.browse': 'Przeglądaj przepisy',
+  'grocery.inBasket': 'W koszyku ({n})',
+  'grocery.clear': 'Wyczyść',
+  'grocery.order': 'Zamów zakupy →',
+
+  'aisle.Produce': 'Warzywa i owoce',
+  'aisle.Meat & Seafood': 'Mięso i ryby',
+  'aisle.Dairy & Eggs': 'Nabiał i jaja',
+  'aisle.Bakery': 'Pieczywo',
+  'aisle.Pantry': 'Spiżarnia',
+  'aisle.Frozen': 'Mrożonki',
+
+  'slot.Breakfast': 'Śniadanie',
+  'slot.Lunch': 'Obiad',
+  'slot.Dinner': 'Kolacja',
+  'slot.addBreakfast': '+ Dodaj śniadanie',
+  'slot.addLunch': '+ Dodaj obiad',
+  'slot.addDinner': '+ Dodaj kolację',
+
+  'day.Mon': 'Pon',
+  'day.Tue': 'Wt',
+  'day.Wed': 'Śr',
+  'day.Thu': 'Czw',
+  'day.Fri': 'Pt',
+  'day.Sat': 'Sob',
+  'day.Sun': 'Nd',
+
+  'mealplan.title': 'Plan posiłków',
+  'mealplan.sub': 'Zaplanuj śniadania, obiady i kolacje na tydzień',
+  'mealplan.dayTotal': '{day} {date} — razem',
+  'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
+  'mealplan.pickLibrary': 'Wybierz z biblioteki',
+
+  'onboarding.t1': 'Zapisuj przepisy z dowolnego miejsca',
+  'onboarding.b1': 'Wklej link z bloga, Instagrama lub Pinteresta — automatycznie wyciągniemy cały przepis.',
+  'onboarding.t2': 'Zaplanuj cały tydzień',
+  'onboarding.b2': 'Wrzucaj przepisy na śniadanie, obiad i kolację i patrz, jak sumują się wartości.',
+  'onboarding.t3': 'Posortowane listy zakupów',
+  'onboarding.b3': 'Każdy składnik połączony i pogrupowany wg alejki. Jedno dotknięcie, by dodać do listy.',
+  'onboarding.next': 'Dalej',
+  'onboarding.start': 'Zaczynamy',
+  'onboarding.skip': 'Pomiń',
 };
 
 export const DICTS: Record<Lang, Record<string, string>> = { en, pl };

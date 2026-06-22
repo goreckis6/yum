@@ -12,11 +12,19 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { DayKey, MealSlot, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
+import { useI18n } from '../i18n/I18nContext';
+import type { TKey } from '../i18n/translations';
 
 const SLOTS: MealSlot[] = ['Breakfast', 'Lunch', 'Dinner'];
+const ADD_SLOT: Record<MealSlot, TKey> = {
+  Breakfast: 'slot.addBreakfast',
+  Lunch: 'slot.addLunch',
+  Dinner: 'slot.addDinner',
+};
 
 export function MealPlanScreen() {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
@@ -37,8 +45,8 @@ export function MealPlanScreen() {
   return (
     <>
       <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
-        <Text style={styles.title}>Meal plan</Text>
-        <Text style={styles.sub}>Plan breakfast, lunch & dinner for the week</Text>
+        <Text style={styles.title}>{t('mealplan.title')}</Text>
+        <Text style={styles.sub}>{t('mealplan.sub')}</Text>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekRow}>
           {DAYS.map((d) => {
@@ -51,7 +59,7 @@ export function MealPlanScreen() {
                 style={[styles.dayPill, sel && styles.dayPillOn]}
                 onPress={() => setSelectedDay(d.day)}
               >
-                <Text style={[styles.dayLabel, sel && styles.dayLabelOn]}>{d.day}</Text>
+                <Text style={[styles.dayLabel, sel && styles.dayLabelOn]}>{t(`day.${d.day}` as TKey)}</Text>
                 <Text style={[styles.dayDate, sel && styles.dayDateOn]}>{d.date}</Text>
                 <View
                   style={[
@@ -76,7 +84,7 @@ export function MealPlanScreen() {
 
           return (
             <View key={slot} style={styles.slotBlock}>
-              <Text style={styles.slotLabel}>{slot}</Text>
+              <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
               {rec ? (
                 <Pressable
                   style={styles.slotCard}
@@ -104,7 +112,7 @@ export function MealPlanScreen() {
                     setPickerOpen(true);
                   }}
                 >
-                  <Text style={styles.addText}>+ Add {slot.toLowerCase()}</Text>
+                  <Text style={styles.addText}>{t(ADD_SLOT[slot])}</Text>
                 </Pressable>
               )}
             </View>
@@ -113,7 +121,7 @@ export function MealPlanScreen() {
 
         <View style={styles.totals}>
           <Text style={styles.totalsLabel}>
-            {selectedDay} {DAYS.find((d) => d.day === selectedDay)?.date} total
+            {t('mealplan.dayTotal', { day: t(`day.${selectedDay}` as TKey), date: DAYS.find((d) => d.day === selectedDay)?.date ?? '' })}
           </Text>
           <Text style={styles.totalsKcal}>{dayKcal.toLocaleString()} kcal</Text>
           <Text style={styles.macros}>
@@ -122,13 +130,13 @@ export function MealPlanScreen() {
         </View>
 
         <Pressable style={styles.weekBtn} onPress={addWeekToGrocery}>
-          <Text style={styles.weekBtnText}>Add week to grocery list</Text>
+          <Text style={styles.weekBtnText}>{t('mealplan.addWeek')}</Text>
         </Pressable>
       </ScrollView>
 
       <MealPickerSheet
         visible={pickerOpen}
-        recipeTitle={pickRecipeId ? getRecipe(pickRecipeId)?.title ?? 'Pick a recipe' : 'Pick from library'}
+        recipeTitle={pickRecipeId ? getRecipe(pickRecipeId)?.title ?? t('mealplan.pickLibrary') : t('mealplan.pickLibrary')}
         selectedDay={selectedDay}
         selectedSlot={pickSlot}
         onClose={() => setPickerOpen(false)}

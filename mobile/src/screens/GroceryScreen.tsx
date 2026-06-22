@@ -12,6 +12,8 @@ import { fonts } from '../theme/fonts';
 import { Aisle, GroceryItem } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { IngredientIcon } from '../components/IngredientIcon';
+import { useI18n } from '../i18n/I18nContext';
+import type { TKey } from '../i18n/translations';
 
 type GroupBy = 'aisle' | 'recipe';
 
@@ -26,7 +28,12 @@ const AISLE_ICON: Record<Aisle, string> = {
 
 export function GroceryScreen() {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
+  const aisleLabel = (name: string) =>
+    (['Produce', 'Meat & Seafood', 'Dairy & Eggs', 'Bakery', 'Pantry', 'Frozen'] as const).includes(name as never)
+      ? t(`aisle.${name}` as TKey)
+      : name;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
   const { grocery, toggleGrocery, clearCheckedGrocery, showToast } = useApp();
@@ -66,30 +73,30 @@ export function GroceryScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
-      <Text style={styles.title}>Grocery list</Text>
-      <Text style={styles.sub}>{active.length} items to pick up</Text>
+      <Text style={styles.title}>{t('grocery.title')}</Text>
+      <Text style={styles.sub}>{t('grocery.itemsToPickup', { n: active.length })}</Text>
 
       <View style={styles.toggle}>
         <Pressable
           style={[styles.toggleBtn, groupBy === 'aisle' && styles.toggleOn]}
           onPress={() => setGroupBy('aisle')}
         >
-          <Text style={[styles.toggleText, groupBy === 'aisle' && styles.toggleTextOn]}>By aisle</Text>
+          <Text style={[styles.toggleText, groupBy === 'aisle' && styles.toggleTextOn]}>{t('grocery.byAisle')}</Text>
         </Pressable>
         <Pressable
           style={[styles.toggleBtn, groupBy === 'recipe' && styles.toggleOn]}
           onPress={() => setGroupBy('recipe')}
         >
-          <Text style={[styles.toggleText, groupBy === 'recipe' && styles.toggleTextOn]}>By recipe</Text>
+          <Text style={[styles.toggleText, groupBy === 'recipe' && styles.toggleTextOn]}>{t('grocery.byRecipe')}</Text>
         </Pressable>
       </View>
 
       {grocery.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>Your list is empty</Text>
-          <Text style={styles.emptySub}>Add ingredients from any recipe</Text>
+          <Text style={styles.emptyTitle}>{t('grocery.empty')}</Text>
+          <Text style={styles.emptySub}>{t('grocery.emptySub')}</Text>
           <Pressable style={styles.browseBtn} onPress={() => setTab('recipes')}>
-            <Text style={styles.browseText}>Browse recipes</Text>
+            <Text style={styles.browseText}>{t('grocery.browse')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -102,7 +109,7 @@ export function GroceryScreen() {
                 ) : (
                   <View style={[styles.dot, { backgroundColor: group.dot }]} />
                 )}
-                <Text style={styles.groupName}>{group.name}</Text>
+                <Text style={styles.groupName}>{groupBy === 'aisle' ? aisleLabel(group.name) : group.name}</Text>
                 <Text style={styles.groupCount}>{group.items.length}</Text>
               </View>
               {group.items.map((item) => (
@@ -113,7 +120,7 @@ export function GroceryScreen() {
                   <View style={styles.itemBody}>
                     <Text style={styles.itemName}>{item.n}</Text>
                     <Text style={styles.itemSub}>
-                      {groupBy === 'aisle' ? item.recipe : item.aisle}
+                      {groupBy === 'aisle' ? item.recipe : aisleLabel(item.aisle)}
                     </Text>
                   </View>
                 </Pressable>
@@ -124,9 +131,9 @@ export function GroceryScreen() {
           {completed.length > 0 && (
             <View style={styles.completed}>
               <View style={styles.completedHeader}>
-                <Text style={styles.completedTitle}>In the basket ({completed.length})</Text>
+                <Text style={styles.completedTitle}>{t('grocery.inBasket', { n: completed.length })}</Text>
                 <Pressable onPress={clearCheckedGrocery}>
-                  <Text style={styles.clearText}>Clear</Text>
+                  <Text style={styles.clearText}>{t('grocery.clear')}</Text>
                 </Pressable>
               </View>
               {completed.map((item) => (
@@ -142,8 +149,8 @@ export function GroceryScreen() {
             </View>
           )}
 
-          <Pressable style={styles.orderBtn} onPress={() => showToast('Grocery ordering coming in a later phase')}>
-            <Text style={styles.orderText}>Order groceries →</Text>
+          <Pressable style={styles.orderBtn} onPress={() => showToast(t('grocery.order'))}>
+            <Text style={styles.orderText}>{t('grocery.order')}</Text>
           </Pressable>
         </>
       )}
