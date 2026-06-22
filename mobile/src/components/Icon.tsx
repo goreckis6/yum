@@ -189,9 +189,9 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
     case 'sync':
       return (
         <>
-          <Path d="M4 12a8 8 0 0 1 13.5-5.8L20 8" {...s} />
+          <Path d="M4 12 a8 8 0 0 1 13.5 -5.8 L20 8" {...s} />
           <Polyline points="20 4 20 8 16 8" {...s} />
-          <Path d="M20 12a8 8 0 0 1-13.5 5.8L4 16" {...s} />
+          <Path d="M20 12 a8 8 0 0 1 -13.5 5.8 L4 16" {...s} />
           <Polyline points="4 20 4 16 8 16" {...s} />
         </>
       );
@@ -200,14 +200,14 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
         <>
           <Rect x={4} y={4} width={16} height={16} rx={5} {...s} />
           <Circle cx={12} cy={12} r={3.5} {...s} />
-          <Circle cx={17} cy={7} r={1} fill={stroke} stroke="none" />
+          <Circle cx={16.5} cy={7.5} r={1.3} fill={color} />
         </>
       );
     case 'tiktok':
       return (
         <>
-          <Path d="M14 4v9.5a3.5 3.5 0 1 1-3.5-3.5" {...s} />
-          <Path d="M14 4c.5 2.3 2 3.8 4.5 4" {...s} />
+          <Path d="M14 4 v9.5 a3.5 3.5 0 1 1 -3.5 -3.5" {...s} />
+          <Path d="M14 4 c.5 2.3 2 3.8 4.5 4" {...s} />
         </>
       );
     case 'x':
