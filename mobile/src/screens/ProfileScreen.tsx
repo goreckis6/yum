@@ -16,6 +16,7 @@ import { ActionSheet } from '../components/ActionSheet';
 import { RootStackParamList } from '../navigation/types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { clearCache } from '../storage/persist';
+import { getApiBaseUrl } from '../config/api';
 
 const LANG_OPTIONS: { key: Lang; label: string }[] = [
   { key: 'en', label: 'English' },
@@ -63,9 +64,18 @@ export function ProfileScreen() {
 
   const deleteAccount = async () => {
     try {
-      if (user && isSupabaseConfigured) {
-        await supabase.from('app_state').delete().eq('user_id', user.id);
-        await clearCache(user.id);
+      if (isSupabaseConfigured) {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (token) {
+          // Server deletes the auth user + data using the service role.
+          await fetch(`${getApiBaseUrl()}/api/delete-account`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken: token }),
+          });
+        }
+        if (user) await clearCache(user.id);
       }
     } catch {
       /* ignore — still sign out below */

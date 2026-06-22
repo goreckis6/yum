@@ -5,6 +5,7 @@ import * as cheerio from 'cheerio';
 import OpenAI from 'openai';
 import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
+import { createClient } from '@supabase/supabase-js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -16,6 +17,14 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
+
+// Admin Supabase client (service role) — used only for account deletion.
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabaseAdmin =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
+    : null;
 
 const RECIPE_SCHEMA = `{
   "title": "string",
@@ -615,6 +624,35 @@ app.post('/api/receipts/export', async (req, res) => {
   } catch (err) {
     console.error('receipts export error:', err);
     res.status(500).json({ error: err.message || 'Failed to export receipts' });
+  }
+});
+
+app.post('/api/delete-account', async (req, res) => {
+  try {
+    if (!supabaseAdmin) {
+      return res.status(503).json({ error: 'Account deletion not configured on the server.' });
+    }
+    const { accessToken } = req.body;
+    if (!accessToken || typeof accessToken !== 'string') {
+      return res.status(400).json({ error: 'accessToken is required' });
+    }
+
+    // Validate the token → resolve the user it belongs to (no impersonation).
+    const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !data?.user) {
+      return res.status(401).json({ error: 'Invalid session' });
+    }
+    const userId = data.user.id;
+
+    // Remove the user's stored data, then the auth user itself.
+    await supabaseAdmin.from('app_state').delete().eq('user_id', userId);
+    const { error: delErr } = await supabaseAdmin.auth.admin.deleteUser(userId);
+    if (delErr) throw delErr;
+
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('delete-account error:', err);
+    res.status(500).json({ error: err.message || 'Failed to delete account' });
   }
 });
 
