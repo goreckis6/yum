@@ -285,6 +285,17 @@ export const en = {
   'onboarding.next': 'Next',
   'onboarding.start': 'Get started',
   'onboarding.skip': 'Skip',
+  'onboarding.step': 'STEP {n} OF {total}',
+  'onboarding.s1title': 'Share a recipe from Instagram',
+  'onboarding.s1body': "Found a recipe reel? Tap Share and pick YumShare. We'll do the rest.",
+  'onboarding.tryExample': 'Try it on an example',
+  'onboarding.save': 'Save',
+  'onboarding.more': 'More',
+  'onboarding.savedTitle': 'Saved!',
+  'onboarding.savedBody': 'Your first recipe is in your library.',
+  'onboarding.continue': 'Continue',
+  'onboarding.s3title': 'Plan, shop & track',
+  'onboarding.s3body': 'Plan your week, auto-build grocery lists, and scan receipts to track spending.',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -550,6 +561,17 @@ export const pl: Record<TKey, string> = {
   'onboarding.next': 'Dalej',
   'onboarding.start': 'Zaczynamy',
   'onboarding.skip': 'Pomiń',
+  'onboarding.step': 'KROK {n} Z {total}',
+  'onboarding.s1title': 'Udostępnij przepis z Instagrama',
+  'onboarding.s1body': 'Masz rolkę z przepisem? Dotknij Udostępnij i wybierz YumShare. Resztę zrobimy my.',
+  'onboarding.tryExample': 'Wypróbuj na przykładzie',
+  'onboarding.save': 'Zapisz',
+  'onboarding.more': 'Więcej',
+  'onboarding.savedTitle': 'Zapisano!',
+  'onboarding.savedBody': 'Twój pierwszy przepis jest w bibliotece.',
+  'onboarding.continue': 'Dalej',
+  'onboarding.s3title': 'Planuj, kupuj, śledź',
+  'onboarding.s3body': 'Zaplanuj tydzień, twórz listy zakupów i skanuj paragony, by śledzić wydatki.',
 };
 
 export const DICTS: Record<Lang, Record<string, string>> = { en, pl };
