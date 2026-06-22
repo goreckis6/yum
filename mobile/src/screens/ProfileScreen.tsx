@@ -22,6 +22,15 @@ const LANG_OPTIONS: { key: Lang; label: string }[] = [
 const SUPPORT_EMAIL = '3dstudiopoland@gmail.com';
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
+// Fill these in to make the links live; empty = shows a "coming soon" toast.
+const LINKS = {
+  terms: '',
+  privacy: '',
+  instagram: '',
+  tiktok: '',
+  x: '',
+};
+
 export function ProfileScreen() {
   const c = useTheme();
   const { t, lang, setLang } = useI18n();
@@ -42,6 +51,11 @@ export function ProfileScreen() {
     Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`).catch(() =>
       showToast(SUPPORT_EMAIL),
     );
+
+  const openExt = (url: string) =>
+    url ? Linking.openURL(url).catch(() => showToast(t('profile.comingSoon'))) : showToast(t('profile.comingSoon'));
+
+  const lastSynced = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const Row = ({
     icon,
@@ -109,18 +123,29 @@ export function ProfileScreen() {
       <Text style={styles.section}>{t('profile.data')}</Text>
       <View style={styles.group}>
         <Row icon="receipt" labelKey="profile.myReceipts" right={String(receipts?.length ?? 0)} onPress={() => navigation.navigate('Receipts')} />
-        <Row icon="calendar" labelKey="profile.syncNow" onPress={() => showToast(t('profile.syncedToast'))} last />
+        <Row icon="document" labelKey="profile.exportReceipts" onPress={() => navigation.navigate('Receipts')} />
+        <Row icon="sync" labelKey="profile.syncData" right={t('profile.lastSynced', { time: lastSynced })} onPress={() => showToast(t('profile.syncedToast'))} last />
       </View>
 
-      <Text style={styles.section}>{t('profile.support')}</Text>
+      <Text style={styles.section}>{t('profile.supportLegal')}</Text>
       <View style={styles.group}>
         <Row icon="bulb" labelKey="profile.requestFeature" onPress={() => mail('YumShare – feature request')} />
-        <Row icon="profile" labelKey="profile.contactSupport" onPress={() => mail('YumShare – support')} last />
+        <Row icon="mail" labelKey="profile.contactSupport" onPress={() => mail('YumShare – support')} />
+        <Row icon="document" labelKey="profile.terms" onPress={() => openExt(LINKS.terms)} />
+        <Row icon="shield" labelKey="profile.privacy" onPress={() => openExt(LINKS.privacy)} last />
       </View>
 
-      <Pressable style={styles.logout} onPress={() => signOut()}>
-        <Text style={styles.logoutText}>{t('profile.signOut')}</Text>
-      </Pressable>
+      <Text style={styles.section}>{t('profile.followUs')}</Text>
+      <View style={styles.group}>
+        <Row icon="instagram" labelKey="profile.instagram" onPress={() => openExt(LINKS.instagram)} />
+        <Row icon="tiktok" labelKey="profile.tiktok" onPress={() => openExt(LINKS.tiktok)} />
+        <Row icon="x" labelKey="profile.x" onPress={() => openExt(LINKS.x)} last />
+      </View>
+
+      <Text style={styles.section}>{t('profile.accountActions')}</Text>
+      <View style={styles.group}>
+        <Row icon="profile" labelKey="profile.signOut" onPress={() => signOut()} last />
+      </View>
 
       <Text style={styles.apiHint}>{t('profile.version', { v: APP_VERSION })}</Text>
     </ScrollView>

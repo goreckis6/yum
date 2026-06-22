@@ -17,7 +17,14 @@ export type IconName =
   | 'scan'
   | 'receipt'
   | 'chevron-left'
-  | 'chevron-down';
+  | 'chevron-down'
+  | 'mail'
+  | 'document'
+  | 'shield'
+  | 'sync'
+  | 'instagram'
+  | 'tiktok'
+  | 'x';
 
 interface Props {
   name: IconName;
@@ -156,6 +163,60 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
       return <Polyline points="15 5 8 12 15 19" {...s} />;
     case 'chevron-down':
       return <Polyline points="6 9 12 15 18 9" {...s} />;
+    case 'mail':
+      return (
+        <>
+          <Rect x={3} y={5} width={18} height={14} rx={2.5} {...s} />
+          <Polyline points="4 7 12 13 20 7" {...s} />
+        </>
+      );
+    case 'document':
+      return (
+        <>
+          <Path d="M7 3h7l4 4v14H7V3Z" {...s} />
+          <Polyline points="14 3 14 7 18 7" {...s} />
+          <Line x1={9.5} y1={12} x2={15} y2={12} {...s} />
+          <Line x1={9.5} y1={15.5} x2={15} y2={15.5} {...s} />
+        </>
+      );
+    case 'shield':
+      return (
+        <>
+          <Path d="M12 3l7 3v5c0 4.2-2.9 7.4-7 8.5-4.1-1.1-7-4.3-7-8.5V6l7-3Z" {...s} />
+          <Polyline points="9 12 11 14 15 10" {...s} />
+        </>
+      );
+    case 'sync':
+      return (
+        <>
+          <Path d="M4 12a8 8 0 0 1 13.5-5.8L20 8" {...s} />
+          <Polyline points="20 4 20 8 16 8" {...s} />
+          <Path d="M20 12a8 8 0 0 1-13.5 5.8L4 16" {...s} />
+          <Polyline points="4 20 4 16 8 16" {...s} />
+        </>
+      );
+    case 'instagram':
+      return (
+        <>
+          <Rect x={4} y={4} width={16} height={16} rx={5} {...s} />
+          <Circle cx={12} cy={12} r={3.5} {...s} />
+          <Circle cx={17} cy={7} r={1} fill={stroke} stroke="none" />
+        </>
+      );
+    case 'tiktok':
+      return (
+        <>
+          <Path d="M14 4v9.5a3.5 3.5 0 1 1-3.5-3.5" {...s} />
+          <Path d="M14 4c.5 2.3 2 3.8 4.5 4" {...s} />
+        </>
+      );
+    case 'x':
+      return (
+        <>
+          <Line x1={5} y1={5} x2={19} y2={19} {...s} />
+          <Line x1={19} y1={5} x2={5} y2={19} {...s} />
+        </>
+      );
     default:
       return null;
   }
