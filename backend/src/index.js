@@ -285,6 +285,9 @@ app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     openai: !!openai,
+    accountDeletion: !!supabaseAdmin,
+    supabaseUrl: !!SUPABASE_URL,
+    serviceKey: !!SUPABASE_SERVICE_ROLE_KEY,
     message: openai ? 'Ready' : 'Running in demo mode — set OPENAI_API_KEY for live extraction',
   });
 });
