@@ -12,7 +12,10 @@ import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
 import { Lang, TKey } from '../i18n/translations';
 import { Icon, IconName } from '../components/Icon';
+import { ActionSheet } from '../components/ActionSheet';
 import { RootStackParamList } from '../navigation/types';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { clearCache } from '../storage/persist';
 
 const LANG_OPTIONS: { key: Lang; label: string }[] = [
   { key: 'en', label: 'English' },
@@ -56,6 +59,20 @@ export function ProfileScreen() {
     url ? Linking.openURL(url).catch(() => showToast(t('profile.comingSoon'))) : showToast(t('profile.comingSoon'));
 
   const lastSynced = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const [deleteOpen, setDeleteOpen] = React.useState(false);
+
+  const deleteAccount = async () => {
+    try {
+      if (user && isSupabaseConfigured) {
+        await supabase.from('app_state').delete().eq('user_id', user.id);
+        await clearCache(user.id);
+      }
+    } catch {
+      /* ignore — still sign out below */
+    }
+    showToast(t('profile.deletedToast'));
+    signOut();
+  };
 
   const Row = ({
     icon,
@@ -78,6 +95,7 @@ export function ProfileScreen() {
   );
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
       <Text style={styles.title}>{t('profile.title')}</Text>
 
@@ -135,20 +153,27 @@ export function ProfileScreen() {
         <Row icon="shield" labelKey="profile.privacy" onPress={() => openExt(LINKS.privacy)} last />
       </View>
 
-      <Text style={styles.section}>{t('profile.followUs')}</Text>
-      <View style={styles.group}>
-        <Row icon="instagram" labelKey="profile.instagram" onPress={() => openExt(LINKS.instagram)} />
-        <Row icon="tiktok" labelKey="profile.tiktok" onPress={() => openExt(LINKS.tiktok)} />
-        <Row icon="x" labelKey="profile.x" onPress={() => openExt(LINKS.x)} last />
-      </View>
-
       <Text style={styles.section}>{t('profile.accountActions')}</Text>
       <View style={styles.group}>
-        <Row icon="profile" labelKey="profile.signOut" onPress={() => signOut()} last />
+        <Row icon="profile" labelKey="profile.signOut" onPress={() => signOut()} />
+        <Pressable style={styles.row} onPress={() => setDeleteOpen(true)}>
+          <Icon name="x" size={19} color="#DC2626" />
+          <Text style={[styles.rowText, styles.deleteText]}>{t('profile.deleteAccount')}</Text>
+          <Text style={[styles.chevron, styles.deleteText]}>›</Text>
+        </Pressable>
       </View>
 
       <Text style={styles.apiHint}>{t('profile.version', { v: APP_VERSION })}</Text>
     </ScrollView>
+
+    <ActionSheet
+      visible={deleteOpen}
+      title={t('profile.deleteAccount')}
+      message={t('profile.deleteAccountMsg')}
+      options={[{ label: t('profile.deleteAccount'), destructive: true, onPress: deleteAccount }]}
+      onClose={() => setDeleteOpen(false)}
+    />
+    </>
   );
 }
 
@@ -204,6 +229,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   rowText: { flex: 1, fontSize: 15, fontWeight: '600', color: c.ink },
   rowRight: { fontSize: 14, fontWeight: '600', color: c.grayMid },
   chevron: { fontSize: 20, color: c.gray },
+  deleteText: { color: '#DC2626' },
   logout: { marginTop: 4, alignItems: 'center', paddingVertical: 14 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#B91C1C' },
   apiHint: { fontSize: 11, color: c.grayMid, textAlign: 'center', marginTop: 16 },

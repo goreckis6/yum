@@ -88,6 +88,9 @@ export const en = {
   'profile.instagram': 'Instagram',
   'profile.tiktok': 'TikTok',
   'profile.x': 'X',
+  'profile.deleteAccount': 'Delete account',
+  'profile.deleteAccountMsg': 'This permanently deletes your saved recipes and receipts. This cannot be undone.',
+  'profile.deletedToast': 'Your data has been deleted',
 
   // recipe detail
   'recipe.ingredients': 'Ingredients',
@@ -364,6 +367,9 @@ export const pl: Record<TKey, string> = {
   'profile.instagram': 'Instagram',
   'profile.tiktok': 'TikTok',
   'profile.x': 'X',
+  'profile.deleteAccount': 'Usuń konto',
+  'profile.deleteAccountMsg': 'To trwale usunie Twoje zapisane przepisy i paragony. Nie można tego cofnąć.',
+  'profile.deletedToast': 'Twoje dane zostały usunięte',
 
   'recipe.ingredients': 'Składniki',
   'recipe.method': 'Przygotowanie',
