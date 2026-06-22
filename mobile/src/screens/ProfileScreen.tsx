@@ -1,34 +1,67 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getApiBaseUrl } from '../config/api';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Constants from 'expo-constants';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme, useThemeCtx, ThemeMode } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
-import { Lang } from '../i18n/translations';
+import { Lang, TKey } from '../i18n/translations';
+import { Icon, IconName } from '../components/Icon';
+import { RootStackParamList } from '../navigation/types';
 
 const LANG_OPTIONS: { key: Lang; label: string }[] = [
   { key: 'en', label: 'English' },
   { key: 'pl', label: 'Polski' },
 ];
 
+const SUPPORT_EMAIL = '3dstudiopoland@gmail.com';
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
+
 export function ProfileScreen() {
   const c = useTheme();
   const { t, lang, setLang } = useI18n();
   const styles = makeStyles(c);
   const { mode, setMode } = useThemeCtx();
-  const { recipes, showToast } = useApp();
+  const { recipes, receipts, showToast } = useApp();
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const THEME_OPTIONS: { key: ThemeMode; label: string }[] = [
     { key: 'system', label: t('profile.system') },
     { key: 'light', label: t('profile.light') },
     { key: 'dark', label: t('profile.dark') },
   ];
+
+  const mail = (subject: string) =>
+    Linking.openURL(`mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`).catch(() =>
+      showToast(SUPPORT_EMAIL),
+    );
+
+  const Row = ({
+    icon,
+    labelKey,
+    onPress,
+    right,
+    last,
+  }: {
+    icon: IconName;
+    labelKey: TKey;
+    onPress: () => void;
+    right?: string;
+    last?: boolean;
+  }) => (
+    <Pressable style={[styles.row, !last && styles.rowBorder]} onPress={onPress}>
+      <Icon name={icon} size={19} color={c.ink} />
+      <Text style={styles.rowText}>{t(labelKey)}</Text>
+      {right ? <Text style={styles.rowRight}>{right}</Text> : <Text style={styles.chevron}>›</Text>}
+    </Pressable>
+  );
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
@@ -39,31 +72,22 @@ export function ProfileScreen() {
           <Text style={styles.avatarText}>YS</Text>
         </View>
         <View>
-          <Text style={styles.name}>{user?.email?.split('@')[0] ?? 'YumShare User'}</Text>
-          <Text style={styles.email}>{user?.email ?? 'Synced to your account'}</Text>
+          <Text style={styles.name}>{user?.email?.split('@')[0] ?? 'YumShare'}</Text>
+          <Text style={styles.email}>{user?.email ?? ''}</Text>
         </View>
       </View>
 
       <View style={styles.statCard}>
         <Text style={styles.statNum}>{recipes.length}</Text>
-        <Text style={styles.statLabel}>recipes synced to your account</Text>
+        <Text style={styles.statLabel}>{t('profile.recipesSynced')}</Text>
       </View>
-
-      <Text style={styles.syncLine}>Last synced just now · 1 device</Text>
-      <Pressable style={styles.syncBtn} onPress={() => showToast('Everything is up to date')}>
-        <Text style={styles.syncBtnText}>Sync now</Text>
-      </Pressable>
 
       <Text style={styles.section}>{t('profile.appearance')}</Text>
       <View style={styles.segment}>
         {THEME_OPTIONS.map((opt) => {
           const on = mode === opt.key;
           return (
-            <Pressable
-              key={opt.key}
-              style={[styles.segmentBtn, on && styles.segmentBtnOn]}
-              onPress={() => setMode(opt.key)}
-            >
+            <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setMode(opt.key)}>
               <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
             </Pressable>
           );
@@ -75,22 +99,30 @@ export function ProfileScreen() {
         {LANG_OPTIONS.map((opt) => {
           const on = lang === opt.key;
           return (
-            <Pressable
-              key={opt.key}
-              style={[styles.segmentBtn, on && styles.segmentBtnOn]}
-              onPress={() => setLang(opt.key)}
-            >
+            <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setLang(opt.key)}>
               <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
             </Pressable>
           );
         })}
       </View>
 
+      <Text style={styles.section}>{t('profile.data')}</Text>
+      <View style={styles.group}>
+        <Row icon="receipt" labelKey="profile.myReceipts" right={String(receipts?.length ?? 0)} onPress={() => navigation.navigate('Receipts')} />
+        <Row icon="calendar" labelKey="profile.syncNow" onPress={() => showToast(t('profile.syncedToast'))} last />
+      </View>
+
+      <Text style={styles.section}>{t('profile.support')}</Text>
+      <View style={styles.group}>
+        <Row icon="bulb" labelKey="profile.requestFeature" onPress={() => mail('YumShare – feature request')} />
+        <Row icon="profile" labelKey="profile.contactSupport" onPress={() => mail('YumShare – support')} last />
+      </View>
+
       <Pressable style={styles.logout} onPress={() => signOut()}>
         <Text style={styles.logoutText}>{t('profile.signOut')}</Text>
       </Pressable>
 
-      <Text style={styles.apiHint}>API: {getApiBaseUrl()}</Text>
+      <Text style={styles.apiHint}>{t('profile.version', { v: APP_VERSION })}</Text>
     </ScrollView>
   );
 }
@@ -119,12 +151,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   avatarText: { color: '#fff', fontWeight: '800', fontSize: 18 },
   name: { fontSize: 16, fontWeight: '700', color: c.ink },
   email: { fontSize: 13, fontWeight: '500', color: c.grayMid, marginTop: 2 },
-  statCard: {
-    backgroundColor: c.accent,
-    borderRadius: 18,
-    padding: 18,
-    marginBottom: 14,
-  },
+  statCard: { backgroundColor: c.accent, borderRadius: 18, padding: 18, marginBottom: 24 },
+  statNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: '#fff' },
+  statLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 4 },
   segment: {
     flexDirection: 'row',
     backgroundColor: c.surfaceAlt,
@@ -132,41 +161,25 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: 4,
     marginBottom: 24,
   },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 10,
-  },
+  segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
   segmentBtnOn: { backgroundColor: c.accent },
   segmentText: { fontSize: 14, fontWeight: '700', color: c.grayMid },
   segmentTextOn: { color: '#fff' },
-  statNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: '#fff' },
-  statLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.55)', marginTop: 4 },
-  syncLine: { fontSize: 13, fontWeight: '500', color: c.grayMid, marginBottom: 10 },
-  syncBtn: {
-    alignSelf: 'flex-start',
+  section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 10 },
+  group: {
     backgroundColor: c.surface,
-    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 16,
     paddingHorizontal: 16,
-    borderRadius: 12,
     marginBottom: 24,
   },
-  syncBtnText: { fontSize: 14, fontWeight: '700', color: c.ink },
-  section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 10 },
-  link: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: c.surface,
-    borderRadius: 14,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  linkText: { fontSize: 15, fontWeight: '600', color: c.ink },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 13, paddingVertical: 15 },
+  rowBorder: { borderBottomWidth: 1, borderBottomColor: c.border },
+  rowText: { flex: 1, fontSize: 15, fontWeight: '600', color: c.ink },
+  rowRight: { fontSize: 14, fontWeight: '600', color: c.grayMid },
   chevron: { fontSize: 20, color: c.gray },
-  logout: { marginTop: 16, alignItems: 'center', paddingVertical: 14 },
+  logout: { marginTop: 4, alignItems: 'center', paddingVertical: 14 },
   logoutText: { fontSize: 15, fontWeight: '700', color: '#B91C1C' },
-  apiHint: { fontSize: 11, color: c.grayMid, textAlign: 'center', marginTop: 20 },
+  apiHint: { fontSize: 11, color: c.grayMid, textAlign: 'center', marginTop: 16 },
 });
