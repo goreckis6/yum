@@ -14,6 +14,7 @@ import {
 } from '@expo-google-fonts/hanken-grotesk';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { AuthScreen } from './src/screens/AuthScreen';
@@ -37,7 +38,7 @@ import { Toast } from './src/components/Toast';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  const { ready, hasOnboarded, toast } = useApp();
+  const { ready, toast } = useApp();
   const c = useTheme();
 
   if (!ready) {
@@ -52,9 +53,8 @@ function RootNavigator() {
     <>
       <Stack.Navigator
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}
-        initialRouteName={hasOnboarded ? 'Main' : 'Onboarding'}
+        initialRouteName="Main"
       >
-        <Stack.Screen name="Onboarding" component={OnboardingScreen} />
         <Stack.Screen name="Main" component={MainNavigator} />
         <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
         <Stack.Screen name="ImportUrl" component={ImportUrlScreen} />
@@ -108,15 +108,34 @@ function ThemedStatusBar() {
   return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }
 
+const ONBOARDED_KEY = '@yumshare/onboarded';
+
 function Gate() {
   const { session, user, initializing } = useAuth();
   const c = useTheme();
+  const [seenOnboarding, setSeenOnboarding] = React.useState<boolean | null>(null);
 
-  if (initializing) {
+  React.useEffect(() => {
+    AsyncStorage.getItem(ONBOARDED_KEY).then((v) => setSeenOnboarding(v === '1'));
+  }, []);
+
+  if (initializing || seenOnboarding === null) {
     return (
       <View style={[styles.loading, { backgroundColor: c.bg }]}>
         <ActivityIndicator size="large" color={c.ink} />
       </View>
+    );
+  }
+
+  // First launch (any user, before sign-in): show onboarding once per device.
+  if (!seenOnboarding && (!session || !user)) {
+    return (
+      <OnboardingScreen
+        onDone={() => {
+          AsyncStorage.setItem(ONBOARDED_KEY, '1').catch(() => {});
+          setSeenOnboarding(true);
+        }}
+      />
     );
   }
 
