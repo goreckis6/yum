@@ -712,7 +712,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  logo: { width: 36, height: 36 },
+  logo: { width: 44, height: 44 },
   logoIcon: { color: '#fff', fontSize: 16 },
   brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: c.ink, letterSpacing: -0.5 },
   syncBadge: {

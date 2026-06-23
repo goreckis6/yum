@@ -124,7 +124,7 @@ export function AuthScreen() {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   inner: { flex: 1, paddingHorizontal: 24 },
-  logo: { width: 60, height: 60, marginBottom: 16 },
+  logo: { width: 84, height: 84, marginBottom: 14 },
   brand: { fontFamily: fonts.displayExtra, fontSize: 32, color: c.ink, letterSpacing: -0.6 },
   subtitle: { fontSize: 15, fontWeight: '500', color: c.grayMuted, marginTop: 6, marginBottom: 28 },
   warn: { fontSize: 13, fontWeight: '600', color: '#B45309', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20 },
