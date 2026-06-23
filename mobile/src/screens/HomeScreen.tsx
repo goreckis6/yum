@@ -658,7 +658,7 @@ export function HomeScreen() {
       <View style={styles.header}>
         <View style={styles.brand}>
           <View style={styles.logo}>
-            <Icon name="heart" size={18} color="#fff" fill />
+            <Icon name="logo" size={20} color="#fff" />
           </View>
           <Text style={styles.brandName}>YumShare</Text>
         </View>

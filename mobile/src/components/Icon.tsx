@@ -24,7 +24,8 @@ export type IconName =
   | 'sync'
   | 'instagram'
   | 'tiktok'
-  | 'x';
+  | 'x'
+  | 'logo';
 
 interface Props {
   name: IconName;
@@ -215,6 +216,19 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
         <>
           <Line x1={5} y1={5} x2={19} y2={19} {...s} />
           <Line x1={19} y1={5} x2={5} y2={19} {...s} />
+        </>
+      );
+    case 'logo':
+      return (
+        <>
+          {/* bowl — half circle opening up */}
+          <Path d="M3.5 12.5 H20.5 A8.5 8.5 0 0 1 3.5 12.5 Z" {...s} />
+          {/* whisk balloon (teardrop) */}
+          <Path d="M11 12.3 C8.4 9.8 8.4 5 11 2.6" {...s} />
+          <Path d="M11 12.3 C13.6 9.8 13.6 5 11 2.6" {...s} />
+          <Line x1={11} y1={12.3} x2={11} y2={2.6} {...s} />
+          {/* handle */}
+          <Line x1={11} y1={2.6} x2={14.8} y2={0.9} {...s} />
         </>
       );
     default:

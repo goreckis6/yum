@@ -99,7 +99,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
                   <View style={styles.sheetRow}>
                     <Animated.View style={{ alignItems: 'center', transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }] }}>
                       <View style={styles.targetOn}>
-                        <Icon name="heart" size={22} color="#fff" fill />
+                        <Icon name="logo" size={24} color="#fff" />
                         <View style={styles.targetDot} />
                       </View>
                       <Text style={styles.targetLabelOn}>YumShare</Text>

@@ -58,7 +58,7 @@ export function AuthScreen() {
     >
       <View style={[styles.inner, { paddingTop: insets.top + 40 }]}>
         <View style={styles.logo}>
-          <Icon name="heart" size={26} color="#fff" fill />
+          <Icon name="logo" size={30} color="#fff" />
         </View>
         <Text style={styles.brand}>YumShare</Text>
         <Text style={styles.subtitle}>
