@@ -657,9 +657,7 @@ export function HomeScreen() {
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
         <View style={styles.brand}>
-          <View style={styles.logo}>
-            <Icon name="logo" size={20} color="#fff" />
-          </View>
+          <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.brandName}>YumiShare</Text>
         </View>
       </View>
@@ -714,14 +712,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   content: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  logo: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    backgroundColor: c.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  logo: { width: 36, height: 36 },
   logoIcon: { color: '#fff', fontSize: 16 },
   brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: c.ink, letterSpacing: -0.5 },
   syncBadge: {

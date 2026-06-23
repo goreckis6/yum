@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -99,7 +99,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
                   <View style={styles.sheetRow}>
                     <Animated.View style={{ alignItems: 'center', transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.08] }) }] }}>
                       <View style={styles.targetOn}>
-                        <Icon name="logo" size={24} color="#fff" />
+                        <Image source={require('../../assets/logo-mark.png')} style={styles.targetImg} resizeMode="contain" />
                         <View style={styles.targetDot} />
                       </View>
                       <Text style={styles.targetLabelOn}>YumiShare</Text>
@@ -220,7 +220,8 @@ const makeStyles = (c: ThemeColors) =>
     sheetGrip: { width: 38, height: 5, borderRadius: 3, backgroundColor: c.border, alignSelf: 'center', marginBottom: 14 },
     sheetRow: { flexDirection: 'row', justifyContent: 'space-around' },
     target: { width: 56, height: 56, borderRadius: 16, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
-    targetOn: { width: 56, height: 56, borderRadius: 16, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+    targetOn: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+    targetImg: { width: 56, height: 56, borderRadius: 16 },
     targetDot: { position: 'absolute', top: 6, right: 6, width: 10, height: 10, borderRadius: 5, backgroundColor: c.sage, borderWidth: 1.5, borderColor: c.surface },
     targetLabel: { fontSize: 12, fontWeight: '600', color: c.grayMid },
     targetLabelOn: { fontSize: 12, fontWeight: '800', color: c.ink },

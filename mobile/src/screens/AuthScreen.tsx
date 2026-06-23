@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -57,9 +58,7 @@ export function AuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={[styles.inner, { paddingTop: insets.top + 40 }]}>
-        <View style={styles.logo}>
-          <Icon name="logo" size={30} color="#fff" />
-        </View>
+        <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
         <Text style={styles.brand}>YumiShare</Text>
         <Text style={styles.subtitle}>
           {mode === 'in' ? t('auth.welcome') : t('auth.signUp')}
@@ -125,15 +124,7 @@ export function AuthScreen() {
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   inner: { flex: 1, paddingHorizontal: 24 },
-  logo: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: c.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
+  logo: { width: 60, height: 60, marginBottom: 16 },
   brand: { fontFamily: fonts.displayExtra, fontSize: 32, color: c.ink, letterSpacing: -0.6 },
   subtitle: { fontSize: 15, fontWeight: '500', color: c.grayMuted, marginTop: 6, marginBottom: 28 },
   warn: { fontSize: 13, fontWeight: '600', color: '#B45309', backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20 },
