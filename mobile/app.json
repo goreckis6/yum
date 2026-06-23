@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "YumShare",
+    "name": "YumiShare",
     "slug": "yumshare",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -14,8 +14,8 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "YumShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
-        "NSCameraUsageDescription": "YumShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
+        "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
+        "NSCameraUsageDescription": "YumiShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
       }
     },
     "android": {
@@ -34,8 +34,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "YumShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
-          "cameraPermission": "YumShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
+          "photosPermission": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
+          "cameraPermission": "YumiShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
         }
       ],
       "expo-localization"

@@ -60,7 +60,7 @@ export function AuthScreen() {
         <View style={styles.logo}>
           <Icon name="logo" size={30} color="#fff" />
         </View>
-        <Text style={styles.brand}>YumShare</Text>
+        <Text style={styles.brand}>YumiShare</Text>
         <Text style={styles.subtitle}>
           {mode === 'in' ? t('auth.welcome') : t('auth.signUp')}
         </Text>

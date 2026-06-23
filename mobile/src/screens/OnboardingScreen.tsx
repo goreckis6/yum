@@ -102,7 +102,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
                         <Icon name="logo" size={24} color="#fff" />
                         <View style={styles.targetDot} />
                       </View>
-                      <Text style={styles.targetLabelOn}>YumShare</Text>
+                      <Text style={styles.targetLabelOn}>YumiShare</Text>
                     </Animated.View>
                     <View style={{ alignItems: 'center' }}>
                       <View style={styles.target}><Icon name="grid" size={20} color={c.grayMid} /></View>

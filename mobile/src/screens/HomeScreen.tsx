@@ -660,7 +660,7 @@ export function HomeScreen() {
           <View style={styles.logo}>
             <Icon name="logo" size={20} color="#fff" />
           </View>
-          <Text style={styles.brandName}>YumShare</Text>
+          <Text style={styles.brandName}>YumiShare</Text>
         </View>
       </View>
 

@@ -114,7 +114,7 @@ export function ProfileScreen() {
           <Text style={styles.avatarText}>YS</Text>
         </View>
         <View>
-          <Text style={styles.name}>{user?.email?.split('@')[0] ?? 'YumShare'}</Text>
+          <Text style={styles.name}>{user?.email?.split('@')[0] ?? 'YumiShare'}</Text>
           <Text style={styles.email}>{user?.email ?? ''}</Text>
         </View>
       </View>
@@ -157,8 +157,8 @@ export function ProfileScreen() {
 
       <Text style={styles.section}>{t('profile.supportLegal')}</Text>
       <View style={styles.group}>
-        <Row icon="bulb" labelKey="profile.requestFeature" onPress={() => mail('YumShare – feature request')} />
-        <Row icon="mail" labelKey="profile.contactSupport" onPress={() => mail('YumShare – support')} />
+        <Row icon="bulb" labelKey="profile.requestFeature" onPress={() => mail('YumiShare – feature request')} />
+        <Row icon="mail" labelKey="profile.contactSupport" onPress={() => mail('YumiShare – support')} />
         <Row icon="document" labelKey="profile.terms" onPress={() => openExt(LINKS.terms)} />
         <Row icon="shield" labelKey="profile.privacy" onPress={() => openExt(LINKS.privacy)} last />
       </View>
