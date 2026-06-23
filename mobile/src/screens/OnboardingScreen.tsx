@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -33,6 +33,7 @@ export function OnboardingScreen({ onDone }: { onDone: () => void }) {
   }, [step]);
 
   useEffect(() => {
+    if (Platform.OS === 'web') return; // decorative loop; skipped on web
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
