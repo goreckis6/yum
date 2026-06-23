@@ -25,7 +25,8 @@ export type IconName =
   | 'instagram'
   | 'tiktok'
   | 'x'
-  | 'logo';
+  | 'logo'
+  | 'barcode';
 
 interface Props {
   name: IconName;
@@ -216,6 +217,17 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
         <>
           <Line x1={5} y1={5} x2={19} y2={19} {...s} />
           <Line x1={19} y1={5} x2={5} y2={19} {...s} />
+        </>
+      );
+    case 'barcode':
+      return (
+        <>
+          <Line x1={4} y1={6} x2={4} y2={18} {...s} />
+          <Line x1={7.5} y1={6} x2={7.5} y2={18} {...s} />
+          <Line x1={11} y1={6} x2={11} y2={18} {...s} />
+          <Line x1={14} y1={6} x2={14} y2={18} {...s} />
+          <Line x1={17.5} y1={6} x2={17.5} y2={18} {...s} />
+          <Line x1={20} y1={6} x2={20} y2={18} {...s} />
         </>
       );
     case 'logo':

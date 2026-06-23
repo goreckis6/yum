@@ -369,6 +369,13 @@ export function HomeScreen() {
           <Text style={styles.scanTitle}>{t('home.addRecipe')}</Text>
           <Text style={styles.scanSub}>{t('home.addRecipeSub')}</Text>
         </Pressable>
+        <Pressable style={styles.scanCard} onPress={() => showToast(t('home.comingSoon'))}>
+          <View style={styles.scanIconPeach}>
+            <Icon name="barcode" size={22} color={c.accent} />
+          </View>
+          <Text style={styles.scanTitle}>{t('home.scanBarcode')}</Text>
+          <Text style={styles.scanSub}>{t('home.scanBarcodeSub')}</Text>
+        </Pressable>
         <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
           <View style={styles.scanIconGold}>
             <Icon name="receipt" size={22} color={c.gold} />
@@ -761,12 +768,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   importTextWrap: { flex: 1 },
   importChevron: { color: 'rgba(255,255,255,0.85)', fontSize: 24, fontWeight: '400' },
-  scanRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  scanRow: { flexDirection: 'row', gap: 9, marginBottom: 16 },
   scanCard: {
     flex: 1,
     backgroundColor: c.surface,
-    borderRadius: 18,
-    padding: 15,
+    borderRadius: 16,
+    padding: 12,
     borderWidth: 1,
     borderColor: c.border,
     shadowColor: '#211C18',
@@ -776,25 +783,34 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     elevation: 2,
   },
   scanIconSage: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     backgroundColor: c.sageSoft,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 11,
+    marginBottom: 9,
   },
   scanIconGold: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 11,
     backgroundColor: c.warning,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 11,
+    marginBottom: 9,
   },
-  scanTitle: { fontSize: 14.5, fontWeight: '700', color: c.ink, marginBottom: 1 },
-  scanSub: { fontSize: 11.5, fontWeight: '500', color: c.grayMid },
+  scanIconPeach: {
+    width: 38,
+    height: 38,
+    borderRadius: 11,
+    backgroundColor: c.accentSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 9,
+  },
+  scanTitle: { fontSize: 13, fontWeight: '700', color: c.ink, marginBottom: 1 },
+  scanSub: { fontSize: 10.5, fontWeight: '500', color: c.grayMid },
   importSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
