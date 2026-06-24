@@ -53,10 +53,10 @@ export function MainNavigator() {
       <AddSheet
         visible={addOpen}
         onClose={() => setAddOpen(false)}
-        onImportLink={() => { setAddOpen(false); navigation.navigate('ImportUrl'); }}
         onScan={() => { setAddOpen(false); navigation.navigate('ScanRecipe'); }}
         onScanBarcode={() => { setAddOpen(false); navigation.navigate('ScanBarcode'); }}
         onScanReceipt={() => { setAddOpen(false); navigation.navigate('ScanReceipt'); }}
+        onRecipeReady={(draft) => { setAddOpen(false); navigation.navigate('ReviewImport', { draft }); }}
       />
     </View>
     </TabProvider>
