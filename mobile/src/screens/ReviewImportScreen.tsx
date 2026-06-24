@@ -168,17 +168,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       </Pressable>
 
       <Text style={styles.eyebrow}>{isManual ? t('reviewImport.eyebrowManual') : t('reviewImport.eyebrow')}</Text>
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>{isManual ? t('reviewImport.titleManual') : t('reviewImport.title')}</Text>
-        <Pressable
-          style={[styles.aiBtn, enriching && styles.aiBtnLoading]}
-          onPress={enrich}
-          disabled={enriching}
-        >
-          <Text style={styles.aiStar}>✦</Text>
-          <Text style={styles.aiBtnText}>{enriching ? 'Analizuję…' : 'AI Inspired'}</Text>
-        </Pressable>
-      </View>
+      <Text style={styles.title}>{isManual ? t('reviewImport.titleManual') : t('reviewImport.title')}</Text>
 
       <View style={styles.modeRow}>
         <Pressable
@@ -297,6 +287,28 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         })}
       </ScrollView>
 
+      {/* AI Inspired banner */}
+      <Pressable
+        style={[styles.aiCard, enriching && styles.aiCardLoading]}
+        onPress={enrich}
+        disabled={enriching}
+      >
+        <View style={styles.aiCardLeft}>
+          <Text style={styles.aiCardIcon}>✦</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.aiCardTitle}>
+              {enriching ? 'Analizuję przepis…' : 'AI Inspired'}
+            </Text>
+            <Text style={styles.aiCardSub}>
+              Niepełny przepis? AI uzupełni składniki, ilości i kroki za Ciebie.
+            </Text>
+          </View>
+        </View>
+        <View style={styles.aiInfoBadge}>
+          <Text style={styles.aiInfoText}>i</Text>
+        </View>
+      </Pressable>
+
       {(() => {
         // Group the editable ingredients by their section, keeping original
         // indices so edit/remove still target the right item.
@@ -385,21 +397,28 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   backIcon: { fontSize: 28, color: c.ink },
   eyebrow: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 4 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
-  title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, flex: 1 },
-  aiBtn: {
+  title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 20 },
+  aiCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: '#1a1a2e',
-    borderRadius: 20,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    marginLeft: 10,
+    justifyContent: 'space-between',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 20,
+    backgroundColor: '#1e1040',
+    overflow: 'hidden',
   },
-  aiBtnLoading: { opacity: 0.6 },
-  aiStar: { color: '#a78bfa', fontSize: 13 },
-  aiBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
+  aiCardLoading: { opacity: 0.65 },
+  aiCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 11, flex: 1 },
+  aiCardIcon: { fontSize: 22, color: '#c4b5fd' },
+  aiCardTitle: { fontSize: 14, fontWeight: '800', color: '#fff', marginBottom: 2 },
+  aiCardSub: { fontSize: 11.5, color: 'rgba(255,255,255,0.62)', lineHeight: 16 },
+  aiInfoBadge: {
+    width: 22, height: 22, borderRadius: 11,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center', marginLeft: 10,
+  },
+  aiInfoText: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '700' },
   label: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 6 },
   field: {
     backgroundColor: c.surface,
