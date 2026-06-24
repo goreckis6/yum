@@ -288,26 +288,31 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       </ScrollView>
 
       {/* AI Inspired banner */}
-      <Pressable
-        style={[styles.aiCard, enriching && styles.aiCardLoading]}
-        onPress={enrich}
-        disabled={enriching}
-      >
-        <View style={styles.aiCardLeft}>
+      <View style={[styles.aiCard, enriching && styles.aiCardLoading]}>
+        <Pressable style={styles.aiCardLeft} onPress={enrich} disabled={enriching}>
           <Text style={styles.aiCardIcon}>✦</Text>
           <View style={{ flex: 1 }}>
             <Text style={styles.aiCardTitle}>
               {enriching ? 'Analizuję przepis…' : 'AI Inspired'}
             </Text>
             <Text style={styles.aiCardSub}>
-              Niepełny przepis? AI uzupełni składniki, ilości i kroki za Ciebie.
+              Dotknij, by AI uzupełnił składniki i kroki.
             </Text>
           </View>
-        </View>
-        <View style={styles.aiInfoBadge}>
+        </Pressable>
+        <Pressable
+          style={styles.aiInfoBadge}
+          hitSlop={10}
+          onPress={() =>
+            Alert.alert(
+              'AI Inspired',
+              'Jeśli Twój przepis jest niepełny — brakuje ilości składników, kroków lub wartości odżywczych — kliknij ten przycisk.\n\nAI przeanalizuje to, co już masz, i uzupełni resztę za Ciebie. Możesz potem dowolnie edytować wynik.',
+            )
+          }
+        >
           <Text style={styles.aiInfoText}>i</Text>
-        </View>
-      </Pressable>
+        </Pressable>
+      </View>
 
       {(() => {
         // Group the editable ingredients by their section, keeping original
