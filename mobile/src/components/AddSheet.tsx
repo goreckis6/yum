@@ -96,8 +96,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
           setClipUrl(text);
         }
       });
-      // Slight delay so the sheet animation finishes before keyboard pops
-      setTimeout(() => inputRef.current?.focus(), 400);
+      // Don't auto-focus — keyboard opens only when user taps the input
     }
   }, [step]);
 
