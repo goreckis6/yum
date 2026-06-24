@@ -83,6 +83,7 @@ export function PantryScreen({ navigation }: Props) {
                         onPress={() => {
                           if (onList && groceryEntry) {
                             removeGrocery(groceryEntry.id);
+                            showToast('Usunięto z listy zakupów');
                           } else {
                             addPantryToGrocery(item.id);
                           }
