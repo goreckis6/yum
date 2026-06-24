@@ -43,6 +43,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     return { ...d, servings: d.servings && d.servings > 0 ? d.servings : 1 };
   });
   const [enriching, setEnriching] = useState(false);
+  const [enrichedKeys, setEnrichedKeys] = useState<Set<string>>(new Set());
   const [coverMode, setCoverMode] = useState<'photo' | 'text'>(
     route.params.draft.imageUrl ? 'photo' : route.params.draft.cover ? 'text' : 'photo',
   );
@@ -117,17 +118,27 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     setEnriching(true);
     try {
       const { recipe: enriched } = await enrichRecipe(draft as any);
-      setDraft((prev) => ({
-        ...prev,
-        ingredients: enriched.ingredients ?? prev.ingredients,
-        steps: enriched.steps ?? prev.steps,
-        kcal: enriched.kcal ?? prev.kcal,
-        p: enriched.p ?? prev.p,
-        c: enriched.c ?? prev.c,
-        f: enriched.f ?? prev.f,
-        time: enriched.time ?? prev.time,
-        servings: enriched.servings ?? prev.servings,
-      }));
+      const changed = new Set<string>();
+      setDraft((prev) => {
+        const next = { ...prev };
+        const check = <K extends keyof typeof prev>(key: K, val: typeof prev[K] | undefined) => {
+          if (val == null) return prev[key];
+          const prevStr = JSON.stringify(prev[key]);
+          const nextStr = JSON.stringify(val);
+          if (prevStr !== nextStr) changed.add(key as string);
+          return val;
+        };
+        next.ingredients = check('ingredients', enriched.ingredients);
+        next.steps = check('steps', enriched.steps);
+        next.kcal = check('kcal', enriched.kcal);
+        next.p = check('p', enriched.p);
+        next.c = check('c', enriched.c);
+        next.f = check('f', enriched.f);
+        next.time = check('time', enriched.time);
+        next.servings = check('servings', enriched.servings);
+        return next;
+      });
+      setEnrichedKeys(changed);
       showToast(t('reviewImport.aiDone'));
     } catch (err: any) {
       showToast(err?.message ?? t('reviewImport.aiError'));
@@ -234,7 +245,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       <View style={styles.row}>
         <View style={styles.half}>
           <Text style={styles.label}>{t('reviewImport.servings')}</Text>
-          <View style={styles.stepper}>
+          <View style={[styles.stepper, enrichedKeys.has('servings') && styles.aiHighlight]}>
             <Pressable
               style={styles.stepBtn}
               onPress={() => changeServings(Math.max(1, draft.servings - 1))}
@@ -255,7 +266,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         <View style={styles.half}>
           <Text style={styles.label}>{t('reviewImport.time')}</Text>
           <TextInput
-            style={styles.field}
+            style={[styles.field, enrichedKeys.has('time') && styles.aiHighlight]}
             keyboardType="number-pad"
             value={String(draft.time)}
             onChangeText={(t) => setDraft({ ...draft, time: parseInt(t, 10) || 0 })}
@@ -324,8 +335,11 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         const groups = Array.from(map.entries());
         const has = groups.some(([g]) => g !== '');
         return (
-          <>
-            <Text style={styles.section}>{has ? groups[0][0] || t('recipe.ingredients') : t('recipe.ingredients')}</Text>
+          <View style={enrichedKeys.has('ingredients') ? styles.aiSectionHighlight : undefined}>
+            <Text style={styles.section}>
+              {has ? groups[0][0] || t('recipe.ingredients') : t('recipe.ingredients')}
+              {enrichedKeys.has('ingredients') ? <Text style={styles.aiTag}> ✦ AI</Text> : null}
+            </Text>
             {groups.map(([g, items], gi) => (
               <View key={g || '__main__'}>
                 {has && gi > 0 && <Text style={styles.ingGroupHead}>{g || 'Other'}</Text>}
@@ -350,14 +364,18 @@ export function ReviewImportScreen({ navigation, route }: Props) {
                 ))}
               </View>
             ))}
-          </>
+          </View>
         );
       })()}
       <Pressable style={styles.addIng} onPress={addIngredient}>
         <Text style={styles.addIngText}>{t('reviewImport.addIngredient')}</Text>
       </Pressable>
 
-      <Text style={styles.section}>{t('reviewImport.steps')}</Text>
+      <View style={enrichedKeys.has('steps') ? styles.aiSectionHighlight : undefined}>
+        <Text style={styles.section}>
+          {t('reviewImport.steps')}
+          {enrichedKeys.has('steps') ? <Text style={styles.aiTag}> ✦ AI</Text> : null}
+        </Text>
       {draft.steps.map((step, i) => (
         <View key={i} style={styles.stepRow}>
           <Text style={styles.stepNum}>{i + 1}</Text>
@@ -377,6 +395,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       <Pressable style={styles.addIng} onPress={addStep}>
         <Text style={styles.addIngText}>{t('reviewImport.addStep')}</Text>
       </Pressable>
+      </View>
 
       <Pressable style={styles.saveBtn} onPress={save}>
         <Text style={styles.saveText}>{t('reviewImport.saveLibrary')}</Text>
@@ -400,6 +419,25 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backIcon: { fontSize: 28, color: c.ink },
   eyebrow: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 4 },
   title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 20 },
+  aiHighlight: {
+    borderColor: '#16a34a',
+    borderWidth: 1.5,
+    borderRadius: 12,
+  },
+  aiSectionHighlight: {
+    backgroundColor: '#f0fdf4',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: '#bbf7d0',
+    paddingHorizontal: 10,
+    paddingTop: 4,
+    marginBottom: 4,
+  },
+  aiTag: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#16a34a',
+  },
   aiCard: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -72,6 +72,7 @@ export const en = {
   'addSheet.recentClearAll': 'Clear all',
   'addSheet.recentDelete': 'Delete',
   'addSheet.linkError': 'Error — please try again',
+  'addSheet.loadingHint': 'This may take a moment…',
   'addSheet.scanRecipe': 'Scan a recipe',
   'addSheet.scanRecipeSub': 'Photo, screenshot, cookbook',
   'addSheet.manualRecipe': 'Write manually',
@@ -336,6 +337,8 @@ export const en = {
   'grocery.browse': 'Browse recipes',
   'grocery.inBasket': 'In the basket ({n})',
   'grocery.clear': 'Clear',
+  'grocery.selectAll': 'Select all',
+  'grocery.deselectAll': 'Deselect all',
   'grocery.order': 'Order groceries →',
 
   // aisles
@@ -462,6 +465,7 @@ export const pl: Record<TKey, string> = {
   'addSheet.recentClearAll': 'Usuń wszystkie',
   'addSheet.recentDelete': 'Usuń',
   'addSheet.linkError': 'Błąd — spróbuj ponownie',
+  'addSheet.loadingHint': 'To może chwilę potrwać…',
   'addSheet.scanRecipe': 'Zeskanuj przepis',
   'addSheet.scanRecipeSub': 'Zdjęcie książki kucharskiej lub notatki',
   'addSheet.manualRecipe': 'Napisz od zera',
@@ -714,6 +718,8 @@ export const pl: Record<TKey, string> = {
   'grocery.browse': 'Przeglądaj przepisy',
   'grocery.inBasket': 'W koszyku ({n})',
   'grocery.clear': 'Wyczyść',
+  'grocery.selectAll': 'Zaznacz wszystko',
+  'grocery.deselectAll': 'Odznacz wszystko',
   'grocery.order': 'Zamów zakupy →',
 
   'aisle.Produce': 'Warzywa i owoce',

@@ -191,7 +191,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
               />
             )}
             {step === 'loading' && (
-              <LoadingView styles={styles} c={c} msg={loadingMsgs[msgIdx]} />
+              <LoadingView styles={styles} c={c} t={t} msg={loadingMsgs[msgIdx]} />
             )}
           </Animated.View>
         </View>
@@ -399,12 +399,12 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent
   );
 }
 
-function LoadingView({ styles, c, msg }: any) {
+function LoadingView({ styles, c, t, msg }: any) {
   return (
     <View style={styles.loadingWrap}>
       <ActivityIndicator size="large" color={c.accent} style={{ marginBottom: 20 }} />
       <Text style={styles.loadingMsg}>{msg}</Text>
-      <Text style={styles.loadingHint}>To może chwilę potrwać…</Text>
+      <Text style={styles.loadingHint}>{t('addSheet.loadingHint')}</Text>
     </View>
   );
 }
@@ -523,14 +523,14 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center',
     },
     recentDeleteLabel: { fontSize: 12, fontWeight: '700', color: '#DC2626' },
-    recentRow: { backgroundColor: c.surface, borderRadius: 12 },
+    recentRow: { backgroundColor: c.surface, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
     recentRowInner: {
       flexDirection: 'row', alignItems: 'center', gap: 8,
-      paddingHorizontal: 12, paddingVertical: 10, flex: 1,
+      paddingLeft: 12, paddingVertical: 11, flex: 1, minWidth: 0,
     },
-    recentDomain: { fontSize: 12.5, fontWeight: '700', color: c.ink, flexShrink: 0, maxWidth: 90 },
-    recentUrlText: { fontSize: 11.5, fontWeight: '400', color: c.grayMid, flex: 1 },
-    recentXBtn: { paddingHorizontal: 12, paddingVertical: 10 },
+    recentDomain: { fontSize: 12.5, fontWeight: '700', color: c.ink, flexShrink: 0, maxWidth: 80 },
+    recentUrlText: { fontSize: 11.5, color: c.grayMid, flex: 1, minWidth: 0 },
+    recentXBtn: { paddingHorizontal: 12, paddingVertical: 11, flexShrink: 0 },
     recentXText: { color: c.grayMid, fontSize: 14 },
 
     /* Loading step */

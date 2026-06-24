@@ -214,7 +214,7 @@ export function GroceryScreen() {
               {allChecked && <Text style={styles.cbCheck}>✓</Text>}
             </View>
             <Text style={styles.selectText}>
-              {allChecked ? 'Odznacz wszystko' : 'Zaznacz wszystko'}
+              {allChecked ? t('grocery.deselectAll') : t('grocery.selectAll')}
             </Text>
             {completed.length > 0 && (
               <Pressable onPress={clearCheckedGrocery} hitSlop={10}>
