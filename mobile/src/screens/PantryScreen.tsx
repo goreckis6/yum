@@ -90,7 +90,7 @@ export function PantryScreen({ navigation }: Props) {
                         hitSlop={6}
                       >
                         <Text style={[styles.addBtnText, onList && styles.addBtnTextDone]}>
-                          {onList ? '✓' : '+'}
+                          {onList ? '×' : '+'}
                         </Text>
                       </Pressable>
                     );
