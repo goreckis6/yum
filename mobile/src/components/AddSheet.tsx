@@ -30,13 +30,6 @@ const RECENT_KEY = '@yumshare/recent_links';
 const MAX_RECENT = 10;
 const SWIPE_THRESHOLD = 72;
 
-const LOADING_MSGS = [
-  'Szef kuchni Yumi analizuje przepis…',
-  'Wyciągamy składniki…',
-  'Usuwamy wstęp bloga…',
-  'Przeliczamy wartości odżywcze…',
-  'Prawie gotowe…',
-];
 
 async function loadRecent(): Promise<string[]> {
   try {
@@ -65,6 +58,11 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
+
+  const loadingMsgs = [
+    t('processing.url1'), t('processing.url2'), t('processing.url3'),
+    t('processing.url4'), t('processing.url5'),
+  ];
 
   const [step, setStep] = useState<Step>('menu');
   const [url, setUrl] = useState('');
@@ -102,7 +100,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
   useEffect(() => {
     if (step !== 'loading') return;
-    const id = setInterval(() => setMsgIdx((i) => (i + 1) % LOADING_MSGS.length), 900);
+    const id = setInterval(() => setMsgIdx((i) => (i + 1) % loadingMsgs.length), 900);
     return () => clearInterval(id);
   }, [step]);
 
@@ -145,7 +143,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
       onClose();
       onRecipeReady(draft);
     } catch (err: any) {
-      crossFade(() => { setStep('link'); setError(err?.message ?? 'Błąd – spróbuj ponownie'); });
+      crossFade(() => { setStep('link'); setError(err?.message ?? t('addSheet.linkError')); });
     }
   };
 
@@ -193,7 +191,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
               />
             )}
             {step === 'loading' && (
-              <LoadingView styles={styles} c={c} msg={LOADING_MSGS[msgIdx]} />
+              <LoadingView styles={styles} c={c} msg={loadingMsgs[msgIdx]} />
             )}
           </Animated.View>
         </View>
@@ -204,8 +202,8 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
 /* ─── SwipeRow ───────────────────────────────────────────────── */
 
-function SwipeRow({ url, styles, c, onSelect, onRemove }: {
-  url: string; styles: any; c: ThemeColors;
+function SwipeRow({ url, styles, c, t, onSelect, onRemove }: {
+  url: string; styles: any; c: ThemeColors; t: (k: string) => string;
   onSelect: () => void; onRemove: () => void;
 }) {
   const tx = useRef(new Animated.Value(0)).current;
@@ -231,7 +229,7 @@ function SwipeRow({ url, styles, c, onSelect, onRemove }: {
     <View style={styles.recentRowOuter}>
       {/* Delete background */}
       <View style={styles.recentDeleteBg}>
-        <Text style={styles.recentDeleteLabel}>Usuń</Text>
+        <Text style={styles.recentDeleteLabel}>{t('addSheet.recentDelete')}</Text>
       </View>
       <Animated.View style={[styles.recentRow, { transform: [{ translateX: tx }] }]} {...pan.panHandlers}>
         <Pressable style={styles.recentRowInner} onPress={onSelect}>
@@ -331,10 +329,10 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent
             <Icon name="link" size={16} color="#fff" />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.clipBadge}>Skopiowany link</Text>
+            <Text style={styles.clipBadge}>{t('addSheet.clipBadge')}</Text>
             <Text style={styles.clipUrl} numberOfLines={1}>{clipUrl}</Text>
           </View>
-          <Text style={styles.clipPasteBtn}>Wklej</Text>
+          <Text style={styles.clipPasteBtn}>{t('addSheet.clipPaste')}</Text>
         </Pressable>
       )}
 
@@ -373,9 +371,9 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent
       {hasRecent && (
         <>
           <View style={styles.recentHeader}>
-            <Text style={styles.recentTitle}>Ostatnie linki</Text>
+            <Text style={styles.recentTitle}>{t('addSheet.recentTitle')}</Text>
             <Pressable onPress={onClearAll} hitSlop={8}>
-              <Text style={styles.recentClearAll}>Usuń wszystkie</Text>
+              <Text style={styles.recentClearAll}>{t('addSheet.recentClearAll')}</Text>
             </Pressable>
           </View>
           <ScrollView
@@ -389,6 +387,7 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent
                 url={u}
                 styles={styles}
                 c={c}
+                t={t}
                 onSelect={() => { setUrl(u); onSubmitUrl(u); }}
                 onRemove={() => onRemoveRecent(u)}
               />

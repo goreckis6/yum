@@ -75,11 +75,11 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   };
 
   const onPhotoPress = () => {
-    Alert.alert('Recipe photo', 'Choose source', [
-      { text: 'Take photo', onPress: () => pickPhoto(true) },
-      { text: 'Choose from gallery', onPress: () => pickPhoto(false) },
-      ...(draft.imageUrl ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => setDraft({ ...draft, imageUrl: undefined }) }] : []),
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t('reviewImport.photoTitle'), t('reviewImport.photoChoose'), [
+      { text: t('reviewImport.photoTake'), onPress: () => pickPhoto(true) },
+      { text: t('reviewImport.photoGallery'), onPress: () => pickPhoto(false) },
+      ...(draft.imageUrl ? [{ text: t('reviewImport.photoRemove'), style: 'destructive' as const, onPress: () => setDraft({ ...draft, imageUrl: undefined }) }] : []),
+      { text: t('reviewImport.cancel'), style: 'cancel' },
     ]);
   };
 
@@ -128,9 +128,9 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         time: enriched.time ?? prev.time,
         servings: enriched.servings ?? prev.servings,
       }));
-      showToast('Przepis uzupełniony przez AI ✓');
+      showToast(t('reviewImport.aiDone'));
     } catch (err: any) {
-      showToast(err?.message ?? 'Błąd AI — spróbuj ponownie');
+      showToast(err?.message ?? t('reviewImport.aiError'));
     } finally {
       setEnriching(false);
     }
@@ -293,10 +293,10 @@ export function ReviewImportScreen({ navigation, route }: Props) {
           <Text style={styles.aiCardIcon}>✦</Text>
           <View style={{ flex: 1 }}>
             <Text style={styles.aiCardTitle}>
-              {enriching ? 'Analizuję przepis…' : 'AI Inspired'}
+              {enriching ? t('reviewImport.aiAnalyzing') : t('reviewImport.aiTitle')}
             </Text>
             <Text style={styles.aiCardSub}>
-              Dotknij, by AI uzupełnił składniki i kroki.
+              {t('reviewImport.aiSub')}
             </Text>
           </View>
         </Pressable>
@@ -304,10 +304,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
           style={styles.aiInfoBadge}
           hitSlop={10}
           onPress={() =>
-            Alert.alert(
-              'AI Inspired',
-              'Jeśli Twój przepis jest niepełny — brakuje ilości składników, kroków lub wartości odżywczych — kliknij ten przycisk.\n\nAI przeanalizuje to, co już masz, i uzupełni resztę za Ciebie. Możesz potem dowolnie edytować wynik.',
-            )
+            Alert.alert(t('reviewImport.aiInfoTitle'), t('reviewImport.aiInfoBody'))
           }
         >
           <Text style={styles.aiInfoText}>i</Text>

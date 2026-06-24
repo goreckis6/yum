@@ -11,23 +11,6 @@ import { useI18n } from '../i18n/I18nContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
 
-const URL_MESSAGES = [
-  'Szef kuchni Yumi analizuje przepis…',
-  'Usuwamy wstęp bloga…',
-  'Wyciągamy składniki…',
-  'Przeliczamy wartości…',
-  'Porządkujemy kroki…',
-  'Prawie gotowe…',
-];
-
-const IMAGE_MESSAGES = [
-  'Szef kuchni Yumi analizuje zdjęcie…',
-  'Rozpoznajemy składniki…',
-  'Budujemy przepis…',
-  'Szacujemy wartości odżywcze…',
-  'Prawie gotowe…',
-];
-
 export function ProcessingScreen({ navigation, route }: Props) {
   const c = useTheme();
   const { t } = useI18n();
@@ -36,6 +19,14 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const isImageMode = 'imageBase64' in route.params;
+  const URL_MESSAGES = [
+    t('processing.url1'), t('processing.url2'), t('processing.url3'),
+    t('processing.url4'), t('processing.url5'), t('processing.url6'),
+  ];
+  const IMAGE_MESSAGES = [
+    t('processing.img1'), t('processing.img2'), t('processing.img3'),
+    t('processing.img4'), t('processing.img5'),
+  ];
   const MESSAGES = isImageMode ? IMAGE_MESSAGES : URL_MESSAGES;
 
   useEffect(() => {
