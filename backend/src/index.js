@@ -783,6 +783,59 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
+app.post('/api/enrich-recipe', async (req, res) => {
+  try {
+    const { recipe } = req.body;
+    if (!recipe || typeof recipe !== 'object') {
+      return res.status(400).json({ error: 'recipe object is required' });
+    }
+
+    if (!openai) {
+      return res.json({ recipe });
+    }
+
+    const prompt = `You are a professional chef and recipe editor. The user has a recipe that may be incomplete — missing ingredient amounts, vague steps, or wrong serving sizes. Your job is to return a fully enriched, complete version.
+
+Current recipe (JSON):
+${JSON.stringify(recipe, null, 2)}
+
+Rules:
+- Keep the original title, tags, and source info unchanged
+- Fill in missing ingredient amounts with realistic values for the given number of servings
+- Expand vague steps into clear, actionable instructions (1–2 sentences each)
+- Recalculate or estimate kcal, protein (p), carbs (c), fat (f) per serving based on the ingredients
+- Keep the same ingredient groups if they exist
+- Do NOT add ingredients not implied by the existing list
+- Return ONLY valid JSON matching this schema exactly: ${RECIPE_SCHEMA}`;
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      response_format: { type: 'json_object' },
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+    });
+
+    let enriched;
+    try {
+      enriched = JSON.parse(completion.choices[0].message.content);
+    } catch {
+      return res.status(500).json({ error: 'AI returned invalid JSON' });
+    }
+
+    // Preserve fields AI shouldn't touch
+    enriched.id = recipe.id;
+    enriched.imageUrl = recipe.imageUrl;
+    enriched.cover = recipe.cover;
+    enriched.tint = recipe.tint;
+    enriched.sourceTint = recipe.sourceTint;
+
+    res.json({ recipe: enriched });
+  } catch (err) {
+    console.error('enrich-recipe error:', err);
+    res.status(500).json({ error: err.message || 'Failed to enrich recipe' });
+  }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`YumShare API running on http://0.0.0.0:${PORT}`);
   if (!openai) {

@@ -43,6 +43,10 @@ export async function extractRecipeFromImage(
   return postJson('/api/extract-recipe-image', { imageBase64, mimeType });
 }
 
+export async function enrichRecipe(recipe: ExtractedRecipe): Promise<{ recipe: ExtractedRecipe }> {
+  return postJson('/api/enrich-recipe', { recipe });
+}
+
 export async function checkApiHealth(): Promise<{ ok: boolean; openai: boolean; message: string }> {
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/health`);

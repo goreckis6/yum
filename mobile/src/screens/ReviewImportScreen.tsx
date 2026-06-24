@@ -24,6 +24,7 @@ import { CoverArt, COVER_PRESETS } from '../components/CoverArt';
 import { cleanStep, scaleAmount } from '../utils/scale';
 import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
+import { enrichRecipe } from '../api/recipes';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewImport'>;
 
@@ -41,6 +42,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     const d = route.params.draft;
     return { ...d, servings: d.servings && d.servings > 0 ? d.servings : 1 };
   });
+  const [enriching, setEnriching] = useState(false);
   const [coverMode, setCoverMode] = useState<'photo' | 'text'>(
     route.params.draft.imageUrl ? 'photo' : route.params.draft.cover ? 'text' : 'photo',
   );
@@ -111,6 +113,29 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     setDraft({ ...draft, steps: draft.steps.filter((_, i) => i !== index) });
   };
 
+  const enrich = async () => {
+    setEnriching(true);
+    try {
+      const { recipe: enriched } = await enrichRecipe(draft as any);
+      setDraft((prev) => ({
+        ...prev,
+        ingredients: enriched.ingredients ?? prev.ingredients,
+        steps: enriched.steps ?? prev.steps,
+        kcal: enriched.kcal ?? prev.kcal,
+        p: enriched.p ?? prev.p,
+        c: enriched.c ?? prev.c,
+        f: enriched.f ?? prev.f,
+        time: enriched.time ?? prev.time,
+        servings: enriched.servings ?? prev.servings,
+      }));
+      showToast('Przepis uzupełniony przez AI ✓');
+    } catch (err: any) {
+      showToast(err?.message ?? 'Błąd AI — spróbuj ponownie');
+    } finally {
+      setEnriching(false);
+    }
+  };
+
   const addStep = () => {
     setDraft({ ...draft, steps: [...draft.steps, ''] });
   };
@@ -143,7 +168,17 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       </Pressable>
 
       <Text style={styles.eyebrow}>{isManual ? t('reviewImport.eyebrowManual') : t('reviewImport.eyebrow')}</Text>
-      <Text style={styles.title}>{isManual ? t('reviewImport.titleManual') : t('reviewImport.title')}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{isManual ? t('reviewImport.titleManual') : t('reviewImport.title')}</Text>
+        <Pressable
+          style={[styles.aiBtn, enriching && styles.aiBtnLoading]}
+          onPress={enrich}
+          disabled={enriching}
+        >
+          <Text style={styles.aiStar}>✦</Text>
+          <Text style={styles.aiBtnText}>{enriching ? 'Analizuję…' : 'AI Inspired'}</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.modeRow}>
         <Pressable
@@ -350,7 +385,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   backIcon: { fontSize: 28, color: c.ink },
   eyebrow: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 4 },
-  title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 20 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  title: { fontFamily: fonts.display, fontSize: 26, color: c.ink, flex: 1 },
+  aiBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: '#1a1a2e',
+    borderRadius: 20,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    marginLeft: 10,
+  },
+  aiBtnLoading: { opacity: 0.6 },
+  aiStar: { color: '#a78bfa', fontSize: 13 },
+  aiBtnText: { color: '#fff', fontSize: 12.5, fontWeight: '700' },
   label: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 6 },
   field: {
     backgroundColor: c.surface,
