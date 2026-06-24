@@ -636,8 +636,6 @@ export const pl: Record<TKey, string> = {
   'reviewImport.categories': 'Kategorie',
   'reviewImport.catHint': 'Sugestia AI · dotknij, by przełączyć',
   'reviewImport.newIngredient': 'Nowy składnik',
-  'reviewImport.stepPlaceholder': 'Opisz ten krok…',
-  'reviewImport.addStep': '+ Dodaj krok',
   'reviewImport.addIngredient': '+ Dodaj składnik',
   'reviewImport.steps': 'Kroki',
   'reviewImport.stepPlaceholder': 'Opisz ten krok…',

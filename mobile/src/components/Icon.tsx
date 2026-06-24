@@ -26,7 +26,8 @@ export type IconName =
   | 'tiktok'
   | 'x'
   | 'logo'
-  | 'barcode';
+  | 'barcode'
+  | 'pencil';
 
 interface Props {
   name: IconName;
@@ -228,6 +229,12 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
           <Line x1={14} y1={6} x2={14} y2={18} {...s} />
           <Line x1={17.5} y1={6} x2={17.5} y2={18} {...s} />
           <Line x1={20} y1={6} x2={20} y2={18} {...s} />
+        </>
+      );
+    case 'pencil':
+      return (
+        <>
+          <Path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" {...s} />
         </>
       );
     case 'logo':

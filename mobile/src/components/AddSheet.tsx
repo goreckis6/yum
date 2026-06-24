@@ -3,14 +3,19 @@ import {
   ActivityIndicator,
   Animated,
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  PanResponder,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -21,6 +26,10 @@ import { Recipe } from '../types';
 
 type Step = 'menu' | 'link' | 'loading';
 
+const RECENT_KEY = '@yumshare/recent_links';
+const MAX_RECENT = 10;
+const SWIPE_THRESHOLD = 72;
+
 const LOADING_MSGS = [
   'Szef kuchni Yumi analizuje przepis…',
   'Wyciągamy składniki…',
@@ -28,6 +37,19 @@ const LOADING_MSGS = [
   'Przeliczamy wartości odżywcze…',
   'Prawie gotowe…',
 ];
+
+async function loadRecent(): Promise<string[]> {
+  try {
+    const raw = await AsyncStorage.getItem(RECENT_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+async function saveRecent(links: string[]) {
+  try { await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(links)); } catch {}
+}
 
 interface Props {
   visible: boolean;
@@ -49,9 +71,13 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const [clipUrl, setClipUrl] = useState<string | null>(null);
   const [msgIdx, setMsgIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [recent, setRecent] = useState<string[]>([]);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const inputRef = useRef<TextInput>(null);
+
+  // Load recent links once on mount
+  useEffect(() => { loadRecent().then(setRecent); }, []);
 
   useEffect(() => {
     if (!visible) {
@@ -70,7 +96,8 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
           setClipUrl(text);
         }
       });
-      setTimeout(() => inputRef.current?.focus(), 300);
+      // Slight delay so the sheet animation finishes before keyboard pops
+      setTimeout(() => inputRef.current?.focus(), 400);
     }
   }, [step]);
 
@@ -88,15 +115,33 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   }, [fadeAnim]);
 
   const goLink = () => crossFade(() => setStep('link'));
-  const goBack = () => crossFade(() => { setStep('menu'); setError(null); });
+  const goBack = () => { Keyboard.dismiss(); crossFade(() => { setStep('menu'); setError(null); }); };
 
-  const submit = async () => {
-    const finalUrl = url.trim() || clipUrl || '';
-    if (!finalUrl) return;
+  const pushRecent = useCallback((u: string) => {
+    const next = [u, ...recent.filter((r) => r !== u)].slice(0, MAX_RECENT);
+    setRecent(next);
+    saveRecent(next);
+  }, [recent]);
+
+  const removeRecent = useCallback((u: string) => {
+    const next = recent.filter((r) => r !== u);
+    setRecent(next);
+    saveRecent(next);
+  }, [recent]);
+
+  const clearAllRecent = useCallback(() => {
+    setRecent([]);
+    saveRecent([]);
+  }, []);
+
+  const submit = async (finalUrl?: string) => {
+    const u = (finalUrl ?? url).trim() || clipUrl || '';
+    if (!u) return;
     Keyboard.dismiss();
     crossFade(() => { setStep('loading'); setError(null); });
     try {
-      const { recipe } = await extractRecipeFromUrl(finalUrl);
+      const { recipe } = await extractRecipeFromUrl(u);
+      pushRecent(u);
       const draft: Recipe = { ...recipe, id: `imp${Date.now()}` };
       onClose();
       onRecipeReady(draft);
@@ -109,8 +154,18 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={step === 'menu' ? onClose : undefined}>
-        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+      {/* KAV pushes the sheet up when keyboard opens */}
+      <KeyboardAvoidingView
+        style={styles.kav}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        {/* Backdrop — only dismisses on menu step */}
+        <Pressable
+          style={StyleSheet.absoluteFillObject}
+          onPress={step === 'menu' ? onClose : Keyboard.dismiss}
+        />
+
+        <View style={styles.sheet}>
           <View style={styles.handle} />
           <Animated.View style={{ opacity: fadeAnim }}>
             {step === 'menu' && (
@@ -129,7 +184,12 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
                 url={url} setUrl={setUrl}
                 clipUrl={clipUrl} error={error}
                 canSubmit={canSubmit}
-                onBack={goBack} onSubmit={submit}
+                recent={recent}
+                onBack={goBack}
+                onSubmit={() => submit()}
+                onSubmitUrl={(u: string) => submit(u)}
+                onRemoveRecent={removeRecent}
+                onClearAll={clearAllRecent}
                 inputRef={inputRef}
               />
             )}
@@ -137,9 +197,54 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
               <LoadingView styles={styles} c={c} msg={LOADING_MSGS[msgIdx]} />
             )}
           </Animated.View>
-        </Pressable>
-      </Pressable>
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+/* ─── SwipeRow ───────────────────────────────────────────────── */
+
+function SwipeRow({ url, styles, c, onSelect, onRemove }: {
+  url: string; styles: any; c: ThemeColors;
+  onSelect: () => void; onRemove: () => void;
+}) {
+  const tx = useRef(new Animated.Value(0)).current;
+
+  const pan = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < 14,
+    onPanResponderMove: (_, g) => { if (g.dx < 0) tx.setValue(g.dx); },
+    onPanResponderRelease: (_, g) => {
+      if (g.dx < -SWIPE_THRESHOLD) {
+        Animated.timing(tx, { toValue: -300, duration: 180, useNativeDriver: true }).start(onRemove);
+      } else {
+        Animated.spring(tx, { toValue: 0, useNativeDriver: true }).start();
+      }
+    },
+    onPanResponderTerminate: () => {
+      Animated.spring(tx, { toValue: 0, useNativeDriver: true }).start();
+    },
+  }), []);
+
+  const domain = (() => { try { return new URL(url).hostname.replace('www.', ''); } catch { return url; } })();
+
+  return (
+    <View style={styles.recentRowOuter}>
+      {/* Delete background */}
+      <View style={styles.recentDeleteBg}>
+        <Text style={styles.recentDeleteLabel}>Usuń</Text>
+      </View>
+      <Animated.View style={[styles.recentRow, { transform: [{ translateX: tx }] }]} {...pan.panHandlers}>
+        <Pressable style={styles.recentRowInner} onPress={onSelect}>
+          <Icon name="link" size={14} color={c.grayMid} />
+          <Text style={styles.recentDomain} numberOfLines={1}>{domain}</Text>
+          <Text style={styles.recentUrlText} numberOfLines={1}>{url}</Text>
+        </Pressable>
+        <Pressable onPress={onRemove} hitSlop={8} style={styles.recentXBtn}>
+          <Text style={styles.recentXText}>✕</Text>
+        </Pressable>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -149,10 +254,8 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
   return (
     <>
       <Text style={styles.title}>{t('addSheet.title')}</Text>
-
       <Text style={styles.sectionLabel}>{t('addSheet.sectionRecipes')}</Text>
 
-      {/* Primary — paste link */}
       <Pressable style={styles.bigOptionAccent} onPress={onLink}>
         <View style={styles.bigIconAccent}>
           <Icon name="link" size={24} color="#fff" />
@@ -164,7 +267,6 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
         <Text style={styles.chevronLight}>›</Text>
       </Pressable>
 
-      {/* Two half cards */}
       <View style={styles.rowTwo}>
         <Pressable style={styles.halfOption} onPress={onScan}>
           <View style={[styles.halfIcon, { backgroundColor: c.sageSoft }]}>
@@ -173,10 +275,9 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
           <Text style={styles.halfTitle}>{t('addSheet.scanRecipe')}</Text>
           <Text style={styles.halfSub}>{t('addSheet.scanRecipeSub')}</Text>
         </Pressable>
-
         <Pressable style={styles.halfOption} onPress={onManualRecipe}>
           <View style={[styles.halfIcon, { backgroundColor: c.accentSoft }]}>
-            <Icon name="edit" size={20} color={c.accent} />
+            <Icon name="pencil" size={20} color={c.accent} />
           </View>
           <Text style={styles.halfTitle}>{t('addSheet.manualRecipe')}</Text>
           <Text style={styles.halfSub}>{t('addSheet.manualRecipeSub')}</Text>
@@ -210,7 +311,11 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
   );
 }
 
-function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, onBack, onSubmit, inputRef }: any) {
+function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent,
+  onBack, onSubmit, onSubmitUrl, onRemoveRecent, onClearAll, inputRef }: any) {
+
+  const hasRecent = recent.length > 0;
+
   return (
     <>
       <View style={styles.linkHeader}>
@@ -220,6 +325,7 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, onBack
         <Text style={styles.title}>{t('addSheet.pasteLink')}</Text>
       </View>
 
+      {/* Clipboard suggestion — only when no manual input yet */}
       {clipUrl && !url && (
         <Pressable style={styles.clipCard} onPress={() => setUrl(clipUrl)}>
           <View style={styles.clipIconBox}>
@@ -263,6 +369,34 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, onBack
       >
         <Text style={styles.submitText}>{t('addSheet.confirmLink')}</Text>
       </Pressable>
+
+      {/* Recent links */}
+      {hasRecent && (
+        <>
+          <View style={styles.recentHeader}>
+            <Text style={styles.recentTitle}>Ostatnie linki</Text>
+            <Pressable onPress={onClearAll} hitSlop={8}>
+              <Text style={styles.recentClearAll}>Usuń wszystkie</Text>
+            </Pressable>
+          </View>
+          <ScrollView
+            style={styles.recentList}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {recent.map((u: string) => (
+              <SwipeRow
+                key={u}
+                url={u}
+                styles={styles}
+                c={c}
+                onSelect={() => { setUrl(u); onSubmitUrl(u); }}
+                onRemove={() => onRemoveRecent(u)}
+              />
+            ))}
+          </ScrollView>
+        </>
+      )}
     </>
   );
 }
@@ -281,14 +415,15 @@ function LoadingView({ styles, c, msg }: any) {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    overlay: { flex: 1, backgroundColor: c.scrim, justifyContent: 'flex-end' },
+    kav: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
     sheet: {
       backgroundColor: c.bg,
       borderTopLeftRadius: 28,
       borderTopRightRadius: 28,
       paddingHorizontal: 20,
-      paddingBottom: 40,
+      paddingBottom: Platform.OS === 'ios' ? 10 : 36,
       paddingTop: 12,
+      maxHeight: '88%',
     },
     handle: {
       width: 42, height: 5, borderRadius: 3,
@@ -344,6 +479,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center', justifyContent: 'center',
     },
     backIcon: { fontSize: 22, color: c.ink, marginTop: -2 },
+
     clipCard: {
       flexDirection: 'row', alignItems: 'center', gap: 12,
       backgroundColor: c.accentSoft, borderRadius: 14, padding: 11, marginBottom: 12,
@@ -358,6 +494,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.accent, color: '#fff', fontWeight: '700',
       fontSize: 12, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 999,
     },
+
     inputWrap: {
       flexDirection: 'row', alignItems: 'center', gap: 10,
       backgroundColor: c.surface, borderRadius: 14,
@@ -369,10 +506,34 @@ const makeStyles = (c: ThemeColors) =>
     errorText: { fontSize: 13, color: '#B91C1C', fontWeight: '600', marginBottom: 10 },
     submitBtn: {
       backgroundColor: c.accent, borderRadius: 14,
-      paddingVertical: 15, alignItems: 'center',
+      paddingVertical: 15, alignItems: 'center', marginBottom: 16,
     },
     submitDisabled: { backgroundColor: c.border },
     submitText: { color: '#fff', fontWeight: '700', fontSize: 15.5 },
+
+    /* Recent links */
+    recentHeader: {
+      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8,
+    },
+    recentTitle: { fontSize: 12, fontWeight: '700', color: c.grayMid, textTransform: 'uppercase', letterSpacing: 0.6 },
+    recentClearAll: { fontSize: 12.5, fontWeight: '700', color: '#DC2626' },
+    recentList: { maxHeight: 200 },
+
+    recentRowOuter: { position: 'relative', marginBottom: 6, borderRadius: 12, overflow: 'hidden' },
+    recentDeleteBg: {
+      position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
+      backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center',
+    },
+    recentDeleteLabel: { fontSize: 12, fontWeight: '700', color: '#DC2626' },
+    recentRow: { backgroundColor: c.surface, borderRadius: 12 },
+    recentRowInner: {
+      flexDirection: 'row', alignItems: 'center', gap: 8,
+      paddingHorizontal: 12, paddingVertical: 10, flex: 1,
+    },
+    recentDomain: { fontSize: 12.5, fontWeight: '700', color: c.ink, flexShrink: 0, maxWidth: 90 },
+    recentUrlText: { fontSize: 11.5, fontWeight: '400', color: c.grayMid, flex: 1 },
+    recentXBtn: { paddingHorizontal: 12, paddingVertical: 10 },
+    recentXText: { color: c.grayMid, fontSize: 14 },
 
     /* Loading step */
     loadingWrap: { alignItems: 'center', paddingVertical: 36 },
