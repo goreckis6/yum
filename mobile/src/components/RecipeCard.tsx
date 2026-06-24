@@ -27,10 +27,6 @@ export function RecipeCard({ title, rating, timeStr, sourceApp, tint, imageUrl, 
         ) : cover ? (
           <CoverArt cover={cover} title={title} fontSize={16} />
         ) : null}
-        <View style={styles.ratingBadge}>
-          <Text style={styles.star}>★</Text>
-          <Text style={styles.rating}>{rating}</Text>
-        </View>
       </View>
       <View style={styles.body}>
         <Text style={styles.title} numberOfLines={2}>
