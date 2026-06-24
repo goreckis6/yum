@@ -8,6 +8,7 @@ import {
   GroceryItem,
   MealPlan,
   MealSlot,
+  PantryItem,
   Receipt,
   Recipe,
 } from '../types';
@@ -46,6 +47,9 @@ interface AppContextValue extends AppState {
   updateReceipt: (receipt: Receipt) => void;
   removeReceipt: (id: string) => void;
   getReceipt: (id: string) => Receipt | undefined;
+  addPantryItem: (item: PantryItem) => void;
+  removePantryItem: (id: string) => void;
+  getPantryItem: (id: string) => PantryItem | undefined;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -303,6 +307,19 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, receipts: (s.receipts ?? []).filter((r) => r.id !== id) }));
   }, []);
 
+  const getPantryItem = useCallback(
+    (id: string) => state.pantry?.find((p) => p.id === id),
+    [state.pantry],
+  );
+
+  const addPantryItem = useCallback((item: PantryItem) => {
+    setState((s) => ({ ...s, pantry: [item, ...(s.pantry ?? [])] }));
+  }, []);
+
+  const removePantryItem = useCallback((id: string) => {
+    setState((s) => ({ ...s, pantry: (s.pantry ?? []).filter((p) => p.id !== id) }));
+  }, []);
+
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -348,6 +365,9 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       updateReceipt,
       removeReceipt,
       getReceipt,
+      addPantryItem,
+      removePantryItem,
+      getPantryItem,
     }),
     [
       state,
@@ -379,6 +399,9 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       updateReceipt,
       removeReceipt,
       getReceipt,
+      addPantryItem,
+      removePantryItem,
+      getPantryItem,
     ],
   );
 

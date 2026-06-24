@@ -32,6 +32,7 @@ import { EditRecipeScreen } from './src/screens/EditRecipeScreen';
 import { ReceiptsScreen } from './src/screens/ReceiptsScreen';
 import { ReceiptDetailScreen } from './src/screens/ReceiptDetailScreen';
 import { ScanBarcodeScreen } from './src/screens/ScanBarcodeScreen';
+import { PantryScreen } from './src/screens/PantryScreen';
 import { ScanReceiptScreen } from './src/screens/ScanReceiptScreen';
 import { ReviewReceiptScreen } from './src/screens/ReviewReceiptScreen';
 import { Toast } from './src/components/Toast';
@@ -67,6 +68,7 @@ function RootNavigator() {
         <Stack.Screen name="ReceiptDetail" component={ReceiptDetailScreen} />
         <Stack.Screen name="ScanReceipt" component={ScanReceiptScreen} />
         <Stack.Screen name="ScanBarcode" component={ScanBarcodeScreen} />
+        <Stack.Screen name="Pantry" component={PantryScreen} />
         <Stack.Screen name="ReviewReceipt" component={ReviewReceiptScreen} />
       </Stack.Navigator>
       <Toast message={toast.message} visible={toast.visible} />

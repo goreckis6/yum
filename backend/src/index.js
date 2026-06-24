@@ -56,6 +56,28 @@ const RECEIPT_SCHEMA = `{
   "items": [{ "n": "string (line item name)", "p": number (line price) }]
 }`;
 
+const NUTRITION_SCHEMA = `{
+  "name": "string (product name if visible on the label, else a short generic description like 'Tomato passata'; empty if truly unknown)",
+  "brand": "string (brand / manufacturer if visible, else empty)",
+  "servingSize": "string (serving size exactly as written, e.g. '30 g', '250 ml', '1 cup (240 ml)'; empty if not stated)",
+  "servingQuantity": number (the serving size as a plain number of grams or millilitres, e.g. 30 or 250; 0 if not stated),
+  "basis": "string (either '100g' or '100ml' — whichever unit the nutrition table is based on)",
+  "per100": { "kcal": number, "p": number (protein g), "c": number (carbs g), "f": number (fat g) },
+  "perServing": { "kcal": number, "p": number, "c": number, "f": number }
+}`;
+
+function buildMockNutrition() {
+  return {
+    name: 'Sample product',
+    brand: '',
+    servingSize: '30 g',
+    servingQuantity: 30,
+    basis: '100g',
+    per100: { kcal: 380, p: 8, c: 60, f: 12 },
+    perServing: { kcal: 114, p: 2.4, c: 18, f: 3.6 },
+  };
+}
+
 function buildMockReceipt() {
   return {
     merchant: 'Blue Bottle Coffee',
@@ -454,6 +476,100 @@ app.post('/api/extract-receipt-image', async (req, res) => {
   } catch (err) {
     console.error('extract-receipt-image error:', err);
     res.status(500).json({ error: err.message || 'Failed to read receipt' });
+  }
+});
+
+app.post('/api/extract-nutrition-label', async (req, res) => {
+  try {
+    // Accept either a single image or several photos of the SAME product label
+    // (e.g. a bottle that can't be captured in one shot).
+    const { images, imageBase64, mimeType = 'image/jpeg' } = req.body;
+    let shots = Array.isArray(images) ? images : [];
+    if (!shots.length && typeof imageBase64 === 'string') {
+      shots = [{ base64: imageBase64, mimeType }];
+    }
+    shots = shots
+      .filter((s) => s && typeof s.base64 === 'string' && s.base64.length)
+      .slice(0, 4);
+    if (!shots.length) {
+      return res.status(400).json({ error: 'At least one label image is required' });
+    }
+
+    if (!openai) {
+      await new Promise((r) => setTimeout(r, 1200));
+      return res.json({ product: buildMockNutrition(), demo: true });
+    }
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        {
+          role: 'system',
+          content: `You read nutrition / "Nutrition Facts" / "Wartość odżywcza" labels from photos of a packaged food or drink and return structured data as valid JSON matching this schema: ${NUTRITION_SCHEMA}. The photos may show the SAME product from different angles (e.g. a bottle where one shot can't capture the whole table) — combine all of them into ONE result; do not double-count. Read numbers carefully. If the table gives values per serving but a serving quantity is stated, COMPUTE the per-100 values (and vice-versa: if only per-100 is given plus a serving size, compute per-serving). Energy must be in kcal — if only kJ is shown, convert (1 kcal = 4.184 kJ). Carbs = total carbohydrate, fat = total fat. If a value is genuinely not on the label, use 0. Never invent values that are not supported by the photos.`,
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'text',
+              text:
+                shots.length > 1
+                  ? `These ${shots.length} photos show the same product's label from different angles. Combine them and extract the nutrition data.`
+                  : 'Extract the nutrition data from this product label.',
+            },
+            ...shots.map((s) => ({
+              type: 'image_url',
+              image_url: {
+                url: `data:${s.mimeType || 'image/jpeg'};base64,${s.base64}`,
+                detail: 'high',
+              },
+            })),
+          ],
+        },
+      ],
+      temperature: 0.2,
+    });
+
+    const raw = completion.choices[0]?.message?.content;
+    if (!raw) throw new Error('Empty response from OpenAI');
+    const parsed = JSON.parse(raw);
+
+    const macro = (o) => ({
+      kcal: Math.max(0, Math.round(Number(o?.kcal) || 0)),
+      p: Math.max(0, Math.round((Number(o?.p) || 0) * 10) / 10),
+      c: Math.max(0, Math.round((Number(o?.c) || 0) * 10) / 10),
+      f: Math.max(0, Math.round((Number(o?.f) || 0) * 10) / 10),
+    });
+    const per100 = macro(parsed.per100);
+    const servingQuantity = Math.max(0, Number(parsed.servingQuantity) || 0);
+    let perServing = macro(parsed.perServing);
+    // Backfill per-serving from per-100 if the model left it empty but we know the portion.
+    if (!perServing.kcal && !perServing.p && !perServing.c && !perServing.f && servingQuantity > 0) {
+      const k = servingQuantity / 100;
+      perServing = {
+        kcal: Math.round(per100.kcal * k),
+        p: Math.round(per100.p * k * 10) / 10,
+        c: Math.round(per100.c * k * 10) / 10,
+        f: Math.round(per100.f * k * 10) / 10,
+      };
+    }
+
+    res.json({
+      product: {
+        name: String(parsed.name || '').trim(),
+        brand: String(parsed.brand || '').trim(),
+        servingSize: String(parsed.servingSize || '').trim(),
+        servingQuantity,
+        basis: parsed.basis === '100ml' ? '100ml' : '100g',
+        per100,
+        perServing,
+      },
+      demo: false,
+    });
+  } catch (err) {
+    console.error('extract-nutrition-label error:', err);
+    res.status(500).json({ error: err.message || 'Failed to read nutrition label' });
   }
 });
 

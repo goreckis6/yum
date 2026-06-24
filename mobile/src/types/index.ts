@@ -59,6 +59,30 @@ export interface Receipt {
   createdAt: number;
 }
 
+export interface Macros {
+  kcal: number;
+  p: number;
+  c: number;
+  f: number;
+}
+
+// A food product saved from the barcode scanner (Open Food Facts hit or an
+// AI-read nutrition label). Macros are kept on both bases so the UI can switch.
+export interface PantryItem {
+  id: string;
+  name: string;
+  brand?: string;
+  barcode?: string;
+  imageUrl?: string;
+  servingSize?: string;
+  servingQuantity?: number;
+  basis: '100g' | '100ml';
+  per100: Macros;
+  perServing?: Macros;
+  source: 'off' | 'label';
+  createdAt: number;
+}
+
 export interface GroceryItem {
   id: string;
   a: string;
@@ -85,6 +109,7 @@ export interface AppState {
   cookbookCovers: Record<string, CookbookCover>;
   customCookbooks: CustomCookbook[];
   receipts: Receipt[];
+  pantry: PantryItem[];
 }
 
 export interface CookbookCover {

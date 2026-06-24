@@ -40,7 +40,7 @@ export function ProfileScreen() {
   const { t, lang, setLang } = useI18n();
   const styles = makeStyles(c);
   const { mode, setMode } = useThemeCtx();
-  const { recipes, receipts, showToast } = useApp();
+  const { recipes, receipts, pantry, showToast } = useApp();
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -150,6 +150,7 @@ export function ProfileScreen() {
 
       <Text style={styles.section}>{t('profile.data')}</Text>
       <View style={styles.group}>
+        <Row icon="barcode" labelKey="profile.myPantry" right={String(pantry?.length ?? 0)} onPress={() => navigation.navigate('Pantry')} />
         <Row icon="receipt" labelKey="profile.myReceipts" right={String(receipts?.length ?? 0)} onPress={() => navigation.navigate('Receipts')} />
         <Row icon="document" labelKey="profile.exportReceipts" onPress={() => navigation.navigate('Receipts')} />
         <Row icon="sync" labelKey="profile.syncData" right={t('profile.lastSynced', { time: lastSynced })} onPress={() => showToast(t('profile.syncedToast'))} last />
