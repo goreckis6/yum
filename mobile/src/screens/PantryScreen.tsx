@@ -18,7 +18,7 @@ export function PantryScreen({ navigation }: Props) {
   const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
-  const { pantry, removePantryItem, addPantryToGrocery, grocery, showToast } = useApp();
+  const { pantry, removePantryItem, addPantryToGrocery, removeGrocery, grocery, showToast } = useApp();
   const items = pantry ?? [];
 
   const remove = (item: PantryItem) => {
@@ -41,9 +41,13 @@ export function PantryScreen({ navigation }: Props) {
         <View style={styles.empty}>
           <Icon name="barcode" size={44} color={c.gray} />
           <Text style={styles.emptyText}>{t('pantry.empty')}</Text>
+          <Pressable style={styles.scanBtn} onPress={() => navigation.navigate('ScanBarcode')}>
+            <Text style={styles.scanBtnText}>Skanuj kod kreskowy</Text>
+          </Pressable>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
+        <View style={{ flex: 1 }}>
+        <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
           <Text style={styles.count}>{t('pantry.count', { n: items.length })}</Text>
           {items.map((item) => {
             const m = item.perServing ?? item.per100;
@@ -71,11 +75,18 @@ export function PantryScreen({ navigation }: Props) {
                 </View>
                 <View style={styles.cardActions}>
                   {(() => {
-                    const onList = (grocery ?? []).some((g) => g.n.toLowerCase() === item.name.toLowerCase());
+                    const groceryEntry = (grocery ?? []).find((g) => g.n.toLowerCase() === item.name.toLowerCase());
+                    const onList = !!groceryEntry;
                     return (
                       <Pressable
                         style={[styles.addBtn, onList && styles.addBtnDone]}
-                        onPress={() => { if (!onList) addPantryToGrocery(item.id); }}
+                        onPress={() => {
+                          if (onList && groceryEntry) {
+                            removeGrocery(groceryEntry.id);
+                          } else {
+                            addPantryToGrocery(item.id);
+                          }
+                        }}
                         hitSlop={6}
                       >
                         <Text style={[styles.addBtnText, onList && styles.addBtnTextDone]}>
@@ -92,6 +103,13 @@ export function PantryScreen({ navigation }: Props) {
             );
           })}
         </ScrollView>
+        <Pressable
+          style={[styles.scanBtn, { marginBottom: insets.bottom + 12 }]}
+          onPress={() => navigation.navigate('ScanBarcode')}
+        >
+          <Text style={styles.scanBtnText}>+ Skanuj kod kreskowy</Text>
+        </Pressable>
+        </View>
       )}
     </View>
   );
@@ -139,4 +157,13 @@ const makeStyles = (c: ThemeColors) =>
     addBtnTextDone: { color: c.grayMid },
     removeBtn: { paddingVertical: 4, paddingHorizontal: 2 },
     removeText: { fontSize: 12, fontWeight: '700', color: c.grayMid },
+    scanBtn: {
+      backgroundColor: c.accent,
+      borderRadius: 16,
+      paddingVertical: 15,
+      alignItems: 'center',
+      marginHorizontal: 0,
+      marginTop: 8,
+    },
+    scanBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   });

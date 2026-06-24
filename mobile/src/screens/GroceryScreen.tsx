@@ -1,6 +1,7 @@
 import React, { useRef, useMemo, useState } from 'react';
 import {
   Animated,
+  Image,
   PanResponder,
   Pressable,
   ScrollView,
@@ -108,13 +109,17 @@ export function GroceryScreen() {
   const { setTab } = useTabNav();
   const { grocery, pantry, toggleGrocery, toggleAllGrocery, removeGrocery, clearCheckedGrocery, addPantryToGrocery, showToast } = useApp();
   const [groupBy, setGroupBy] = useState<GroupBy>('aisle');
+  const [pantryExpanded, setPantryExpanded] = useState(false);
   const insets = useSafeAreaInsets();
 
   const active = grocery.filter((g) => !g.checked);
   const completed = grocery.filter((g) => g.checked);
   const allChecked = grocery.length > 0 && grocery.every((g) => g.checked);
 
-  const pantryItems = (pantry ?? []).slice(0, 10);
+  const allPantryItems = pantry ?? [];
+  const PANTRY_PREVIEW = 4;
+  const pantryItems = pantryExpanded ? allPantryItems : allPantryItems.slice(0, PANTRY_PREVIEW);
+  const hasMore = allPantryItems.length > PANTRY_PREVIEW;
 
   const groups = useMemo(() => {
     if (groupBy === 'aisle') {
@@ -150,29 +155,49 @@ export function GroceryScreen() {
       <Text style={styles.sub}>{t('grocery.itemsToPickup', { n: active.length })}</Text>
 
       {/* Pantry quick-add strip */}
-      {pantryItems.length > 0 && (
+      {allPantryItems.length > 0 && (
         <View style={styles.pantryStrip}>
           <Text style={styles.pantryStripLabel}>Ze spiżarni</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pantryScroll}>
+          <View style={styles.pantryGrid}>
             {pantryItems.map((p) => {
-              const alreadyOn = grocery.some((g) => g.n.toLowerCase() === p.name.toLowerCase());
+              const groceryEntry = grocery.find((g) => g.n.toLowerCase() === p.name.toLowerCase());
+              const onList = !!groceryEntry;
               return (
                 <Pressable
                   key={p.id}
-                  style={[styles.pantryChip, alreadyOn && styles.pantryChipDone]}
+                  style={[styles.pantryChip, onList && styles.pantryChipDone]}
                   onPress={() => {
-                    if (alreadyOn) return;
-                    addPantryToGrocery(p.id);
+                    if (onList && groceryEntry) {
+                      removeGrocery(groceryEntry.id);
+                    } else {
+                      addPantryToGrocery(p.id);
+                    }
                   }}
-                  disabled={alreadyOn}
                 >
-                  <Text style={[styles.pantryChipText, alreadyOn && styles.pantryChipTextDone]} numberOfLines={1}>
-                    {alreadyOn ? '✓ ' : '+ '}{p.name}
+                  {p.imageUrl ? (
+                    <Image source={{ uri: p.imageUrl }} style={styles.pantryChipImg} resizeMode="cover" />
+                  ) : (
+                    <View style={styles.pantryChipImgEmpty}>
+                      <Text style={{ fontSize: 12 }}>🫙</Text>
+                    </View>
+                  )}
+                  <Text style={[styles.pantryChipText, onList && styles.pantryChipTextDone]} numberOfLines={1}>
+                    {p.name}
+                  </Text>
+                  <Text style={[styles.pantryChipBadge, onList && styles.pantryChipBadgeDone]}>
+                    {onList ? '✓' : '+'}
                   </Text>
                 </Pressable>
               );
             })}
-          </ScrollView>
+          </View>
+          {hasMore && (
+            <Pressable style={styles.pantryExpandBtn} onPress={() => setPantryExpanded((v) => !v)}>
+              <Text style={styles.pantryExpandText}>
+                {pantryExpanded ? 'Pokaż mniej ↑' : `Pokaż więcej (${allPantryItems.length - PANTRY_PREVIEW}) ↓`}
+              </Text>
+            </Pressable>
+          )}
         </View>
       )}
 
@@ -293,19 +318,35 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   pantryStrip: { marginBottom: 16 },
   pantryStripLabel: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 8 },
-  pantryScroll: { marginHorizontal: -20, paddingHorizontal: 20 },
+  pantryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   pantryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
     backgroundColor: c.surface,
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 20,
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    marginRight: 8,
+    paddingVertical: 6,
+    paddingLeft: 6,
+    paddingRight: 12,
   },
-  pantryChipDone: { backgroundColor: c.surfaceAlt, borderColor: 'transparent' },
-  pantryChipText: { fontSize: 13, fontWeight: '600', color: c.ink, maxWidth: 140 },
+  pantryChipDone: { backgroundColor: c.surfaceAlt, borderColor: c.border },
+  pantryChipImg: { width: 26, height: 26, borderRadius: 13 },
+  pantryChipImgEmpty: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: c.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pantryChipText: { fontSize: 13, fontWeight: '600', color: c.ink, maxWidth: 110 },
   pantryChipTextDone: { color: c.grayMid },
+  pantryChipBadge: { fontSize: 13, fontWeight: '700', color: c.accent },
+  pantryChipBadgeDone: { color: c.grayMid },
+  pantryExpandBtn: { paddingTop: 10, alignSelf: 'flex-start' },
+  pantryExpandText: { fontSize: 12.5, fontWeight: '700', color: c.accent },
 
   toggle: {
     flexDirection: 'row',
