@@ -47,7 +47,8 @@ export function ScanBarcodeScreen({ navigation }: Props) {
   const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
-  const { addPantryItem, showToast } = useApp();
+  const { addPantryItem, addPantryToGrocery, grocery, showToast } = useApp();
+  const [savedId, setSavedId] = useState<string | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
   const [permission, requestPermission] = useCameraPermissions();
@@ -91,6 +92,7 @@ export function ScanBarcodeScreen({ navigation }: Props) {
     setError(null);
     setSaved(false);
     setSaving(false);
+    setSavedId(null);
     setMode('scanning');
     busy.current = false;
   };
@@ -124,6 +126,7 @@ export function ScanBarcodeScreen({ navigation }: Props) {
       };
       addPantryItem(item);
       setSaved(true);
+      setSavedId(item.id);
       showToast(t('barcode.saved'));
     } catch {
       setError(t('barcode.labelError'));
@@ -265,6 +268,20 @@ export function ScanBarcodeScreen({ navigation }: Props) {
               <Pressable style={styles.againBtn} onPress={addShot}>
                 <Text style={styles.againText}>{t('barcode.photoLabel')}</Text>
               </Pressable>
+              {saved && savedId && (() => {
+                const onList = (grocery ?? []).some((g) => g.n.toLowerCase() === (display?.name ?? '').toLowerCase());
+                return (
+                  <Pressable
+                    style={[styles.ghostBtn, onList && { opacity: 0.5 }]}
+                    onPress={() => { if (!onList && savedId) addPantryToGrocery(savedId); }}
+                    disabled={onList}
+                  >
+                    <Text style={styles.ghostText}>
+                      {onList ? '✓ Na liście zakupów' : '+ Dodaj do listy zakupów'}
+                    </Text>
+                  </Pressable>
+                );
+              })()}
               <Pressable style={styles.ghostBtn} onPress={reset}>
                 <Text style={styles.ghostText}>{t('barcode.scanAgain')}</Text>
               </Pressable>

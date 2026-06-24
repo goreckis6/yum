@@ -29,8 +29,11 @@ interface AppContextValue extends AppState {
   toggleFavorite: (id: string) => void;
   updateRecipes: (recipes: Recipe[]) => void;
   toggleGrocery: (id: string) => void;
+  toggleAllGrocery: (checked: boolean) => void;
+  removeGrocery: (id: string) => void;
   clearCheckedGrocery: () => void;
   addRecipeToGrocery: (recipeId: string) => void;
+  addPantryToGrocery: (pantryId: string) => void;
   addWeekToGrocery: () => void;
   setMealPlan: (plan: MealPlan) => void;
   assignMeal: (day: DayKey, slot: MealSlot, recipeId: string | null) => void;
@@ -134,10 +137,48 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     }));
   }, []);
 
+  const toggleAllGrocery = useCallback((checked: boolean) => {
+    setState((s) => ({
+      ...s,
+      grocery: s.grocery.map((g) => ({ ...g, checked })),
+    }));
+  }, []);
+
+  const removeGrocery = useCallback((id: string) => {
+    setState((s) => ({ ...s, grocery: s.grocery.filter((g) => g.id !== id) }));
+  }, []);
+
   const clearCheckedGrocery = useCallback(() => {
     setState((s) => ({ ...s, grocery: s.grocery.filter((g) => !g.checked) }));
     showToast('Cleared the basket');
   }, [showToast]);
+
+  const addPantryToGrocery = useCallback(
+    (pantryId: string) => {
+      const item = state.pantry?.find((p) => p.id === pantryId);
+      if (!item) return;
+      setState((s) => {
+        const existing = s.grocery.find((g) => g.n.toLowerCase() === item.name.toLowerCase());
+        if (existing) return s;
+        return {
+          ...s,
+          grocery: [
+            ...s.grocery,
+            {
+              id: `gp${Date.now()}`,
+              a: item.servingSize || '1 szt.',
+              n: item.name,
+              aisle: 'Pantry' as const,
+              recipe: item.brand || 'Spiżarnia',
+              checked: false,
+            },
+          ],
+        };
+      });
+      showToast('Dodano do listy zakupów');
+    },
+    [state.pantry, showToast],
+  );
 
   const addRecipeToGrocery = useCallback(
     (recipeId: string) => {
@@ -347,8 +388,11 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       updateRecipe,
       toggleFavorite,
       toggleGrocery,
+      toggleAllGrocery,
+      removeGrocery,
       clearCheckedGrocery,
       addRecipeToGrocery,
+      addPantryToGrocery,
       addWeekToGrocery,
       setMealPlan,
       assignMeal,
@@ -381,8 +425,11 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       updateRecipe,
       toggleFavorite,
       toggleGrocery,
+      toggleAllGrocery,
+      removeGrocery,
       clearCheckedGrocery,
       addRecipeToGrocery,
+      addPantryToGrocery,
       addWeekToGrocery,
       setMealPlan,
       assignMeal,

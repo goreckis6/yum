@@ -18,7 +18,7 @@ export function PantryScreen({ navigation }: Props) {
   const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
-  const { pantry, removePantryItem, showToast } = useApp();
+  const { pantry, removePantryItem, addPantryToGrocery, grocery, showToast } = useApp();
   const items = pantry ?? [];
 
   const remove = (item: PantryItem) => {
@@ -69,9 +69,25 @@ export function PantryScreen({ navigation }: Props) {
                     <Text style={styles.macroNote}>  {basisNote}</Text>
                   </Text>
                 </View>
-                <Pressable style={styles.removeBtn} onPress={() => remove(item)} hitSlop={8}>
-                  <Text style={styles.removeText}>{t('pantry.remove')}</Text>
-                </Pressable>
+                <View style={styles.cardActions}>
+                  {(() => {
+                    const onList = (grocery ?? []).some((g) => g.n.toLowerCase() === item.name.toLowerCase());
+                    return (
+                      <Pressable
+                        style={[styles.addBtn, onList && styles.addBtnDone]}
+                        onPress={() => { if (!onList) addPantryToGrocery(item.id); }}
+                        hitSlop={6}
+                      >
+                        <Text style={[styles.addBtnText, onList && styles.addBtnTextDone]}>
+                          {onList ? '✓' : '+'}
+                        </Text>
+                      </Pressable>
+                    );
+                  })()}
+                  <Pressable style={styles.removeBtn} onPress={() => remove(item)} hitSlop={8}>
+                    <Text style={styles.removeText}>{t('pantry.remove')}</Text>
+                  </Pressable>
+                </View>
               </View>
             );
           })}
@@ -109,6 +125,18 @@ const makeStyles = (c: ThemeColors) =>
     brand: { fontSize: 12.5, fontWeight: '500', color: c.grayMid, marginTop: 1 },
     macroLine: { fontSize: 12.5, fontWeight: '700', color: c.ink, marginTop: 5 },
     macroNote: { fontSize: 11, fontWeight: '500', color: c.grayMid },
-    removeBtn: { paddingVertical: 6, paddingHorizontal: 4 },
-    removeText: { fontSize: 12.5, fontWeight: '700', color: c.accent },
+    cardActions: { alignItems: 'flex-end', gap: 8 },
+    addBtn: {
+      width: 30,
+      height: 30,
+      borderRadius: 15,
+      backgroundColor: c.accent,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addBtnDone: { backgroundColor: c.surfaceAlt },
+    addBtnText: { color: '#fff', fontSize: 18, fontWeight: '700', marginTop: -1 },
+    addBtnTextDone: { color: c.grayMid },
+    removeBtn: { paddingVertical: 4, paddingHorizontal: 2 },
+    removeText: { fontSize: 12, fontWeight: '700', color: c.grayMid },
   });

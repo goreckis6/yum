@@ -1,5 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useMemo, useState } from 'react';
+import {
+  Animated,
+  PanResponder,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,6 +34,68 @@ const AISLE_ICON: Record<Aisle, string> = {
   Frozen: '🧊',
 };
 
+const SWIPE_THRESHOLD = 80;
+
+function SwipeableRow({
+  item,
+  onToggle,
+  onRemove,
+  children,
+  styles,
+  c,
+}: {
+  item: GroceryItem;
+  onToggle: () => void;
+  onRemove: () => void;
+  children: React.ReactNode;
+  styles: ReturnType<typeof makeStyles>;
+  c: ThemeColors;
+}) {
+  const translateX = useRef(new Animated.Value(0)).current;
+  const [revealed, setRevealed] = useState(false);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > 8 && Math.abs(g.dx) > Math.abs(g.dy),
+      onPanResponderMove: (_, g) => {
+        const dx = Math.min(0, g.dx);
+        translateX.setValue(dx);
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dx < -SWIPE_THRESHOLD) {
+          Animated.spring(translateX, { toValue: -80, useNativeDriver: true }).start();
+          setRevealed(true);
+        } else {
+          Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+          setRevealed(false);
+        }
+      },
+    }),
+  ).current;
+
+  const handleRemove = () => {
+    Animated.timing(translateX, { toValue: -400, duration: 220, useNativeDriver: true }).start(
+      onRemove,
+    );
+  };
+
+  return (
+    <View style={styles.swipeWrap}>
+      <View style={styles.deleteBack}>
+        <Pressable style={styles.deleteBtn} onPress={handleRemove}>
+          <Text style={styles.deleteText}>Usuń</Text>
+        </Pressable>
+      </View>
+      <Animated.View style={{ transform: [{ translateX }] }} {...panResponder.panHandlers}>
+        <Pressable style={styles.item} onPress={onToggle}>
+          {children}
+        </Pressable>
+      </Animated.View>
+    </View>
+  );
+}
+
 export function GroceryScreen() {
   const c = useTheme();
   const { t } = useI18n();
@@ -36,12 +106,15 @@ export function GroceryScreen() {
       : name;
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
-  const { grocery, toggleGrocery, clearCheckedGrocery, showToast } = useApp();
+  const { grocery, pantry, toggleGrocery, toggleAllGrocery, removeGrocery, clearCheckedGrocery, addPantryToGrocery, showToast } = useApp();
   const [groupBy, setGroupBy] = useState<GroupBy>('aisle');
   const insets = useSafeAreaInsets();
 
   const active = grocery.filter((g) => !g.checked);
   const completed = grocery.filter((g) => g.checked);
+  const allChecked = grocery.length > 0 && grocery.every((g) => g.checked);
+
+  const pantryItems = (pantry ?? []).slice(0, 10);
 
   const groups = useMemo(() => {
     if (groupBy === 'aisle') {
@@ -76,6 +149,33 @@ export function GroceryScreen() {
       <Text style={styles.title}>{t('grocery.title')}</Text>
       <Text style={styles.sub}>{t('grocery.itemsToPickup', { n: active.length })}</Text>
 
+      {/* Pantry quick-add strip */}
+      {pantryItems.length > 0 && (
+        <View style={styles.pantryStrip}>
+          <Text style={styles.pantryStripLabel}>Ze spiżarni</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pantryScroll}>
+            {pantryItems.map((p) => {
+              const alreadyOn = grocery.some((g) => g.n.toLowerCase() === p.name.toLowerCase());
+              return (
+                <Pressable
+                  key={p.id}
+                  style={[styles.pantryChip, alreadyOn && styles.pantryChipDone]}
+                  onPress={() => {
+                    if (alreadyOn) return;
+                    addPantryToGrocery(p.id);
+                  }}
+                  disabled={alreadyOn}
+                >
+                  <Text style={[styles.pantryChipText, alreadyOn && styles.pantryChipTextDone]} numberOfLines={1}>
+                    {alreadyOn ? '✓ ' : '+ '}{p.name}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
+
       <View style={styles.toggle}>
         <Pressable
           style={[styles.toggleBtn, groupBy === 'aisle' && styles.toggleOn]}
@@ -101,6 +201,19 @@ export function GroceryScreen() {
         </View>
       ) : (
         <>
+          {/* Select-all row */}
+          <Pressable style={styles.selectAllRow} onPress={() => toggleAllGrocery(!allChecked)}>
+            <View style={[styles.checkbox, allChecked && styles.checkboxOn]}>
+              {allChecked && <Text style={styles.check}>✓</Text>}
+            </View>
+            <Text style={styles.selectAllText}>{allChecked ? 'Odznacz wszystko' : 'Zaznacz wszystko'}</Text>
+            {completed.length > 0 && (
+              <Pressable onPress={clearCheckedGrocery} hitSlop={10}>
+                <Text style={styles.clearText}>{t('grocery.clear')}</Text>
+              </Pressable>
+            )}
+          </Pressable>
+
           {groups.map((group) => (
             <View key={group.name} style={styles.group}>
               <View style={styles.groupHeader}>
@@ -113,8 +226,15 @@ export function GroceryScreen() {
                 <Text style={styles.groupCount}>{group.items.length}</Text>
               </View>
               {group.items.map((item) => (
-                <Pressable key={item.id} style={styles.item} onPress={() => toggleGrocery(item.id)}>
-                  <View style={styles.checkbox} />
+                <SwipeableRow
+                  key={item.id}
+                  item={item}
+                  onToggle={() => toggleGrocery(item.id)}
+                  onRemove={() => removeGrocery(item.id)}
+                  styles={styles}
+                  c={c}
+                >
+                  <View style={styles.checkboxInner} />
                   <IngredientIcon name={item.n} aisle={item.aisle} size={34} />
                   <Text style={styles.itemAmt}>{item.a}</Text>
                   <View style={styles.itemBody}>
@@ -123,7 +243,7 @@ export function GroceryScreen() {
                       {groupBy === 'aisle' ? item.recipe : aisleLabel(item.aisle)}
                     </Text>
                   </View>
-                </Pressable>
+                </SwipeableRow>
               ))}
             </View>
           ))}
@@ -137,14 +257,21 @@ export function GroceryScreen() {
                 </Pressable>
               </View>
               {completed.map((item) => (
-                <Pressable key={item.id} style={styles.itemDone} onPress={() => toggleGrocery(item.id)}>
+                <SwipeableRow
+                  key={item.id}
+                  item={item}
+                  onToggle={() => toggleGrocery(item.id)}
+                  onRemove={() => removeGrocery(item.id)}
+                  styles={styles}
+                  c={c}
+                >
                   <View style={styles.checkboxOn}>
                     <Text style={styles.check}>✓</Text>
                   </View>
                   <IngredientIcon name={item.n} aisle={item.aisle} size={30} muted />
                   <Text style={styles.itemAmtDone}>{item.a}</Text>
                   <Text style={styles.itemNameDone}>{item.n}</Text>
-                </Pressable>
+                </SwipeableRow>
               ))}
             </View>
           )}
@@ -162,13 +289,30 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
   title: { fontFamily: fonts.display, fontSize: 28, color: c.ink, letterSpacing: -0.6 },
-  sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4, marginBottom: 18 },
+  sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4, marginBottom: 16 },
+
+  pantryStrip: { marginBottom: 16 },
+  pantryStripLabel: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginBottom: 8 },
+  pantryScroll: { marginHorizontal: -20, paddingHorizontal: 20 },
+  pantryChip: {
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 20,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    marginRight: 8,
+  },
+  pantryChipDone: { backgroundColor: c.surfaceAlt, borderColor: 'transparent' },
+  pantryChipText: { fontSize: 13, fontWeight: '600', color: c.ink, maxWidth: 140 },
+  pantryChipTextDone: { color: c.grayMid },
+
   toggle: {
     flexDirection: 'row',
     backgroundColor: c.surfaceAlt,
     borderRadius: 12,
     padding: 4,
-    marginBottom: 22,
+    marginBottom: 14,
   },
   toggleBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center' },
   toggleOn: {
@@ -181,6 +325,16 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   toggleText: { fontSize: 13.5, fontWeight: '700', color: c.grayMid },
   toggleTextOn: { color: c.ink },
+
+  selectAllRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  selectAllText: { flex: 1, fontSize: 13.5, fontWeight: '700', color: c.ink },
+
   empty: { alignItems: 'center', paddingVertical: 60 },
   emptyTitle: { fontSize: 17, fontWeight: '700', color: c.ink, marginBottom: 6 },
   emptySub: { fontSize: 14, fontWeight: '500', color: c.grayMid, marginBottom: 20 },
@@ -197,6 +351,21 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   groupIcon: { fontSize: 16 },
   groupName: { fontSize: 13, fontWeight: '700', color: c.ink, flex: 1 },
   groupCount: { fontSize: 12, fontWeight: '600', color: c.grayMid },
+
+  swipeWrap: { position: 'relative', marginBottom: 8, overflow: 'hidden', borderRadius: 14 },
+  deleteBack: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: '#DC2626',
+    borderRadius: 14,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+  },
+  deleteBtn: { paddingHorizontal: 20, height: '100%', alignItems: 'center', justifyContent: 'center' },
+  deleteText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
   item: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -204,7 +373,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     backgroundColor: c.surface,
     borderRadius: 14,
     padding: 12,
-    marginBottom: 8,
   },
   checkbox: {
     width: 22,
@@ -213,15 +381,13 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 2,
     borderColor: '#DADADA',
   },
-  itemAmt: { fontSize: 14, fontWeight: '700', color: c.ink, minWidth: 56 },
-  itemBody: { flex: 1 },
-  itemName: { fontSize: 14.5, fontWeight: '600', color: c.ink },
-  itemSub: { fontSize: 12, fontWeight: '500', color: c.grayMid, marginTop: 2 },
-  completed: { marginTop: 8 },
-  completedHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  completedTitle: { fontSize: 13, fontWeight: '700', color: c.grayMid },
-  clearText: { fontSize: 13, fontWeight: '700', color: c.ink },
-  itemDone: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, opacity: 0.6 },
+  checkboxInner: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#DADADA',
+  },
   checkboxOn: {
     width: 22,
     height: 22,
@@ -231,6 +397,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   check: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  itemAmt: { fontSize: 14, fontWeight: '700', color: c.ink, minWidth: 56 },
+  itemBody: { flex: 1 },
+  itemName: { fontSize: 14.5, fontWeight: '600', color: c.ink },
+  itemSub: { fontSize: 12, fontWeight: '500', color: c.grayMid, marginTop: 2 },
+
+  completed: { marginTop: 8 },
+  completedHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  completedTitle: { fontSize: 13, fontWeight: '700', color: c.grayMid },
+  clearText: { fontSize: 13, fontWeight: '700', color: c.ink },
   itemAmtDone: { fontSize: 14, fontWeight: '700', color: c.grayMid, textDecorationLine: 'line-through', minWidth: 56 },
   itemNameDone: { fontSize: 14.5, fontWeight: '500', color: c.grayMid, textDecorationLine: 'line-through', flex: 1 },
   orderBtn: {
