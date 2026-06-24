@@ -12,20 +12,20 @@ import { useI18n } from '../i18n/I18nContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
 
 const URL_MESSAGES = [
-  'Reading the recipe…',
-  'Removing blog intro…',
-  'Extracting ingredients…',
-  'Converting to WW / WBT…',
-  'Cleaning up steps…',
-  'Almost done…',
+  'Szef kuchni Yumi analizuje przepis…',
+  'Usuwamy wstęp bloga…',
+  'Wyciągamy składniki…',
+  'Przeliczamy wartości…',
+  'Porządkujemy kroki…',
+  'Prawie gotowe…',
 ];
 
 const IMAGE_MESSAGES = [
-  'Analysing photo…',
-  'Identifying ingredients…',
-  'Building recipe…',
-  'Estimating nutrition…',
-  'Almost done…',
+  'Szef kuchni Yumi analizuje zdjęcie…',
+  'Rozpoznajemy składniki…',
+  'Budujemy przepis…',
+  'Szacujemy wartości odżywcze…',
+  'Prawie gotowe…',
 ];
 
 export function ProcessingScreen({ navigation, route }: Props) {

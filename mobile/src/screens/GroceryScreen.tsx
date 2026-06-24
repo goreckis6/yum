@@ -304,6 +304,15 @@ export function GroceryScreen() {
           <Pressable style={styles.orderBtn} onPress={() => showToast(t('grocery.order'))}>
             <Text style={styles.orderText}>{t('grocery.order')}</Text>
           </Pressable>
+
+          <Pressable style={styles.receiptBtn} onPress={() => navigation.navigate('Receipts')}>
+            <Text style={styles.receiptIcon}>🧾</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.receiptTitle}>{t('home.trackSpending')}</Text>
+              <Text style={styles.receiptSub}>{t('home.trackSpendingSub')}</Text>
+            </View>
+            <Text style={styles.receiptChevron}>›</Text>
+          </Pressable>
         </>
       )}
     </ScrollView>
@@ -457,4 +466,19 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginTop: 10,
   },
   orderText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  receiptBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 10,
+  },
+  receiptIcon: { fontSize: 26 },
+  receiptTitle: { fontSize: 14, fontWeight: '700', color: c.ink },
+  receiptSub: { fontSize: 12, fontWeight: '500', color: c.grayMid, marginTop: 1 },
+  receiptChevron: { color: c.grayMid, fontSize: 22 },
 });

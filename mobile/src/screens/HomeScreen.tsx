@@ -25,10 +25,21 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
 import { DayKey, FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
+
+function plRecipes(n: number, lang: string): string {
+  if (lang === 'pl') {
+    if (n === 1) return `${n} przepis`;
+    if (n >= 2 && n <= 4) return `${n} przepisy`;
+    return `${n} przepisów`;
+  }
+  return n === 1 ? `${n} recipe` : `${n} recipes`;
+}
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
 
 const CHIPS: FilterChip[] = ['All', 'Favorites', 'Quick', 'Dinner', 'Breakfast', 'Lunch', 'Vegetarian', 'High-protein'];
+// Recipes that ship in the seed — used to detect "first-time / empty" state.
+const SEED_IDS = new Set(['r1']);
 const HOME_TABS: { key: HomeTab; label: string }[] = [
   { key: 'organize', label: 'Organize' },
   { key: 'plan', label: 'Plan' },
@@ -45,7 +56,7 @@ function greetingKey(): 'home.greetingMorning' | 'home.greetingAfternoon' | 'hom
 
 export function HomeScreen() {
   const c = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -307,11 +318,26 @@ export function HomeScreen() {
     </>
   );
 
+  // "First-time" = user has no imported recipes yet (only the built-in seed).
+  const isFirstTime = recipes.every((r) => SEED_IDS.has(r.id));
+
   const renderOrganize = () => (
     <>
       <Text style={styles.headline}>
         {t(greetingKey())},{'\n'}{t('home.whatsCooking')}
       </Text>
+
+      {/* Empty state — shown when no user recipes yet */}
+      {isFirstTime && (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateTitle}>{t('home.empty.title')}</Text>
+          <Text style={styles.emptyStateSub}>{t('home.empty.sub')}</Text>
+          <Pressable style={styles.emptyStateBtn} onPress={() => navigation.navigate('ImportUrl')}>
+            <Icon name="link" size={18} color="#fff" />
+            <Text style={styles.emptyStateBtnText}>{t('home.empty.btn')}</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={styles.searchBox}>
         <Icon name="search" size={18} color={c.gray} />
@@ -350,70 +376,39 @@ export function HomeScreen() {
         </View>
       )}
 
-      <Pressable style={styles.importPrimary} onPress={() => navigation.navigate('ImportUrl')}>
-        <View style={styles.importIconLight}>
-          <Icon name="link" size={20} color="#fff" />
-        </View>
-        <View style={styles.importTextWrap}>
-          <Text style={styles.importTitle}>{t('home.pasteLink')}</Text>
-          <Text style={styles.importSub}>{t('home.pasteLinkSub')}</Text>
-        </View>
-        <Text style={styles.importChevron}>›</Text>
-      </Pressable>
-
-      <View style={styles.scanRow}>
-        <Pressable style={styles.scanCard} onPress={() => navigation.navigate('ScanRecipe')}>
-          <View style={styles.scanIconSage}>
-            <Icon name="scan" size={22} color={c.sage} />
-          </View>
-          <Text style={styles.scanTitle}>{t('home.addRecipe')}</Text>
-          <Text style={styles.scanSub}>{t('home.addRecipeSub')}</Text>
-        </Pressable>
-        <Pressable style={styles.scanCard} onPress={() => navigation.navigate('ScanBarcode')}>
-          <View style={styles.scanIconPeach}>
-            <Icon name="barcode" size={22} color={c.accent} />
-          </View>
-          <Text style={styles.scanTitle}>{t('home.scanBarcode')}</Text>
-          <Text style={styles.scanSub}>{t('home.scanBarcodeSub')}</Text>
-        </Pressable>
-        <Pressable style={styles.scanCard} onPress={() => navigation.navigate('Receipts')}>
-          <View style={styles.scanIconGold}>
-            <Icon name="receipt" size={22} color={c.gold} />
-          </View>
-          <Text style={styles.scanTitle}>{t('home.trackSpending')}</Text>
-          <Text style={styles.scanSub}>{t('home.trackSpendingSub')}</Text>
-        </Pressable>
-      </View>
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipRow}>
-        {CHIPS.map((c) => (
+        {CHIPS.map((chip_) => (
           <Pressable
-            key={c}
-            style={[styles.chip, chip === c && !activeCookbook && styles.chipOn]}
+            key={chip_}
+            style={[styles.chip, chip === chip_ && !activeCookbook && styles.chipOn]}
             onPress={() => {
-              setChip(c);
+              setChip(chip_);
               setActiveCookbook(null);
             }}
           >
-            <Text style={[styles.chipText, chip === c && styles.chipTextOn]}>
-              {TAG_ICON[c] ? `${TAG_ICON[c]} ${c}` : c}
+            <Text style={[styles.chipText, chip === chip_ && styles.chipTextOn]}>
+              {TAG_ICON[chip_] ? `${TAG_ICON[chip_]} ` : ''}{t(`chip.${chip_}` as any)}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{t('home.yourCookbooks')}</Text>
-        <Pressable onPress={() => setShowAllCookbooks((v) => !v)} hitSlop={8}>
-          <Text style={styles.sectionLink}>{showAllCookbooks ? t('common.showLess') : t('common.seeAll')}</Text>
-        </Pressable>
-      </View>
-      {showAllCookbooks ? (
-        <View style={styles.cookbookGrid}>{cookbookCards()}</View>
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cookbookRow}>
-          {cookbookCards()}
-        </ScrollView>
+      {!isFirstTime && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{t('home.yourCookbooks')}</Text>
+            <Pressable onPress={() => setShowAllCookbooks((v) => !v)} hitSlop={8}>
+              <Text style={styles.sectionLink}>{showAllCookbooks ? t('common.showLess') : t('common.seeAll')}</Text>
+            </Pressable>
+          </View>
+          {showAllCookbooks ? (
+            <View style={styles.cookbookGrid}>{cookbookCards()}</View>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cookbookRow}>
+              {cookbookCards()}
+            </ScrollView>
+          )}
+        </>
       )}
 
       <View style={styles.sectionHeader}>
@@ -430,7 +425,7 @@ export function HomeScreen() {
           </Pressable>
         ) : (
           <View style={styles.sortRow}>
-            <Text style={styles.countLabel}>{t('home.recipesCount', { n: filtered.length })}</Text>
+            <Text style={styles.countLabel}>{plRecipes(filtered.length, lang)}</Text>
             <Pressable style={styles.sortBtn} onPress={() => setSortOpen(true)} hitSlop={8}>
               <Text style={styles.sortText}>{SORT_LABEL[sortBy]}</Text>
               <Icon name="chevron-down" size={13} color={c.grayMid} />
@@ -752,66 +747,27 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     letterSpacing: -0.8,
     marginBottom: 16,
   },
-  importPrimary: {
+  emptyState: {
+    backgroundColor: c.accentSoft,
+    borderRadius: 20,
+    padding: 22,
+    marginBottom: 18,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyStateTitle: { fontFamily: fonts.display, fontSize: 20, color: c.ink, textAlign: 'center' },
+  emptyStateSub: { fontSize: 13.5, fontWeight: '500', color: c.grayMid, textAlign: 'center', lineHeight: 20 },
+  emptyStateBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
+    gap: 8,
     backgroundColor: c.accent,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: c.accent,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 22,
-    elevation: 4,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginTop: 4,
   },
-  importTextWrap: { flex: 1 },
-  importChevron: { color: 'rgba(255,255,255,0.85)', fontSize: 24, fontWeight: '400' },
-  scanRow: { flexDirection: 'row', alignItems: 'stretch', gap: 9, marginBottom: 16 },
-  scanCard: {
-    flex: 1,
-    minHeight: 118,
-    backgroundColor: c.surface,
-    borderRadius: 16,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: c.border,
-    shadowColor: '#211C18',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 16,
-    elevation: 2,
-  },
-  scanIconSage: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: c.sageSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 9,
-  },
-  scanIconGold: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: c.warning,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 9,
-  },
-  scanIconPeach: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: c.accentSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 9,
-  },
-  scanTitle: { fontSize: 13, fontWeight: '700', color: c.ink, marginBottom: 1 },
-  scanSub: { fontSize: 10.5, fontWeight: '500', color: c.grayMid },
+  emptyStateBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
   importSecondary: {
     flexDirection: 'row',
     alignItems: 'center',
