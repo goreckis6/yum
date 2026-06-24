@@ -38,7 +38,13 @@
           "cameraPermission": "YumiShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "YumiShare needs camera access to scan product barcodes."
+        }
+      ]
     ]
   }
 }

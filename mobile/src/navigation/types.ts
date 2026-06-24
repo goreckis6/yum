@@ -14,6 +14,7 @@ export type RootStackParamList = {
   Receipts: undefined;
   ReceiptDetail: { id: string };
   ScanReceipt: undefined;
+  ScanBarcode: undefined;
   ReviewReceipt: { draft: import('../types').Receipt; imageBase64?: string; mimeType?: string };
 };
 

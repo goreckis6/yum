@@ -369,7 +369,7 @@ export function HomeScreen() {
           <Text style={styles.scanTitle}>{t('home.addRecipe')}</Text>
           <Text style={styles.scanSub}>{t('home.addRecipeSub')}</Text>
         </Pressable>
-        <Pressable style={styles.scanCard} onPress={() => showToast(t('home.comingSoon'))}>
+        <Pressable style={styles.scanCard} onPress={() => navigation.navigate('ScanBarcode')}>
           <View style={styles.scanIconPeach}>
             <Icon name="barcode" size={22} color={c.accent} />
           </View>
@@ -768,9 +768,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   importTextWrap: { flex: 1 },
   importChevron: { color: 'rgba(255,255,255,0.85)', fontSize: 24, fontWeight: '400' },
-  scanRow: { flexDirection: 'row', gap: 9, marginBottom: 16 },
+  scanRow: { flexDirection: 'row', alignItems: 'stretch', gap: 9, marginBottom: 16 },
   scanCard: {
     flex: 1,
+    minHeight: 118,
     backgroundColor: c.surface,
     borderRadius: 16,
     padding: 12,
