@@ -6,6 +6,7 @@ import { AddSheet } from '../components/AddSheet';
 import { BottomNav } from '../components/BottomNav';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../theme/ThemeContext';
+import { COVER_PRESETS } from '../components/CoverArt';
 import { RootStackParamList } from './types';
 import { GroceryScreen } from '../screens/GroceryScreen';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -57,6 +58,25 @@ export function MainNavigator() {
         onScanBarcode={() => { setAddOpen(false); navigation.navigate('ScanBarcode'); }}
         onScanReceipt={() => { setAddOpen(false); navigation.navigate('ScanReceipt'); }}
         onRecipeReady={(draft) => { setAddOpen(false); navigation.navigate('ReviewImport', { draft }); }}
+        onManualRecipe={() => {
+          setAddOpen(false);
+          navigation.navigate('ReviewImport', {
+            manual: true,
+            draft: {
+              id: '',
+              title: '',
+              time: 30,
+              servings: 4,
+              rating: 0,
+              app: 'manual',
+              tint: '#F97316',
+              tags: [],
+              ingredients: [],
+              steps: [],
+              cover: COVER_PRESETS[0].id,
+            },
+          });
+        }}
       />
     </View>
     </TabProvider>

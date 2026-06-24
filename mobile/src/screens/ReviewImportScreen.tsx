@@ -35,8 +35,8 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   const { user } = useAuth();
   const userId = user?.id;
   const insets = useSafeAreaInsets();
-  // Keep the recipe's ingredients EXACTLY as extracted (original amounts) and
-  // its own serving count. The user only scales later via the stepper.
+  const isManual = route.params.manual === true;
+
   const [draft, setDraft] = useState(() => {
     const d = route.params.draft;
     return { ...d, servings: d.servings && d.servings > 0 ? d.servings : 1 };
@@ -102,6 +102,19 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     });
   };
 
+  const updateStep = (index: number, text: string) => {
+    const steps = draft.steps.map((s, i) => (i === index ? text : s));
+    setDraft({ ...draft, steps });
+  };
+
+  const removeStep = (index: number) => {
+    setDraft({ ...draft, steps: draft.steps.filter((_, i) => i !== index) });
+  };
+
+  const addStep = () => {
+    setDraft({ ...draft, steps: [...draft.steps, ''] });
+  };
+
   const save = async () => {
     const uploaded =
       coverMode === 'text' || !userId ? draft.imageUrl : await uploadImageIfLocal(draft.imageUrl, userId);
@@ -129,8 +142,8 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 
-      <Text style={styles.eyebrow}>{t('reviewImport.eyebrow')}</Text>
-      <Text style={styles.title}>{t('reviewImport.title')}</Text>
+      <Text style={styles.eyebrow}>{isManual ? t('reviewImport.eyebrowManual') : t('reviewImport.eyebrow')}</Text>
+      <Text style={styles.title}>{isManual ? t('reviewImport.titleManual') : t('reviewImport.title')}</Text>
 
       <View style={styles.modeRow}>
         <Pressable
@@ -299,9 +312,22 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       {draft.steps.map((step, i) => (
         <View key={i} style={styles.stepRow}>
           <Text style={styles.stepNum}>{i + 1}</Text>
-          <Text style={styles.stepText}>{cleanStep(step)}</Text>
+          <TextInput
+            style={styles.stepInput}
+            value={cleanStep(step)}
+            onChangeText={(text) => updateStep(i, text)}
+            placeholder={t('reviewImport.stepPlaceholder')}
+            placeholderTextColor={c.gray}
+            multiline
+          />
+          <Pressable onPress={() => removeStep(i)} hitSlop={8}>
+            <Text style={styles.remove}>✕</Text>
+          </Pressable>
         </View>
       ))}
+      <Pressable style={styles.addIng} onPress={addStep}>
+        <Text style={styles.addIngText}>{t('reviewImport.addStep')}</Text>
+      </Pressable>
 
       <Pressable style={styles.saveBtn} onPress={save}>
         <Text style={styles.saveText}>{t('reviewImport.saveLibrary')}</Text>
@@ -394,8 +420,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     lineHeight: 28,
     fontWeight: '700',
     color: c.ink,
+    flexShrink: 0,
+    marginTop: 10,
   },
   stepText: { flex: 1, fontSize: 14, lineHeight: 20, color: '#3A3A3A' },
+  stepInput: {
+    flex: 1,
+    backgroundColor: c.surface,
+    borderRadius: 10,
+    padding: 10,
+    fontSize: 14,
+    color: c.ink,
+    lineHeight: 20,
+    minHeight: 44,
+  },
   tagHint: { fontSize: 11, fontWeight: '600', color: c.grayMid, marginBottom: 10, marginTop: -4 },
   tagRow: { marginBottom: 18 },
   tagChip: {

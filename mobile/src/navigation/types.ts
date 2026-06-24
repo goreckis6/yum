@@ -6,7 +6,7 @@ export type RootStackParamList = {
   ImportUrl: undefined;
   ScanRecipe: undefined;
   Processing: { url: string } | { imageBase64: string; mimeType: string };
-  ReviewImport: { draft: import('../types').Recipe };
+  ReviewImport: { draft: import('../types').Recipe; manual?: boolean };
   EditRecipe: { id: string };
   Grocery: undefined;
   MealPlan: undefined;

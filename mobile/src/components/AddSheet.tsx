@@ -36,9 +36,10 @@ interface Props {
   onScanBarcode: () => void;
   onScanReceipt: () => void;
   onRecipeReady: (draft: Recipe) => void;
+  onManualRecipe: () => void;
 }
 
-export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceipt, onRecipeReady }: Props) {
+export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceipt, onRecipeReady, onManualRecipe }: Props) {
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
@@ -117,6 +118,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
                 styles={styles} c={c} t={t}
                 onLink={goLink}
                 onScan={() => { onClose(); onScan(); }}
+                onManualRecipe={() => { onClose(); onManualRecipe(); }}
                 onScanBarcode={() => { onClose(); onScanBarcode(); }}
                 onScanReceipt={() => { onClose(); onScanReceipt(); }}
               />
@@ -143,7 +145,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
 /* ─── Sub-views ──────────────────────────────────────────────── */
 
-function MenuView({ styles, c, t, onLink, onScan, onScanBarcode, onScanReceipt }: any) {
+function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode, onScanReceipt }: any) {
   return (
     <>
       <Text style={styles.title}>{t('addSheet.title')}</Text>
@@ -172,7 +174,7 @@ function MenuView({ styles, c, t, onLink, onScan, onScanBarcode, onScanReceipt }
           <Text style={styles.halfSub}>{t('addSheet.scanRecipeSub')}</Text>
         </Pressable>
 
-        <Pressable style={styles.halfOption}>
+        <Pressable style={styles.halfOption} onPress={onManualRecipe}>
           <View style={[styles.halfIcon, { backgroundColor: c.accentSoft }]}>
             <Icon name="edit" size={20} color={c.accent} />
           </View>
