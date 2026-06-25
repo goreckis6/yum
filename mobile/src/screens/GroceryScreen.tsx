@@ -315,19 +315,19 @@ export function GroceryScreen() {
         {/* Toggle pill */}
         <View style={styles.toggle}>
           <Pressable
-            style={[styles.toggleBtn, groupBy === 'aisle' && styles.toggleOn]}
-            onPress={() => setGroupBy('aisle')}
-          >
-            <Text style={[styles.toggleText, groupBy === 'aisle' && styles.toggleTextOn]}>
-              {t('grocery.byAisle')}
-            </Text>
-          </Pressable>
-          <Pressable
             style={[styles.toggleBtn, groupBy === 'recipe' && styles.toggleOn]}
             onPress={() => setGroupBy('recipe')}
           >
             <Text style={[styles.toggleText, groupBy === 'recipe' && styles.toggleTextOn]}>
               {t('grocery.byRecipe')}
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.toggleBtn, groupBy === 'aisle' && styles.toggleOn]}
+            onPress={() => setGroupBy('aisle')}
+          >
+            <Text style={[styles.toggleText, groupBy === 'aisle' && styles.toggleTextOn]}>
+              {t('grocery.byAisle')}
             </Text>
           </Pressable>
         </View>
