@@ -6,11 +6,13 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -52,6 +54,7 @@ interface Props {
 export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
   const c = useTheme();
   const { t } = useI18n();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(c), [c]);
   const { pantry, recipes, grocery, addGroceryItem } = useApp();
 
@@ -173,17 +176,16 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
     { key: 'db',      labelKey: 'mealplan.add.tabDb',      iconName: 'globe',   iconColor: c.gold,   iconBg: c.warning },
   ];
 
+  const topPad = insets.top + (Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0);
+  const botPad = Math.max(insets.bottom, 16);
+
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <Modal visible={visible} transparent={false} animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
-        style={styles.kav}
+        style={[styles.kav, { paddingTop: topPad, paddingBottom: botPad }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <Pressable style={StyleSheet.absoluteFillObject} onPress={onClose} />
-
         <View style={styles.sheet}>
-          {/* Handle */}
-          <View style={styles.handle} />
 
           {/* ── Quantity step ── */}
           {qtyTarget ? (
@@ -206,13 +208,13 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
             <>
               {/* Header */}
               <View style={styles.header}>
-                <View>
+                <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
+                  <Text style={styles.closeIcon}>‹</Text>
+                </Pressable>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.slotChip}>{slotLabel} · {day}</Text>
                   <Text style={styles.title}>{t('mealplan.add.title' as TKey, { slot: slotLabel, day })}</Text>
                 </View>
-                <Pressable style={styles.closeBtn} onPress={onClose} hitSlop={8}>
-                  <Text style={styles.closeIcon}>✕</Text>
-                </Pressable>
               </View>
 
               {/* Segmented tabs */}
@@ -509,30 +511,19 @@ function Empty({ label, styles, icon }: { label: string; styles: any; icon?: str
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    kav: { flex: 1, justifyContent: 'flex-end', backgroundColor: c.scrim },
-    sheet: {
-      backgroundColor: c.bg,
-      borderTopLeftRadius: 28,
-      borderTopRightRadius: 28,
-      paddingHorizontal: 20,
-      paddingTop: 12,
-      paddingBottom: Platform.OS === 'ios' ? 10 : 36,
-      maxHeight: '90%',
-    },
-    handle: {
-      width: 42, height: 5, borderRadius: 3,
-      backgroundColor: c.border, alignSelf: 'center', marginBottom: 16,
-    },
+    kav: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 20 },
+    sheet: { flex: 1 },
 
     // ── List header ──
-    header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 },
+    header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 18, paddingTop: 8 },
     slotChip: { fontSize: 11, fontWeight: '700', color: c.accent, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
-    title: { fontFamily: fonts.display, fontSize: 20, color: c.ink },
+    title: { fontFamily: fonts.display, fontSize: 22, color: c.ink },
     closeBtn: {
-      width: 30, height: 30, borderRadius: 15,
-      backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center', marginTop: 2,
+      width: 38, height: 38, borderRadius: 19,
+      backgroundColor: c.surface, borderWidth: 1, borderColor: c.border,
+      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     },
-    closeIcon: { fontSize: 13, color: c.grayMid, fontWeight: '700' },
+    closeIcon: { fontSize: 26, color: c.ink, marginTop: -2, marginLeft: -2 },
 
     // ── Segmented control ──
     seg: {
@@ -587,13 +578,13 @@ const makeStyles = (c: ThemeColors) =>
     emptyText: { fontSize: 13.5, fontWeight: '500', color: c.grayMid, textAlign: 'center', paddingHorizontal: 24 },
 
     // ── QtyStep ──
-    qtyHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20 },
+    qtyHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20, paddingTop: 8 },
     backBtn: {
-      width: 36, height: 36, borderRadius: 18,
+      width: 38, height: 38, borderRadius: 19,
       backgroundColor: c.surface, borderWidth: 1, borderColor: c.border,
-      alignItems: 'center', justifyContent: 'center',
+      alignItems: 'center', justifyContent: 'center', flexShrink: 0,
     },
-    backIcon: { fontSize: 24, color: c.ink, marginTop: -2 },
+    backIcon: { fontSize: 26, color: c.ink, marginTop: -2, marginLeft: -2 },
     qtyName: { fontFamily: fonts.display, fontSize: 17, color: c.ink },
     qtyBrand: { fontSize: 12, fontWeight: '500', color: c.grayMid, marginTop: 1 },
     qtySectionLabel: {
