@@ -148,7 +148,7 @@ export function ProfileScreen() {
         })}
       </View>
 
-      <Text style={styles.section}>{t('profile.units' as any)}</Text>
+      <Text style={styles.section}>{t('profile.units' as TKey)}</Text>
       <View style={styles.unitsCard}>
         {(['metric', 'imperial'] as const).map((key) => {
           const on = (unitSystem ?? 'metric') === key;
@@ -163,7 +163,7 @@ export function ProfileScreen() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.unitLabel, on && styles.unitLabelOn]}>
-                  {key === 'metric' ? t('profile.units.metric' as any) : t('profile.units.imperial' as any)}
+                  {key === 'metric' ? t('profile.units.metric' as TKey) : t('profile.units.imperial' as TKey)}
                 </Text>
               </View>
             </Pressable>

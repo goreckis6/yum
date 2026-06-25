@@ -349,6 +349,11 @@ export const en = {
   'grocery.order': 'Order groceries →',
   'grocery.scanBought': 'Scan what you bought → Pantry',
   'grocery.removedFromList': 'Removed from grocery list',
+  'grocery.fromPantry': 'From your pantry',
+  'grocery.swipeDelete': 'Delete',
+  'grocery.calcHint': 'Sum repeated ingredients — e.g. ½ lemon + ½ lemon = 1 lemon',
+  'grocery.calcTitle': '🧮 Summed ingredients',
+  'grocery.calcItems': '{n} items',
   'mealplan.slot.added': 'Added to {slot}',
   'mealplan.entry.grams': '{g}g · {kcal} kcal',
 
@@ -796,6 +801,11 @@ export const pl: Record<TKey, string> = {
   'grocery.order': 'Zamów zakupy →',
   'grocery.scanBought': 'Skanuj co kupiłeś → Spiżarnia',
   'grocery.removedFromList': 'Usunięto z listy zakupów',
+  'grocery.fromPantry': 'Ze spiżarni',
+  'grocery.swipeDelete': 'Usuń',
+  'grocery.calcHint': 'Zsumuj powtarzające się składniki — np. ½ cytryny + ½ cytryny = 1 cytryna',
+  'grocery.calcTitle': '🧮 Zsumowane składniki',
+  'grocery.calcItems': '{n} pozycji',
   'mealplan.slot.added': 'Dodano do {slot}',
   'mealplan.entry.grams': '{g}g · {kcal} kcal',
 

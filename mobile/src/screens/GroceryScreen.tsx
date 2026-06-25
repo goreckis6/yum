@@ -178,12 +178,13 @@ function consolidate(items: GroceryItem[]): Consolidated[] {
 // ─── SwipeableRow ─────────────────────────────────────────────────────────────
 
 function SwipeableRow({
-  onToggle, onRemove, children, styles,
+  onToggle, onRemove, children, styles, deleteLabel,
 }: {
   onToggle: () => void;
   onRemove: () => void;
   children: React.ReactNode;
   styles: ReturnType<typeof makeStyles>;
+  deleteLabel: string;
 }) {
   const translateX = useRef(new Animated.Value(0)).current;
 
@@ -210,7 +211,7 @@ function SwipeableRow({
     <View style={styles.swipeWrap}>
       <View style={styles.deleteBg}>
         <Pressable style={styles.deleteBtn} onPress={handleRemove}>
-          <Text style={styles.deleteText}>Usuń</Text>
+          <Text style={styles.deleteText}>{deleteLabel}</Text>
         </Pressable>
       </View>
       <Animated.View style={{ transform: [{ translateX }] }} {...pan.panHandlers}>
@@ -231,7 +232,7 @@ export function GroceryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setTab } = useTabNav();
   const { grocery, pantry, toggleGrocery, toggleAllGrocery, removeGrocery, clearCheckedGrocery, addPantryToGrocery, showToast } = useApp();
-  const [groupBy, setGroupBy] = useState<GroupBy>('aisle');
+  const [groupBy, setGroupBy] = useState<GroupBy>('recipe');
   const [pantryExpanded, setPantryExpanded] = useState(false);
   const [calcOpen, setCalcOpen] = useState(false);
   const insets = useSafeAreaInsets();
@@ -335,7 +336,7 @@ export function GroceryScreen() {
       {/* Pantry quick-add — horizontal scroll */}
       {allPantryItems.length > 0 && (
         <View style={styles.pantryWrap}>
-          <Text style={styles.sectionLabel}>Ze spiżarni</Text>
+          <Text style={styles.sectionLabel}>{t('grocery.fromPantry' as TKey)}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.pantryScroll}>
             {pantryItems.map((p) => {
               const entry = grocery.find((g) => g.n.toLowerCase() === p.name.toLowerCase());
@@ -415,6 +416,7 @@ export function GroceryScreen() {
                     onToggle={() => toggleGrocery(item.id)}
                     onRemove={() => removeGrocery(item.id)}
                     styles={styles}
+                    deleteLabel={t('grocery.swipeDelete' as TKey)}
                   >
                     <View style={[styles.cb, styles.cbInRow]}>
                       {/* unchecked — empty */}
@@ -437,9 +439,7 @@ export function GroceryScreen() {
           {/* ── Calculate button ── */}
           {active.length > 0 && (
             <View style={styles.calcBtnWrap}>
-              <Text style={styles.calcBtnHint}>
-                Zsumuj powtarzające się składniki — np. ½ cytryny + ½ cytryny = 1 cytryna
-              </Text>
+              <Text style={styles.calcBtnHint}>{t('grocery.calcHint' as TKey)}</Text>
               <Pressable style={styles.calcBtn} onPress={handleCalculate}>
                 <View style={styles.calcBtnInner}>
                   <Text style={styles.calcLabel}>🧮  Calculate</Text>
@@ -455,8 +455,8 @@ export function GroceryScreen() {
           {calcOpen && (
             <View ref={calcRef} style={styles.calcCard}>
               <View style={styles.calcHeader}>
-                <Text style={styles.calcTitle}>🧮 Zsumowane składniki</Text>
-                <Text style={styles.calcSub}>{consolidated.length} pozycji</Text>
+                <Text style={styles.calcTitle}>{t('grocery.calcTitle' as TKey)}</Text>
+                <Text style={styles.calcSub}>{t('grocery.calcItems' as TKey, { n: consolidated.length })}</Text>
               </View>
               {consolidated.map((item, idx) => (
                 <View key={item.name + idx}>
@@ -509,6 +509,7 @@ export function GroceryScreen() {
                     onToggle={() => toggleGrocery(item.id)}
                     onRemove={() => removeGrocery(item.id)}
                     styles={styles}
+                    deleteLabel={t('grocery.swipeDelete' as TKey)}
                   >
                     <View style={styles.cbOn}>
                       <Text style={styles.cbCheck}>✓</Text>
