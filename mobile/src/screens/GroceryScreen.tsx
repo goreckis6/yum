@@ -40,52 +40,89 @@ const SWIPE_THRESHOLD = 72;
 // ─── ingredient consolidation ────────────────────────────────────────────────
 
 const UNICODE_FRACS: [string, number][] = [
-  ['¾', 0.75], ['⅔', 0.667], ['⅝', 0.625], ['½', 0.5],
-  ['⅜', 0.375], ['⅓', 0.333], ['¼', 0.25], ['⅛', 0.125], ['⅞', 0.875],
+  ['¾', 0.75], ['⅔', 0.6667], ['⅝', 0.625], ['½', 0.5],
+  ['⅜', 0.375], ['⅓', 0.3333], ['¼', 0.25], ['⅛', 0.125], ['⅞', 0.875],
 ];
 
+// Normalize unit aliases so "tablespoons" === "tbsp", "cups" === "cup", etc.
+const UNIT_ALIASES: Record<string, string> = {
+  tablespoon: 'tbsp', tablespoons: 'tbsp',
+  teaspoon: 'tsp', teaspoons: 'tsp',
+  cups: 'cup',
+  gram: 'g', grams: 'g',
+  kilogram: 'kg', kilograms: 'kg',
+  milliliter: 'ml', milliliters: 'ml', millilitre: 'ml', millilitres: 'ml',
+  liter: 'l', liters: 'l', litre: 'l', litres: 'l',
+  ounce: 'oz', ounces: 'oz',
+  pound: 'lb', pounds: 'lb',
+  cloves: 'clove',
+  slices: 'slice',
+  cans: 'can',
+  bunches: 'bunch',
+  sprigs: 'sprig',
+  stalks: 'stalk',
+  heads: 'head',
+  pieces: 'piece', pcs: 'piece',
+  bags: 'bag',
+  packages: 'pkg', package: 'pkg', packs: 'pkg', pack: 'pkg',
+  handfuls: 'handful',
+  pinches: 'pinch',
+};
+
+function normalizeUnit(u: string): string {
+  const low = u.toLowerCase().trim();
+  return UNIT_ALIASES[low] ?? low;
+}
+
 function parseAmt(a: string): { value: number; unit: string } {
-  const s = (a || '').trim().toLowerCase();
+  const s = (a || '').trim();
   if (!s) return { value: 0, unit: '' };
 
   let value = 0;
   let rest = s;
 
-  // leading unicode fraction (possibly preceded by an integer "1½")
-  const intPrefix = s.match(/^(\d+)\s*/);
-  if (intPrefix) {
-    const afterInt = s.slice(intPrefix[0].length);
-    const frac = UNICODE_FRACS.find(([sym]) => afterInt.startsWith(sym));
-    if (frac) {
-      value = parseInt(intPrefix[1], 10) + frac[1];
-      rest = afterInt.slice(frac[0].length).trim();
-    }
+  // "1½", "2½" etc — integer + immediately adjacent unicode fraction
+  const intFracM = s.match(/^(\d+)\s*([¼-¾⅐-⅞])(.*)/u);
+  if (intFracM) {
+    const frac = UNICODE_FRACS.find(([sym]) => sym === intFracM[2]);
+    if (frac) { value = parseInt(intFracM[1], 10) + frac[1]; rest = intFracM[3].trim(); }
   }
+
+  // standalone unicode fraction
   if (value === 0) {
     const frac = UNICODE_FRACS.find(([sym]) => s.startsWith(sym));
     if (frac) { value = frac[1]; rest = s.slice(frac[0].length).trim(); }
   }
+
+  // slash fraction "1/2", "3/4"
   if (value === 0) {
     const m = s.match(/^(\d+)\s*\/\s*(\d+)(.*)/);
     if (m) { value = parseInt(m[1]) / parseInt(m[2]); rest = m[3].trim(); }
   }
+
+  // plain integer or decimal, possibly with leading non-digit chars (e.g. "~100g", "about 2")
   if (value === 0) {
-    const m = s.match(/^(\d+(?:[.,]\d+)?)(.*)/);
+    const m = s.match(/(\d+(?:[.,]\d+)?)(.*)/);
     if (m) { value = parseFloat(m[1].replace(',', '.')); rest = m[2].trim(); }
   }
 
-  return { value, unit: rest };
+  // unit = first word of rest (handles "100 g", "2 cups", "3 cloves", "to taste")
+  const unitWord = rest.split(/\s+/)[0] ?? '';
+  return { value, unit: normalizeUnit(unitWord) };
 }
 
 function formatValue(v: number): string {
   if (v <= 0) return '';
   const whole = Math.floor(v);
   const frac = v - whole;
-  const FRAC_MAP: [number, string][] = [[0.875,'⅞'],[0.75,'¾'],[0.667,'⅔'],[0.625,'⅝'],[0.5,'½'],[0.375,'⅜'],[0.333,'⅓'],[0.25,'¼'],[0.125,'⅛']];
+  const FRAC_MAP: [number, string][] = [
+    [0.875,'⅞'],[0.75,'¾'],[0.6667,'⅔'],[0.625,'⅝'],
+    [0.5,'½'],[0.375,'⅜'],[0.3333,'⅓'],[0.25,'¼'],[0.125,'⅛'],
+  ];
   const match = FRAC_MAP.find(([f]) => Math.abs(frac - f) < 0.04);
   if (match) return whole > 0 ? `${whole}${match[1]}` : match[1];
   if (Math.abs(frac) < 0.04) return String(whole || Math.round(v));
-  return v % 1 === 0 ? String(v) : v.toFixed(1);
+  return v.toFixed(1).replace('.0', '');
 }
 
 interface Consolidated {
@@ -96,45 +133,42 @@ interface Consolidated {
 }
 
 function consolidate(items: GroceryItem[]): Consolidated[] {
-  const norm = (s: string) =>
-    s.toLowerCase().trim()
-      .replace(/\s+/g, ' ')
-      .replace(/ies$/, 'y')
-      .replace(/es$/, '')
-      .replace(/s$/, '');
+  // Simple case-insensitive key — no aggressive suffix stripping
+  const normName = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
-  const map = new Map<string, { name: string; value: number; unit: string; recipes: string[]; rawAmts: string[] }>();
+  type Entry = { name: string; byUnit: Map<string, number>; noValueAmts: string[]; recipes: string[] };
+  const map = new Map<string, Entry>();
 
   items.forEach((item) => {
-    const key = norm(item.n);
+    const key = normName(item.n);
     const { value, unit } = parseAmt(item.a);
+
     if (!map.has(key)) {
-      map.set(key, { name: item.n, value: 0, unit, recipes: [], rawAmts: [] });
+      map.set(key, { name: item.n, byUnit: new Map(), noValueAmts: [], recipes: [] });
     }
     const entry = map.get(key)!;
-    // only sum when units match (or one of them is empty)
-    const unitsMatch = entry.unit === unit || entry.unit === '' || unit === '';
-    if (unitsMatch && value > 0) {
-      entry.value += value;
-      if (entry.unit === '') entry.unit = unit;
-    } else if (value > 0) {
-      // different units — just concatenate
-      entry.rawAmts.push(item.a);
+
+    if (value > 0) {
+      entry.byUnit.set(unit, (entry.byUnit.get(unit) ?? 0) + value);
+    } else if (item.a?.trim()) {
+      // keep non-numeric amounts (e.g. "to taste", "a handful") without duplicating
+      if (!entry.noValueAmts.includes(item.a.trim())) {
+        entry.noValueAmts.push(item.a.trim());
+      }
     }
+
     if (!entry.recipes.includes(item.recipe)) entry.recipes.push(item.recipe);
   });
 
   return Array.from(map.values()).map((e) => {
-    let total = '';
-    if (e.value > 0) {
-      total = formatValue(e.value) + (e.unit ? ' ' + e.unit : '');
-    }
-    if (e.rawAmts.length > 0) {
-      total = [total, ...e.rawAmts].filter(Boolean).join(' + ');
-    }
+    const parts: string[] = [];
+    e.byUnit.forEach((val, unit) => {
+      parts.push(formatValue(val) + (unit ? ' ' + unit : ''));
+    });
+    parts.push(...e.noValueAmts);
     return {
       name: e.name,
-      total: total.trim(),
+      total: parts.filter(Boolean).join(' + ') || '—',
       recipes: e.recipes,
       merged: e.recipes.length > 1,
     };
@@ -402,12 +436,19 @@ export function GroceryScreen() {
 
           {/* ── Calculate button ── */}
           {active.length > 0 && (
-            <Pressable style={styles.calcBtn} onPress={handleCalculate}>
-              <Text style={styles.calcLabel}>Calculate</Text>
-              <Animated.Text style={[styles.calcArrow, { transform: [{ translateY: arrowAnim }] }]}>
-                ↓
-              </Animated.Text>
-            </Pressable>
+            <View style={styles.calcBtnWrap}>
+              <Text style={styles.calcBtnHint}>
+                Zsumuj powtarzające się składniki — np. ½ cytryny + ½ cytryny = 1 cytryna
+              </Text>
+              <Pressable style={styles.calcBtn} onPress={handleCalculate}>
+                <View style={styles.calcBtnInner}>
+                  <Text style={styles.calcLabel}>🧮  Calculate</Text>
+                  <Animated.Text style={[styles.calcArrow, { transform: [{ translateY: arrowAnim }] }]}>
+                    ↓
+                  </Animated.Text>
+                </View>
+              </Pressable>
+            </View>
           )}
 
           {/* ── Consolidated view ── */}
@@ -604,18 +645,23 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
 
   /* ── Calculate button ── */
-  calcBtn: {
-    alignItems: 'center', justifyContent: 'center',
-    alignSelf: 'center',
-    backgroundColor: c.accent,
-    borderRadius: 28,
-    paddingVertical: 13, paddingHorizontal: 32,
-    gap: 2, marginVertical: 20,
-    shadowColor: c.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
+  calcBtnWrap: { marginVertical: 20 },
+  calcBtnHint: {
+    fontSize: 12.5, fontWeight: '500', color: c.grayMid,
+    textAlign: 'center', marginBottom: 12, paddingHorizontal: 10,
   },
-  calcLabel: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: 0.3 },
-  calcArrow: { color: '#fff', fontSize: 22, fontWeight: '800', lineHeight: 24 },
+  calcBtn: {
+    backgroundColor: c.accent,
+    borderRadius: 20,
+    paddingVertical: 18, paddingHorizontal: 24,
+    shadowColor: c.accent, shadowOpacity: 0.4, shadowRadius: 14, shadowOffset: { width: 0, height: 5 },
+    elevation: 7,
+  },
+  calcBtnInner: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12,
+  },
+  calcLabel: { color: '#fff', fontSize: 18, fontWeight: '800', letterSpacing: 0.3 },
+  calcArrow: { color: '#fff', fontSize: 26, fontWeight: '800', lineHeight: 28 },
 
   /* ── Consolidated card ── */
   calcCard: {

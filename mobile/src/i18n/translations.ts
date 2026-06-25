@@ -130,6 +130,11 @@ export const en = {
   'home.sort.rating': 'Top rated',
   'home.sortTitle': 'Sort recipes',
 
+  // units
+  'profile.units': 'Units',
+  'profile.units.metric': 'Metric (g, ml, kg)',
+  'profile.units.imperial': 'Imperial (oz, cups, lb)',
+
   // profile
   'profile.title': 'Profile',
   'profile.appearance': 'Appearance',
@@ -584,6 +589,10 @@ export const pl: Record<TKey, string> = {
   'home.sort.az': 'A–Z',
   'home.sort.rating': 'Najwyżej oceniane',
   'home.sortTitle': 'Sortuj przepisy',
+
+  'profile.units': 'Jednostki',
+  'profile.units.metric': 'Metryczne (g, ml, kg)',
+  'profile.units.imperial': 'Imperialne (oz, cups, lb)',
 
   'profile.title': 'Profil',
   'profile.appearance': 'Wygląd',

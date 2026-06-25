@@ -40,7 +40,7 @@ export function ProfileScreen() {
   const { t, lang, setLang } = useI18n();
   const styles = makeStyles(c);
   const { mode, setMode } = useThemeCtx();
-  const { recipes, receipts, pantry, showToast } = useApp();
+  const { recipes, receipts, pantry, unitSystem, setUnitSystem, showToast } = useApp();
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -148,6 +148,29 @@ export function ProfileScreen() {
         })}
       </View>
 
+      <Text style={styles.section}>{t('profile.units' as any)}</Text>
+      <View style={styles.unitsCard}>
+        {(['metric', 'imperial'] as const).map((key) => {
+          const on = (unitSystem ?? 'metric') === key;
+          return (
+            <Pressable
+              key={key}
+              style={[styles.unitOption, on && styles.unitOptionOn]}
+              onPress={() => setUnitSystem(key)}
+            >
+              <View style={[styles.unitRadio, on && styles.unitRadioOn]}>
+                {on && <View style={styles.unitRadioDot} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.unitLabel, on && styles.unitLabelOn]}>
+                  {key === 'metric' ? t('profile.units.metric' as any) : t('profile.units.imperial' as any)}
+                </Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
       <Text style={styles.section}>{t('profile.data')}</Text>
       <View style={styles.group}>
         <Row icon="barcode" labelKey="profile.myPantry" right={String(pantry?.length ?? 0)} onPress={() => navigation.navigate('Pantry')} />
@@ -226,6 +249,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   segmentBtnOn: { backgroundColor: c.accent },
   segmentText: { fontSize: 14, fontWeight: '700', color: c.grayMid },
   segmentTextOn: { color: '#fff' },
+  unitsCard: {
+    backgroundColor: c.surface, borderRadius: 16,
+    borderWidth: 1, borderColor: c.border,
+    overflow: 'hidden', marginBottom: 24,
+  },
+  unitOption: {
+    flexDirection: 'row', alignItems: 'center', gap: 14,
+    paddingHorizontal: 16, paddingVertical: 15,
+    borderBottomWidth: 1, borderBottomColor: c.border,
+  },
+  unitOptionOn: { backgroundColor: c.accentSoft },
+  unitRadio: {
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 2, borderColor: c.gray,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  unitRadioOn: { borderColor: c.accent },
+  unitRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.accent },
+  unitLabel: { fontSize: 14, fontWeight: '600', color: c.ink },
+  unitLabelOn: { color: c.accent },
   section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 10 },
   group: {
     backgroundColor: c.surface,

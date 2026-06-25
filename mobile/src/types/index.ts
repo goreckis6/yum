@@ -104,6 +104,8 @@ export type MealEntry =
 
 export type MealPlan = Partial<Record<DayKey, Partial<Record<MealSlot, MealEntry | null>>>>;
 
+export type UnitSystem = 'metric' | 'imperial';
+
 export interface AppState {
   recipes: Recipe[];
   grocery: GroceryItem[];
@@ -116,6 +118,7 @@ export interface AppState {
   customCookbooks: CustomCookbook[];
   receipts: Receipt[];
   pantry: PantryItem[];
+  unitSystem: UnitSystem;
 }
 
 export interface CookbookCover {

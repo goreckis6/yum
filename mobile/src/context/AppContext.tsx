@@ -12,6 +12,7 @@ import {
   PantryItem,
   Receipt,
   Recipe,
+  UnitSystem,
 } from '../types';
 
 interface ToastState {
@@ -55,6 +56,7 @@ interface AppContextValue extends AppState {
   addPantryItem: (item: PantryItem) => void;
   removePantryItem: (id: string) => void;
   getPantryItem: (id: string) => PantryItem | undefined;
+  setUnitSystem: (u: UnitSystem) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -362,6 +364,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, pantry: (s.pantry ?? []).filter((p) => p.id !== id) }));
   }, []);
 
+  const setUnitSystem = useCallback((u: UnitSystem) => {
+    setState((s) => ({ ...s, unitSystem: u }));
+  }, []);
+
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -414,6 +420,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       addPantryItem,
       removePantryItem,
       getPantryItem,
+      setUnitSystem,
     }),
     [
       state,
@@ -452,6 +459,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       addPantryItem,
       removePantryItem,
       getPantryItem,
+      setUnitSystem,
     ],
   );
 

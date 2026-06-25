@@ -32,6 +32,7 @@ export const AISLE_DOT: Record<string, string> = {
 
 export const SEED_STATE: AppState = {
   hasOnboarded: true,
+  unitSystem: 'metric',
   made: {},
   ingChecked: {},
   favorites: {},
