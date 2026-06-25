@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useState } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import {
   Animated,
   Image,
@@ -36,6 +36,112 @@ const AISLE_ICON: Record<Aisle, string> = {
 };
 
 const SWIPE_THRESHOLD = 72;
+
+// ─── ingredient consolidation ────────────────────────────────────────────────
+
+const UNICODE_FRACS: [string, number][] = [
+  ['¾', 0.75], ['⅔', 0.667], ['⅝', 0.625], ['½', 0.5],
+  ['⅜', 0.375], ['⅓', 0.333], ['¼', 0.25], ['⅛', 0.125], ['⅞', 0.875],
+];
+
+function parseAmt(a: string): { value: number; unit: string } {
+  const s = (a || '').trim().toLowerCase();
+  if (!s) return { value: 0, unit: '' };
+
+  let value = 0;
+  let rest = s;
+
+  // leading unicode fraction (possibly preceded by an integer "1½")
+  const intPrefix = s.match(/^(\d+)\s*/);
+  if (intPrefix) {
+    const afterInt = s.slice(intPrefix[0].length);
+    const frac = UNICODE_FRACS.find(([sym]) => afterInt.startsWith(sym));
+    if (frac) {
+      value = parseInt(intPrefix[1], 10) + frac[1];
+      rest = afterInt.slice(frac[0].length).trim();
+    }
+  }
+  if (value === 0) {
+    const frac = UNICODE_FRACS.find(([sym]) => s.startsWith(sym));
+    if (frac) { value = frac[1]; rest = s.slice(frac[0].length).trim(); }
+  }
+  if (value === 0) {
+    const m = s.match(/^(\d+)\s*\/\s*(\d+)(.*)/);
+    if (m) { value = parseInt(m[1]) / parseInt(m[2]); rest = m[3].trim(); }
+  }
+  if (value === 0) {
+    const m = s.match(/^(\d+(?:[.,]\d+)?)(.*)/);
+    if (m) { value = parseFloat(m[1].replace(',', '.')); rest = m[2].trim(); }
+  }
+
+  return { value, unit: rest };
+}
+
+function formatValue(v: number): string {
+  if (v <= 0) return '';
+  const whole = Math.floor(v);
+  const frac = v - whole;
+  const FRAC_MAP: [number, string][] = [[0.875,'⅞'],[0.75,'¾'],[0.667,'⅔'],[0.625,'⅝'],[0.5,'½'],[0.375,'⅜'],[0.333,'⅓'],[0.25,'¼'],[0.125,'⅛']];
+  const match = FRAC_MAP.find(([f]) => Math.abs(frac - f) < 0.04);
+  if (match) return whole > 0 ? `${whole}${match[1]}` : match[1];
+  if (Math.abs(frac) < 0.04) return String(whole || Math.round(v));
+  return v % 1 === 0 ? String(v) : v.toFixed(1);
+}
+
+interface Consolidated {
+  name: string;
+  total: string;
+  recipes: string[];
+  merged: boolean;
+}
+
+function consolidate(items: GroceryItem[]): Consolidated[] {
+  const norm = (s: string) =>
+    s.toLowerCase().trim()
+      .replace(/\s+/g, ' ')
+      .replace(/ies$/, 'y')
+      .replace(/es$/, '')
+      .replace(/s$/, '');
+
+  const map = new Map<string, { name: string; value: number; unit: string; recipes: string[]; rawAmts: string[] }>();
+
+  items.forEach((item) => {
+    const key = norm(item.n);
+    const { value, unit } = parseAmt(item.a);
+    if (!map.has(key)) {
+      map.set(key, { name: item.n, value: 0, unit, recipes: [], rawAmts: [] });
+    }
+    const entry = map.get(key)!;
+    // only sum when units match (or one of them is empty)
+    const unitsMatch = entry.unit === unit || entry.unit === '' || unit === '';
+    if (unitsMatch && value > 0) {
+      entry.value += value;
+      if (entry.unit === '') entry.unit = unit;
+    } else if (value > 0) {
+      // different units — just concatenate
+      entry.rawAmts.push(item.a);
+    }
+    if (!entry.recipes.includes(item.recipe)) entry.recipes.push(item.recipe);
+  });
+
+  return Array.from(map.values()).map((e) => {
+    let total = '';
+    if (e.value > 0) {
+      total = formatValue(e.value) + (e.unit ? ' ' + e.unit : '');
+    }
+    if (e.rawAmts.length > 0) {
+      total = [total, ...e.rawAmts].filter(Boolean).join(' + ');
+    }
+    return {
+      name: e.name,
+      total: total.trim(),
+      recipes: e.recipes,
+      merged: e.recipes.length > 1,
+    };
+  });
+}
+
+// ─── SwipeableRow ─────────────────────────────────────────────────────────────
 
 function SwipeableRow({
   onToggle, onRemove, children, styles,
@@ -82,6 +188,8 @@ function SwipeableRow({
   );
 }
 
+// ─── GroceryScreen ────────────────────────────────────────────────────────────
+
 export function GroceryScreen() {
   const c = useTheme();
   const { t } = useI18n();
@@ -91,7 +199,31 @@ export function GroceryScreen() {
   const { grocery, pantry, toggleGrocery, toggleAllGrocery, removeGrocery, clearCheckedGrocery, addPantryToGrocery, showToast } = useApp();
   const [groupBy, setGroupBy] = useState<GroupBy>('aisle');
   const [pantryExpanded, setPantryExpanded] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const scrollRef = useRef<ScrollView>(null);
+  const calcRef = useRef<View>(null);
+  const arrowAnim = useRef(new Animated.Value(0)).current;
+
+  // bouncing arrow animation
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(arrowAnim, { toValue: 7, duration: 500, useNativeDriver: true }),
+        Animated.timing(arrowAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ])
+    );
+    loop.start();
+    return () => loop.stop();
+  }, []);
+
+  const handleCalculate = () => {
+    setCalcOpen(true);
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    }, 80);
+  };
 
   const aisleLabel = (name: string) =>
     (['Produce', 'Meat & Seafood', 'Dairy & Eggs', 'Bakery', 'Pantry', 'Frozen'] as const).includes(name as never)
@@ -106,6 +238,8 @@ export function GroceryScreen() {
   const PANTRY_PREVIEW = 6;
   const pantryItems = pantryExpanded ? allPantryItems : allPantryItems.slice(0, PANTRY_PREVIEW);
   const hasMore = allPantryItems.length > PANTRY_PREVIEW;
+
+  const consolidated = useMemo(() => consolidate(active), [active]);
 
   const groups = useMemo(() => {
     if (groupBy === 'aisle') {
@@ -127,7 +261,11 @@ export function GroceryScreen() {
   }, [active, groupBy]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}>
+    <ScrollView
+      ref={scrollRef}
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+    >
 
       {/* Header */}
       <View style={styles.headerRow}>
@@ -261,6 +399,52 @@ export function GroceryScreen() {
               </View>
             </View>
           ))}
+
+          {/* ── Calculate button ── */}
+          {active.length > 0 && (
+            <Pressable style={styles.calcBtn} onPress={handleCalculate}>
+              <Text style={styles.calcLabel}>Calculate</Text>
+              <Animated.Text style={[styles.calcArrow, { transform: [{ translateY: arrowAnim }] }]}>
+                ↓
+              </Animated.Text>
+            </Pressable>
+          )}
+
+          {/* ── Consolidated view ── */}
+          {calcOpen && (
+            <View ref={calcRef} style={styles.calcCard}>
+              <View style={styles.calcHeader}>
+                <Text style={styles.calcTitle}>🧮 Zsumowane składniki</Text>
+                <Text style={styles.calcSub}>{consolidated.length} pozycji</Text>
+              </View>
+              {consolidated.map((item, idx) => (
+                <View key={item.name + idx}>
+                  <View style={styles.calcRow}>
+                    <IngredientIcon name={item.name} size={26} />
+                    <View style={styles.rowBody}>
+                      <Text style={styles.calcRowName}>{item.name}</Text>
+                      {item.recipes.length > 1 && (
+                        <Text style={styles.calcRowSub} numberOfLines={1}>
+                          {item.recipes.join(' · ')}
+                        </Text>
+                      )}
+                    </View>
+                    <View style={styles.calcAmtWrap}>
+                      <Text style={[styles.calcAmt, item.merged && styles.calcAmtMerged]}>
+                        {item.total || '—'}
+                      </Text>
+                      {item.merged && (
+                        <View style={styles.mergedBadge}>
+                          <Text style={styles.mergedBadgeText}>+{item.recipes.length}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                  {idx < consolidated.length - 1 && <View style={styles.calcSep} />}
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Completed */}
           {completed.length > 0 && (
@@ -418,6 +602,50 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     position: 'absolute', bottom: 0, left: 46, right: 0,
     height: StyleSheet.hairlineWidth, backgroundColor: c.border,
   },
+
+  /* ── Calculate button ── */
+  calcBtn: {
+    alignItems: 'center', justifyContent: 'center',
+    alignSelf: 'center',
+    backgroundColor: c.accent,
+    borderRadius: 28,
+    paddingVertical: 13, paddingHorizontal: 32,
+    gap: 2, marginVertical: 20,
+    shadowColor: c.accent, shadowOpacity: 0.35, shadowRadius: 12, shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  calcLabel: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: 0.3 },
+  calcArrow: { color: '#fff', fontSize: 22, fontWeight: '800', lineHeight: 24 },
+
+  /* ── Consolidated card ── */
+  calcCard: {
+    backgroundColor: c.surface, borderRadius: 18,
+    borderWidth: 1, borderColor: c.border,
+    marginBottom: 20, overflow: 'hidden',
+  },
+  calcHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 13,
+    borderBottomWidth: 1, borderBottomColor: c.border,
+    backgroundColor: c.surfaceAlt,
+  },
+  calcTitle: { fontSize: 14, fontWeight: '800', color: c.ink },
+  calcSub: { fontSize: 12, fontWeight: '600', color: c.grayMid },
+  calcRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 14, paddingVertical: 11, gap: 11,
+  },
+  calcRowName: { fontSize: 14, fontWeight: '600', color: c.ink },
+  calcRowSub: { fontSize: 11, color: c.grayMid, marginTop: 1 },
+  calcAmtWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 0 },
+  calcAmt: { fontSize: 13, fontWeight: '700', color: c.grayMid, textAlign: 'right' },
+  calcAmtMerged: { color: c.accent, fontWeight: '800' },
+  mergedBadge: {
+    backgroundColor: c.accentSoft, borderRadius: 8,
+    paddingHorizontal: 6, paddingVertical: 2,
+  },
+  mergedBadgeText: { fontSize: 10.5, fontWeight: '800', color: c.accent },
+  calcSep: { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginLeft: 51 },
 
   /* Completed */
   completedWrap: { marginBottom: 18 },
