@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -172,8 +173,8 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
 
   const TABS: { key: Tab; labelKey: TKey; iconName: string; iconColor: string; iconBg: string }[] = [
     { key: 'pantry',  labelKey: 'mealplan.add.tabPantry',  iconName: 'barcode', iconColor: c.sage,   iconBg: c.sageSoft },
-    { key: 'recipes', labelKey: 'mealplan.add.tabRecipes', iconName: 'book',    iconColor: c.accent, iconBg: c.accentSoft },
-    { key: 'db',      labelKey: 'mealplan.add.tabDb',      iconName: 'globe',   iconColor: c.gold,   iconBg: c.warning },
+    { key: 'recipes', labelKey: 'mealplan.add.tabRecipes', iconName: 'document', iconColor: c.accent, iconBg: c.accentSoft },
+    { key: 'db',      labelKey: 'mealplan.add.tabDb',      iconName: 'link',     iconColor: c.gold,   iconBg: c.warning },
   ];
 
   const topPad = insets.top + (Platform.OS === 'android' ? (StatusBar.currentHeight ?? 0) : 0);
@@ -282,6 +283,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
                         iconName="barcode"
                         iconColor={c.sage}
                         iconBg={c.sageSoft}
+                        imageUrl={item.imageUrl}
                         styles={styles}
                         c={c}
                         onPress={() => openQtyForPantry(item)}
@@ -305,6 +307,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
                         iconName="book"
                         iconColor={c.accent}
                         iconBg={c.accentSoft}
+                        imageUrl={rec.imageUrl}
                         chevron
                         styles={styles}
                         c={c}
@@ -341,6 +344,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
                             iconName="globe"
                             iconColor={c.gold}
                             iconBg={c.warning}
+                            imageUrl={item.imageUrl}
                             styles={styles}
                             c={c}
                             onPress={() => openQtyForDb(item)}
@@ -472,17 +476,21 @@ function SectionHeader({ label, styles }: { label: string; styles: any }) {
 }
 
 function FoodRow({
-  name, sub, meta, iconName, iconColor, iconBg, chevron = false, styles, c, onPress,
+  name, sub, meta, iconName, iconColor, iconBg, imageUrl, chevron = false, styles, c, onPress,
 }: {
   name: string; sub?: string; meta: string;
   iconName: string; iconColor: string; iconBg: string;
-  chevron?: boolean; styles: any; c: ThemeColors; onPress: () => void;
+  imageUrl?: string; chevron?: boolean; styles: any; c: ThemeColors; onPress: () => void;
 }) {
   return (
     <Pressable style={styles.row} onPress={onPress}>
-      <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
-        <Icon name={iconName as any} size={18} color={iconColor} />
-      </View>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={[styles.rowIcon, { borderRadius: 12 }]} resizeMode="cover" />
+      ) : (
+        <View style={[styles.rowIcon, { backgroundColor: iconBg }]}>
+          <Icon name={iconName as any} size={18} color={iconColor} />
+        </View>
+      )}
       <View style={styles.rowInfo}>
         <Text style={styles.rowName} numberOfLines={1}>{name}</Text>
         {sub ? <Text style={styles.rowSub} numberOfLines={1}>{sub}</Text> : null}
@@ -562,7 +570,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.surface, borderWidth: 1, borderColor: c.border,
       borderRadius: 16, padding: 12, marginBottom: 8,
     },
-    rowIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    rowIcon: { width: 42, height: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' },
     rowInfo: { flex: 1, minWidth: 0 },
     rowName: { fontSize: 14, fontWeight: '700', color: c.ink },
     rowSub: { fontSize: 11.5, fontWeight: '500', color: c.grayMid, marginTop: 1 },

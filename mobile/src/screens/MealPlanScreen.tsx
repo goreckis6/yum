@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -14,6 +14,7 @@ import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { matchIngredients, MatchResult } from '../lib/ingredientMatch';
+import { Icon } from '../components/Icon';
 
 const SLOTS: MealSlot[] = ['Breakfast', 'Lunch', 'Dinner'];
 const ADD_SLOT: Record<MealSlot, TKey> = {
@@ -69,11 +70,12 @@ function MatchBadge({
 /* ─── SlotEntryCard ──────────────────────────────────────────── */
 
 function SlotEntryCard({
-  entry, match, getRecipe, styles, t, onRemove, onPressRecipe, onAddMissing,
+  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing,
 }: {
   entry: MealEntry;
   match?: MatchResult;
   getRecipe: (id: string) => Recipe | undefined;
+  getPantryItem: (id: string) => import('../types').PantryItem | undefined;
   styles: ReturnType<typeof makeStyles>;
   t: (key: TKey, vars?: Record<string, string | number>) => string;
   onRemove: () => void;
@@ -92,9 +94,13 @@ function SlotEntryCard({
         ]}
         onPress={() => onPressRecipe(rec.id)}
       >
-        <View style={[styles.thumb, { backgroundColor: rec.tint }]}>
-          <Text style={styles.thumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
-        </View>
+        {rec.imageUrl ? (
+          <Image source={{ uri: rec.imageUrl }} style={styles.thumb} resizeMode="cover" />
+        ) : (
+          <View style={[styles.thumb, { backgroundColor: rec.tint }]}>
+            <Text style={styles.thumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
+          </View>
+        )}
         <View style={styles.cardBody}>
           <Text style={styles.slotTitle}>{rec.title}</Text>
           <Text style={styles.slotMeta}>{rec.time} min · {rec.kcal} kcal</Text>
@@ -109,14 +115,18 @@ function SlotEntryCard({
 
   const isPantry = entry.type === 'pantry';
   const tint = isPantry ? '#dcfce7' : '#dbeafe';
-  const icon = isPantry ? '🏠' : '🌐';
   const brand = entry.type === 'food' ? entry.brand : undefined;
+  const pantryImg = isPantry ? getPantryItem((entry as any).pantryId)?.imageUrl : undefined;
 
   return (
     <View style={styles.slotCard}>
-      <View style={[styles.thumb, { backgroundColor: tint }]}>
-        <Text style={styles.thumbIcon}>{icon}</Text>
-      </View>
+      {pantryImg ? (
+        <Image source={{ uri: pantryImg }} style={styles.thumb} resizeMode="cover" />
+      ) : (
+        <View style={[styles.thumb, { backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }]}>
+          <Icon name={isPantry ? 'barcode' : 'link'} size={22} color={isPantry ? '#15803d' : '#1d4ed8'} />
+        </View>
+      )}
       <View style={styles.cardBody}>
         <Text style={styles.slotTitle}>{entry.name}</Text>
         {brand ? <Text style={styles.slotMeta}>{brand}</Text> : null}
@@ -137,7 +147,7 @@ export function MealPlanScreen() {
   const styles = useMemo(() => makeStyles(c), [c]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
-    mealPlan, pantry, getRecipe, assignMeal, removeMeal,
+    mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
     addWeekToGrocery, addRecipeToGrocery, showToast,
   } = useApp();
   const [selectedDay, setSelectedDay] = useState<DayKey>('Wed');
@@ -240,6 +250,7 @@ export function MealPlanScreen() {
                   entry={entry}
                   match={match}
                   getRecipe={getRecipe}
+                  getPantryItem={getPantryItem}
                   styles={styles}
                   t={t}
                   onRemove={() => removeMeal(selectedDay, slot)}
@@ -324,6 +335,7 @@ const makeStyles = (c: ThemeColors) =>
     thumb: {
       width: 62, height: 62, borderRadius: 13,
       alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      overflow: 'hidden',
     },
     thumbIcon: { fontSize: 26 },
     cardBody: { flex: 1 },
