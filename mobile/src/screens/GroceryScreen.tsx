@@ -271,6 +271,12 @@ export function GroceryScreen() {
                   <Text style={styles.clearAll}>{t('grocery.clear')}</Text>
                 </Pressable>
               </View>
+              <Pressable
+                style={styles.scanBoughtBtn}
+                onPress={() => navigation.navigate('ScanBarcode')}
+              >
+                <Text style={styles.scanBoughtText}>{t('grocery.scanBought' as TKey)}</Text>
+              </Pressable>
               <View style={styles.card}>
                 {completed.map((item) => (
                   <SwipeableRow
@@ -417,6 +423,12 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   completedWrap: { marginBottom: 18 },
   completedHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   completedTitle: { fontSize: 12, fontWeight: '700', color: c.grayMid, textTransform: 'uppercase', letterSpacing: 0.5 },
+  scanBoughtBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: '#f0fdf4', borderRadius: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: '#86efac', marginBottom: 10,
+  },
+  scanBoughtText: { fontSize: 13, fontWeight: '700', color: '#15803d' },
   rowNameDone: { flex: 1, fontSize: 14, fontWeight: '500', color: c.grayMid, textDecorationLine: 'line-through' },
   rowAmtDone: { fontSize: 13, fontWeight: '600', color: c.grayMid, textDecorationLine: 'line-through', flexShrink: 0 },
 

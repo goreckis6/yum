@@ -18,8 +18,7 @@ import { fonts } from '../theme/fonts';
 import { Icon } from './Icon';
 import { useI18n } from '../i18n/I18nContext';
 import { useApp } from '../context/AppContext';
-import { DAYS } from '../data/seed';
-import { DayKey, GroceryItem, MealSlot, PantryItem, Recipe } from '../types';
+import { DayKey, GroceryItem, MealEntry, MealSlot, PantryItem, Recipe } from '../types';
 import { OFFSearchResult, searchProducts } from '../api/openfoodfacts';
 import type { TKey } from '../i18n/translations';
 
@@ -36,8 +35,11 @@ interface QuantityTarget {
   brand?: string;
   kcalPer100: number;
   pPer100: number;
+  cPer100: number;
+  fPer100: number;
   fromDb: boolean;
-  onConfirm: (grams: number) => void;
+  pantryId?: string;
+  dbItem?: OFFSearchResult;
 }
 
 interface Props {
@@ -45,14 +47,14 @@ interface Props {
   slot: MealSlot;
   day: DayKey;
   onClose: () => void;
-  onRecipeAdd: (recipeId: string) => void;
+  onAdd: (entry: MealEntry) => void;
 }
 
-export function MealAddSheet({ visible, slot, day, onClose, onRecipeAdd }: Props) {
+export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
-  const { pantry, recipes, grocery, addGroceryItem, showToast } = useApp();
+  const { pantry, recipes, grocery, addGroceryItem } = useApp();
 
   const [tab, setTab] = useState<Tab>('pantry');
   const [query, setQuery] = useState('');
@@ -62,7 +64,6 @@ export function MealAddSheet({ visible, slot, day, onClose, onRecipeAdd }: Props
   const [qty, setQty] = useState(100);
   const abortRef = useRef<AbortController | null>(null);
 
-  const dayLabel = DAYS.find((d) => d.day === day)?.date ?? day;
   const slotLabel = t(SLOT_LABEL[slot] as TKey);
 
   useEffect(() => {
@@ -108,14 +109,13 @@ export function MealAddSheet({ visible, slot, day, onClose, onRecipeAdd }: Props
       brand: item.brand,
       kcalPer100: item.per100.kcal,
       pPer100: item.per100.p,
+      cPer100: item.per100.c,
+      fPer100: item.per100.f,
       fromDb: false,
-      onConfirm: (grams) => {
-        showToast(`${item.name} added to ${slotLabel}`);
-        onClose();
-      },
+      pantryId: item.id,
     });
-    setQty(100);
-  }, [slotLabel, onClose, showToast]);
+    setQty(item.servingQuantity ?? 100);
+  }, []);
 
   const handleAddDb = useCallback((item: OFFSearchResult) => {
     const alreadyInGrocery = (grocery ?? []).some(
@@ -126,29 +126,39 @@ export function MealAddSheet({ visible, slot, day, onClose, onRecipeAdd }: Props
       brand: item.brand,
       kcalPer100: item.kcal,
       pPer100: item.p,
+      cPer100: item.c,
+      fPer100: item.f,
       fromDb: !alreadyInGrocery,
-      onConfirm: (grams) => {
-        if (!alreadyInGrocery) {
-          const groceryItem: GroceryItem = {
-            id: `gm${Date.now()}`,
-            a: `${grams}g`,
-            n: item.name,
-            aisle: 'Pantry',
-            recipe: item.brand || 'Food DB',
-            checked: false,
-          };
-          addGroceryItem(groceryItem);
-        }
-        showToast(`${item.name} added to ${slotLabel}`);
-        onClose();
-      },
+      dbItem: item,
     });
     setQty(100);
-  }, [grocery, slotLabel, onClose, addGroceryItem, showToast]);
+  }, [grocery]);
 
   const confirmQty = () => {
-    qtyTarget?.onConfirm(qty);
+    if (!qtyTarget) return;
+    const { name, brand, kcalPer100, pPer100, cPer100, fPer100, pantryId, dbItem, fromDb } = qtyTarget;
+    const kcal = Math.round(kcalPer100 * qty / 100);
+    const p = Math.round(pPer100 * qty / 100);
+    const c = Math.round(cPer100 * qty / 100);
+    const f = Math.round(fPer100 * qty / 100);
+
+    let entry: MealEntry;
+    if (pantryId) {
+      entry = { type: 'pantry', pantryId, name, grams: qty, kcal, p, c, f };
+    } else {
+      entry = { type: 'food', name, brand, grams: qty, kcal, p, c, f };
+      if (fromDb && dbItem) {
+        addGroceryItem({
+          id: `gm${Date.now()}`,
+          a: `${qty}g`, n: name,
+          aisle: 'Pantry',
+          recipe: brand || 'Food DB',
+          checked: false,
+        });
+      }
+    }
     setQtyTarget(null);
+    onAdd(entry);
   };
 
   const kcalPreview = qtyTarget ? Math.round(qtyTarget.kcalPer100 * qty / 100) : 0;
@@ -171,7 +181,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onRecipeAdd }: Props
           <View style={styles.handle} />
 
           <Text style={styles.title}>
-            {t('mealplan.add.title' as TKey, { slot: slotLabel, day: `${day} ${dayLabel}` })}
+            {t('mealplan.add.title' as TKey, { slot: slotLabel, day })}
           </Text>
 
           {/* Segmented tabs */}
@@ -304,7 +314,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onRecipeAdd }: Props
                           tint="#fef9c3"
                           styles={styles}
                           c={c}
-                          onAdd={() => { onRecipeAdd(rec.id); onClose(); }}
+                          onAdd={() => onAdd({ type: 'recipe', recipeId: rec.id })}
                         />
                       ))}
                     </>

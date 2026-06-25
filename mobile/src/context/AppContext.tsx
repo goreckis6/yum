@@ -6,6 +6,7 @@ import {
   CookbookCover,
   DayKey,
   GroceryItem,
+  MealEntry,
   MealPlan,
   MealSlot,
   PantryItem,
@@ -37,7 +38,7 @@ interface AppContextValue extends AppState {
   addGroceryItem: (item: GroceryItem) => void;
   addWeekToGrocery: () => void;
   setMealPlan: (plan: MealPlan) => void;
-  assignMeal: (day: DayKey, slot: MealSlot, recipeId: string | null) => void;
+  assignMeal: (day: DayKey, slot: MealSlot, entry: MealEntry) => void;
   removeMeal: (day: DayKey, slot: MealSlot) => void;
   toggleMade: (recipeId: string) => void;
   toggleIngredient: (recipeId: string, index: number) => void;
@@ -225,33 +226,25 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
   const addWeekToGrocery = useCallback(() => {
     setState((s) => {
       const list = [...s.grocery];
-      const ids: string[] = [];
+      let n = 0;
       Object.values(s.mealPlan).forEach((day) => {
         if (!day) return;
         (['Breakfast', 'Lunch', 'Dinner'] as MealSlot[]).forEach((slot) => {
-          const rid = day[slot];
-          if (rid) ids.push(rid);
-        });
-      });
-
-      let n = 0;
-      ids.forEach((id) => {
-        const rec = s.recipes.find((r) => r.id === id);
-        if (!rec) return;
-        rec.ingredients.forEach((ing) => {
-          const ex = list.find((g) => g.n.toLowerCase() === ing.n.toLowerCase());
-          if (ex) {
-            ex.checked = false;
-          } else {
-            list.push({
-              id: `gw${Date.now()}_${n++}`,
-              a: ing.a,
-              n: ing.n,
-              aisle: ing.aisle,
-              recipe: rec.title,
-              checked: false,
-            });
-          }
+          const entry = day[slot];
+          if (!entry || entry.type !== 'recipe') return;
+          const rec = s.recipes.find((r) => r.id === entry.recipeId);
+          if (!rec) return;
+          rec.ingredients.forEach((ing) => {
+            const ex = list.find((g) => g.n.toLowerCase() === ing.n.toLowerCase());
+            if (ex) { ex.checked = false; }
+            else {
+              list.push({
+                id: `gw${Date.now()}_${n++}`,
+                a: ing.a, n: ing.n, aisle: ing.aisle,
+                recipe: rec.title, checked: false,
+              });
+            }
+          });
         });
       });
       return { ...s, grocery: list };
@@ -263,10 +256,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, mealPlan: plan }));
   }, []);
 
-  const assignMeal = useCallback((day: DayKey, slot: MealSlot, recipeId: string | null) => {
+  const assignMeal = useCallback((day: DayKey, slot: MealSlot, entry: MealEntry) => {
     setState((s) => {
       const mp = { ...s.mealPlan };
-      mp[day] = { ...mp[day], [slot]: recipeId };
+      mp[day] = { ...mp[day], [slot]: entry };
       return { ...s, mealPlan: mp };
     });
   }, []);

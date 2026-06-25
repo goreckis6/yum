@@ -1,7 +1,25 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState } from '../types';
+import { AppState, MealEntry, MealPlan } from '../types';
 import { SEED_STATE } from '../data/seed';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+
+// Stored data may have slot values as bare recipe ID strings (pre-MealEntry era).
+function migrateMealPlan(raw: any): MealPlan {
+  if (!raw || typeof raw !== 'object') return {};
+  const out: MealPlan = {};
+  for (const day of Object.keys(raw) as any[]) {
+    const dayRaw = raw[day];
+    if (!dayRaw || typeof dayRaw !== 'object') continue;
+    out[day as keyof MealPlan] = {};
+    for (const slot of Object.keys(dayRaw) as any[]) {
+      const v = dayRaw[slot];
+      if (v == null) { (out[day as keyof MealPlan] as any)[slot] = null; }
+      else if (typeof v === 'string') { (out[day as keyof MealPlan] as any)[slot] = { type: 'recipe', recipeId: v } satisfies MealEntry; }
+      else { (out[day as keyof MealPlan] as any)[slot] = v as MealEntry; }
+    }
+  }
+  return out;
+}
 
 const CACHE_PREFIX = '@yumshare/state-v3/';
 
@@ -18,7 +36,7 @@ function normalize(parsed: Partial<AppState>): AppState {
         return seed ? { ...r, imageUrl: r.imageUrl ?? seed.imageUrl } : r;
       })
     : SEED_STATE.recipes;
-  return { ...SEED_STATE, ...parsed, recipes: mergedRecipes };
+  return { ...SEED_STATE, ...parsed, recipes: mergedRecipes, mealPlan: migrateMealPlan(parsed.mealPlan) };
 }
 
 // Load a user's state: prefer Supabase (source of truth across devices), fall

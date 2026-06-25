@@ -62,7 +62,7 @@ export function PantryScreen({ navigation }: Props) {
           <Icon name="barcode" size={44} color={c.gray} />
           <Text style={styles.emptyText}>{t('pantry.empty')}</Text>
           <Pressable style={styles.scanBtn} onPress={() => navigation.navigate('ScanBarcode')}>
-            <Text style={styles.scanBtnText}>Skanuj kod kreskowy</Text>
+            <Text style={styles.scanBtnText}>{t('pantry.scanBtn')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -97,7 +97,7 @@ export function PantryScreen({ navigation }: Props) {
                         onPress={() => {
                           if (onList && groceryEntry) {
                             removeGrocery(groceryEntry.id);
-                            showToast('Usunięto z listy zakupów');
+                            showToast(t('pantry.removedFromList'));
                           } else {
                             addPantryToGrocery(item.id);
                           }
@@ -122,7 +122,7 @@ export function PantryScreen({ navigation }: Props) {
           style={[styles.scanBtn, { marginBottom: insets.bottom + 12 }]}
           onPress={() => navigation.navigate('ScanBarcode')}
         >
-          <Text style={styles.scanBtnText}>+ Skanuj kod kreskowy</Text>
+          <Text style={styles.scanBtnText}>+ {t('pantry.scanBtn')}</Text>
         </Pressable>
         </View>
       )}

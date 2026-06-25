@@ -96,7 +96,12 @@ export interface GroceryItem {
 export type MealSlot = 'Breakfast' | 'Lunch' | 'Dinner';
 export type DayKey = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
 
-export type MealPlan = Partial<Record<DayKey, Partial<Record<MealSlot, string | null>>>>;
+export type MealEntry =
+  | { type: 'recipe'; recipeId: string }
+  | { type: 'food'; name: string; brand?: string; grams: number; kcal: number; p: number; c: number; f: number }
+  | { type: 'pantry'; pantryId: string; name: string; grams: number; kcal: number; p: number; c: number; f: number };
+
+export type MealPlan = Partial<Record<DayKey, Partial<Record<MealSlot, MealEntry | null>>>>;
 
 export interface AppState {
   recipes: Recipe[];

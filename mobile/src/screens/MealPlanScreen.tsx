@@ -9,7 +9,7 @@ import { MealAddSheet } from '../components/MealAddSheet';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
-import { DayKey, MealSlot, Recipe, TAG_ICON } from '../types';
+import { DayKey, MealEntry, MealSlot, Recipe, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
@@ -66,6 +66,69 @@ function MatchBadge({
   );
 }
 
+/* ─── SlotEntryCard ──────────────────────────────────────────── */
+
+function SlotEntryCard({
+  entry, match, getRecipe, styles, t, onRemove, onPressRecipe, onAddMissing,
+}: {
+  entry: MealEntry;
+  match?: MatchResult;
+  getRecipe: (id: string) => Recipe | undefined;
+  styles: ReturnType<typeof makeStyles>;
+  t: (key: TKey, vars?: Record<string, string | number>) => string;
+  onRemove: () => void;
+  onPressRecipe: (id: string) => void;
+  onAddMissing: (missing: string[], recipe: Recipe) => void;
+}) {
+  if (entry.type === 'recipe') {
+    const rec = getRecipe(entry.recipeId);
+    if (!rec) return null;
+    return (
+      <Pressable
+        style={[
+          styles.slotCard,
+          match && match.missing.length === 0 && styles.slotCardFull,
+          match && match.missing.length > 0 && styles.slotCardPartial,
+        ]}
+        onPress={() => onPressRecipe(rec.id)}
+      >
+        <View style={[styles.thumb, { backgroundColor: rec.tint }]}>
+          <Text style={styles.thumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.slotTitle}>{rec.title}</Text>
+          <Text style={styles.slotMeta}>{rec.time} min · {rec.kcal} kcal</Text>
+          {match && (
+            <MatchBadge match={match} recipe={rec} styles={styles} t={t} onAddMissing={onAddMissing} />
+          )}
+        </View>
+        <Pressable style={styles.remove} onPress={onRemove}><Text>✕</Text></Pressable>
+      </Pressable>
+    );
+  }
+
+  const isPantry = entry.type === 'pantry';
+  const tint = isPantry ? '#dcfce7' : '#dbeafe';
+  const icon = isPantry ? '🏠' : '🌐';
+  const brand = entry.type === 'food' ? entry.brand : undefined;
+
+  return (
+    <View style={styles.slotCard}>
+      <View style={[styles.thumb, { backgroundColor: tint }]}>
+        <Text style={styles.thumbIcon}>{icon}</Text>
+      </View>
+      <View style={styles.cardBody}>
+        <Text style={styles.slotTitle}>{entry.name}</Text>
+        {brand ? <Text style={styles.slotMeta}>{brand}</Text> : null}
+        <Text style={styles.slotMeta}>
+          {t('mealplan.entry.grams' as TKey, { g: entry.grams, kcal: entry.kcal })}
+        </Text>
+      </View>
+      <Pressable style={styles.remove} onPress={onRemove}><Text>✕</Text></Pressable>
+    </View>
+  );
+}
+
 /* ─── Screen ─────────────────────────────────────────────────── */
 
 export function MealPlanScreen() {
@@ -84,13 +147,14 @@ export function MealPlanScreen() {
 
   const dayPlan = mealPlan[selectedDay] || {};
 
-  // Pre-compute match for every recipe in today's plan
+  // Pre-compute pantry match only for recipe entries
   const matches = useMemo(() => {
     const pantryItems = pantry ?? [];
     const result: Partial<Record<MealSlot, MatchResult>> = {};
     for (const slot of SLOTS) {
-      const rid = dayPlan[slot];
-      const rec = rid ? getRecipe(rid) : undefined;
+      const entry = dayPlan[slot];
+      if (!entry || entry.type !== 'recipe') continue;
+      const rec = getRecipe(entry.recipeId);
       if (rec && rec.ingredients.length > 0) {
         result[slot] = matchIngredients(rec.ingredients, pantryItems);
       }
@@ -116,6 +180,16 @@ export function MealPlanScreen() {
   };
 
   let dayKcal = 0, dayP = 0, dayC = 0, dayF = 0;
+  for (const slot of SLOTS) {
+    const entry = dayPlan[slot];
+    if (!entry) continue;
+    if (entry.type === 'recipe') {
+      const rec = getRecipe(entry.recipeId);
+      if (rec) { dayKcal += rec.kcal; dayP += rec.p; dayC += rec.c; dayF += rec.f; }
+    } else {
+      dayKcal += entry.kcal; dayP += entry.p; dayC += entry.c; dayF += entry.f;
+    }
+  }
 
   return (
     <>
@@ -155,48 +229,23 @@ export function MealPlanScreen() {
 
         {/* Slots */}
         {SLOTS.map((slot) => {
-          const rid = dayPlan[slot];
-          const rec = rid ? getRecipe(rid) : undefined;
-          if (rec) {
-            dayKcal += rec.kcal;
-            dayP += rec.p;
-            dayC += rec.c;
-            dayF += rec.f;
-          }
+          const entry = dayPlan[slot];
           const match = matches[slot];
 
           return (
             <View key={slot} style={styles.slotBlock}>
               <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
-              {rec ? (
-                <Pressable
-                  style={[
-                    styles.slotCard,
-                    match && match.missing.length === 0 && styles.slotCardFull,
-                    match && match.missing.length > 0 && styles.slotCardPartial,
-                  ]}
-                  onPress={() => navigation.navigate('RecipeDetail', { id: rec.id })}
-                >
-                  <View style={[styles.thumb, { backgroundColor: rec.tint }]}>
-                    <Text style={styles.thumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
-                  </View>
-                  <View style={styles.cardBody}>
-                    <Text style={styles.slotTitle}>{rec.title}</Text>
-                    <Text style={styles.slotMeta}>{rec.time} min · {rec.kcal} kcal</Text>
-                    {match && (
-                      <MatchBadge
-                        match={match}
-                        recipe={rec}
-                        styles={styles}
-                        t={t}
-                        onAddMissing={handleAddMissing}
-                      />
-                    )}
-                  </View>
-                  <Pressable style={styles.remove} onPress={() => removeMeal(selectedDay, slot)}>
-                    <Text>✕</Text>
-                  </Pressable>
-                </Pressable>
+              {entry ? (
+                <SlotEntryCard
+                  entry={entry}
+                  match={match}
+                  getRecipe={getRecipe}
+                  styles={styles}
+                  t={t}
+                  onRemove={() => removeMeal(selectedDay, slot)}
+                  onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
+                  onAddMissing={handleAddMissing}
+                />
               ) : (
                 <Pressable
                   style={styles.addSlot}
@@ -231,9 +280,10 @@ export function MealPlanScreen() {
         slot={addSlot}
         day={selectedDay}
         onClose={() => setAddOpen(false)}
-        onRecipeAdd={(recipeId) => {
-          assignMeal(selectedDay, addSlot, recipeId);
-          showToast(`Added to ${selectedDay}`);
+        onAdd={(entry) => {
+          assignMeal(selectedDay, addSlot, entry);
+          setAddOpen(false);
+          showToast(t('mealplan.slot.added' as TKey, { slot: t(`slot.${addSlot}` as TKey) }));
         }}
       />
     </>

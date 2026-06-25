@@ -248,8 +248,8 @@ export function HomeScreen() {
 
   const selPlan = mealPlan[selectedDay] || {};
   const slots = (['Breakfast', 'Lunch', 'Dinner'] as MealSlot[]).map((slot) => {
-    const rid = selPlan[slot];
-    const rec = rid ? getRecipe(rid) : undefined;
+    const entry = selPlan[slot];
+    const rec = entry?.type === 'recipe' ? getRecipe(entry.recipeId) : undefined;
     return { slot, rec };
   });
 

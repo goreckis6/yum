@@ -335,7 +335,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
         onSelectDay={setPickDay}
         onSelectSlot={setPickSlot}
         onConfirm={() => {
-          assignMeal(pickDay, pickSlot, recipe.id);
+          assignMeal(pickDay, pickSlot, { type: 'recipe', recipeId: recipe.id });
           setPickerOpen(false);
           showToast(`Added to ${pickDay}`);
         }}
