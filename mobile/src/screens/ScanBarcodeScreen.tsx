@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,10 +15,32 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { uploadBase64Image, uploadImageIfLocal } from '../lib/storage';
 import { PantryItem } from '../types';
-import { lookupBarcode } from '../api/openfoodfacts';
+import { lookupBarcode, lookupBarcodeImage } from '../api/openfoodfacts';
 import { extractNutritionFromLabels, LabelMacros } from '../api/nutritionLabel';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ScanBarcode'>;
+
+function FadeImage({ uri, style, placeholderIcon, c }: {
+  uri?: string; style: any; placeholderIcon: string; c: ThemeColors;
+}) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const onLoad = () => Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+  return (
+    <View style={[style, { overflow: 'hidden' }]}>
+      <View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.surfaceAlt }]}>
+        <Icon name={placeholderIcon as any} size={22} color={c.gray} />
+      </View>
+      {uri && (
+        <Animated.Image
+          source={{ uri }}
+          style={[StyleSheet.absoluteFillObject, { opacity }]}
+          resizeMode="cover"
+          onLoad={onLoad}
+        />
+      )}
+    </View>
+  );
+}
 type Mode = 'scanning' | 'loading' | 'result' | 'notfound' | 'capturing' | 'analyzing';
 
 interface Shot {
@@ -67,19 +89,24 @@ export function ScanBarcodeScreen({ navigation }: Props) {
     setMode('loading');
     const found = await lookupBarcode(data);
     if (found) {
-      setDisplay({
+      const display: Display = {
         name: found.name,
         brand: found.brand,
-        imageUrl: found.imageUrl,
+        imageUrl: undefined,
         servingSize: found.servingSize,
         basis: '100g',
         per100: { kcal: found.kcal, p: found.p, c: found.c, f: found.f },
         source: 'off',
         barcode: data,
-      });
+      };
+      setDisplay(display);
       setPerServing(false);
       setSaved(false);
       setMode('result');
+      // Fetch image in background — update when ready
+      lookupBarcodeImage(data).then((imageUrl) => {
+        if (imageUrl) setDisplay((prev) => prev ? { ...prev, imageUrl } : prev);
+      });
     } else {
       setMode('notfound');
     }
@@ -325,13 +352,7 @@ export function ScanBarcodeScreen({ navigation }: Props) {
           {mode === 'result' && display && macros && (
             <>
               <View style={styles.prodRow}>
-                {display.imageUrl ? (
-                  <Image source={{ uri: display.imageUrl }} style={styles.prodImg} resizeMode="cover" />
-                ) : (
-                  <View style={[styles.prodImg, styles.prodImgEmpty]}>
-                    <Icon name="barcode" size={22} color={c.gray} />
-                  </View>
-                )}
+                <FadeImage uri={display.imageUrl} style={styles.prodImg} placeholderIcon="barcode" c={c} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.prodName} numberOfLines={2}>{display.name}</Text>
                   {!!display.brand && <Text style={styles.prodBrand} numberOfLines={1}>{display.brand}</Text>}

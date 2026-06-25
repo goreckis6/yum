@@ -1,5 +1,5 @@
-import React from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useRef } from 'react';
+import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ThemeColors } from '../theme/colors';
@@ -12,6 +12,26 @@ import { Icon } from '../components/Icon';
 import { PantryItem } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
+
+function FadeImage({ uri, style, c }: { uri?: string; style: any; c: ThemeColors }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  const onLoad = () => Animated.timing(opacity, { toValue: 1, duration: 280, useNativeDriver: true }).start();
+  return (
+    <View style={[style, { overflow: 'hidden' }]}>
+      <View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', justifyContent: 'center', backgroundColor: c.surfaceAlt }]}>
+        <Icon name="barcode" size={20} color={c.gray} />
+      </View>
+      {uri && (
+        <Animated.Image
+          source={{ uri }}
+          style={[StyleSheet.absoluteFillObject, { opacity }]}
+          resizeMode="cover"
+          onLoad={onLoad}
+        />
+      )}
+    </View>
+  );
+}
 
 export function PantryScreen({ navigation }: Props) {
   const c = useTheme();
@@ -58,13 +78,7 @@ export function PantryScreen({ navigation }: Props) {
                 : t('barcode.per100');
             return (
               <View key={item.id} style={styles.card}>
-                {item.imageUrl ? (
-                  <Image source={{ uri: item.imageUrl }} style={styles.img} resizeMode="cover" />
-                ) : (
-                  <View style={[styles.img, styles.imgEmpty]}>
-                    <Icon name="barcode" size={20} color={c.gray} />
-                  </View>
-                )}
+                <FadeImage uri={item.imageUrl} style={styles.img} c={c} />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
                   {!!item.brand && <Text style={styles.brand} numberOfLines={1}>{item.brand}</Text>}
@@ -139,7 +153,6 @@ const makeStyles = (c: ThemeColors) =>
       marginBottom: 10,
     },
     img: { width: 52, height: 52, borderRadius: 11, backgroundColor: c.surfaceAlt },
-    imgEmpty: { alignItems: 'center', justifyContent: 'center' },
     name: { fontFamily: fonts.display, fontSize: 16, color: c.ink },
     brand: { fontSize: 12.5, fontWeight: '500', color: c.grayMid, marginTop: 1 },
     macroLine: { fontSize: 12.5, fontWeight: '700', color: c.ink, marginTop: 5 },
