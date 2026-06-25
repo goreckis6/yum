@@ -60,3 +60,44 @@ export async function lookupBarcodeImage(code: string): Promise<string | undefin
   const product = await offFetch(code, 'image_front_small_url', 8000);
   return product?.image_front_small_url || undefined;
 }
+
+export interface OFFSearchResult {
+  code: string;
+  name: string;
+  brand: string;
+  imageUrl?: string;
+  kcal: number;
+  p: number;
+  c: number;
+  f: number;
+}
+
+export async function searchProducts(query: string, signal?: AbortSignal): Promise<OFFSearchResult[]> {
+  const url =
+    `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}` +
+    `&search_simple=1&action=process&json=1&page_size=10` +
+    `&fields=code,product_name,brands,image_front_small_url,nutriments`;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'YumiShare/1.0 (recipe app)' },
+      signal,
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const products: any[] = data.products ?? [];
+    return products
+      .filter((p) => p.product_name)
+      .map((p) => ({
+        code: p.code ?? '',
+        name: p.product_name,
+        brand: p.brands || '',
+        imageUrl: p.image_front_small_url || undefined,
+        kcal: n(p.nutriments?.['energy-kcal_100g']),
+        p: n(p.nutriments?.proteins_100g),
+        c: n(p.nutriments?.carbohydrates_100g),
+        f: n(p.nutriments?.fat_100g),
+      }));
+  } catch {
+    return [];
+  }
+}

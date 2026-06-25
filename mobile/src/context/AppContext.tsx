@@ -34,6 +34,7 @@ interface AppContextValue extends AppState {
   clearCheckedGrocery: () => void;
   addRecipeToGrocery: (recipeId: string) => void;
   addPantryToGrocery: (pantryId: string) => void;
+  addGroceryItem: (item: GroceryItem) => void;
   addWeekToGrocery: () => void;
   setMealPlan: (plan: MealPlan) => void;
   assignMeal: (day: DayKey, slot: MealSlot, recipeId: string | null) => void;
@@ -146,6 +147,13 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
 
   const removeGrocery = useCallback((id: string) => {
     setState((s) => ({ ...s, grocery: s.grocery.filter((g) => g.id !== id) }));
+  }, []);
+
+  const addGroceryItem = useCallback((item: GroceryItem) => {
+    setState((s) => {
+      if (s.grocery.find((g) => g.n.toLowerCase() === item.n.toLowerCase())) return s;
+      return { ...s, grocery: [...s.grocery, item] };
+    });
   }, []);
 
   const clearCheckedGrocery = useCallback(() => {
@@ -393,6 +401,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       clearCheckedGrocery,
       addRecipeToGrocery,
       addPantryToGrocery,
+      addGroceryItem,
       addWeekToGrocery,
       setMealPlan,
       assignMeal,
@@ -430,6 +439,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       clearCheckedGrocery,
       addRecipeToGrocery,
       addPantryToGrocery,
+      addGroceryItem,
       addWeekToGrocery,
       setMealPlan,
       assignMeal,

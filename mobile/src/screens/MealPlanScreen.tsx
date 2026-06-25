@@ -5,8 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { DAYS } from '../data/seed';
 import { useApp } from '../context/AppContext';
-import { useTabNav } from '../navigation/TabContext';
-import { MealPickerSheet } from '../components/MealPickerSheet';
+import { MealAddSheet } from '../components/MealAddSheet';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -74,15 +73,13 @@ export function MealPlanScreen() {
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { setTab } = useTabNav();
   const {
     mealPlan, pantry, getRecipe, assignMeal, removeMeal,
     addWeekToGrocery, addRecipeToGrocery, showToast,
   } = useApp();
   const [selectedDay, setSelectedDay] = useState<DayKey>('Wed');
-  const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickSlot, setPickSlot] = useState<MealSlot>('Dinner');
-  const [pickRecipeId, setPickRecipeId] = useState<string | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addSlot, setAddSlot] = useState<MealSlot>('Dinner');
   const insets = useSafeAreaInsets();
 
   const dayPlan = mealPlan[selectedDay] || {};
@@ -203,11 +200,7 @@ export function MealPlanScreen() {
               ) : (
                 <Pressable
                   style={styles.addSlot}
-                  onPress={() => {
-                    setPickSlot(slot);
-                    setPickRecipeId(null);
-                    setPickerOpen(true);
-                  }}
+                  onPress={() => { setAddSlot(slot); setAddOpen(true); }}
                 >
                   <Text style={styles.addText}>{t(ADD_SLOT[slot])}</Text>
                 </Pressable>
@@ -233,27 +226,14 @@ export function MealPlanScreen() {
         </Pressable>
       </ScrollView>
 
-      <MealPickerSheet
-        visible={pickerOpen}
-        recipeTitle={
-          pickRecipeId
-            ? getRecipe(pickRecipeId)?.title ?? t('mealplan.pickLibrary')
-            : t('mealplan.pickLibrary')
-        }
-        selectedDay={selectedDay}
-        selectedSlot={pickSlot}
-        onClose={() => setPickerOpen(false)}
-        onSelectDay={setSelectedDay}
-        onSelectSlot={setPickSlot}
-        onConfirm={() => {
-          if (pickRecipeId) {
-            assignMeal(selectedDay, pickSlot, pickRecipeId);
-            setPickerOpen(false);
-            showToast(`Added to ${selectedDay}`);
-          } else {
-            setPickerOpen(false);
-            setTab('recipes');
-          }
+      <MealAddSheet
+        visible={addOpen}
+        slot={addSlot}
+        day={selectedDay}
+        onClose={() => setAddOpen(false)}
+        onRecipeAdd={(recipeId) => {
+          assignMeal(selectedDay, addSlot, recipeId);
+          showToast(`Added to ${selectedDay}`);
         }}
       />
     </>

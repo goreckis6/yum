@@ -19,7 +19,7 @@ export const en = {
 
   // bottom nav
   'nav.recipes': 'Recipes',
-  'nav.planner': 'Planner',
+  'nav.planner': 'Meal Planner',
   'nav.grocery': 'Grocery',
   'nav.profile': 'Profile',
 
@@ -371,6 +371,27 @@ export const en = {
   'mealplan.sub': 'Plan breakfast, lunch & dinner for the week',
   'mealplan.dayTotal': '{day} {date} total',
   'mealplan.addWeek': 'Add week to grocery list',
+
+  // add-to-meal sheet
+  'mealplan.add.title': 'Add to {slot} · {day}',
+  'mealplan.add.search': 'Search pantry, recipes, products…',
+  'mealplan.add.tabPantry': 'Pantry',
+  'mealplan.add.tabRecipes': 'My recipes',
+  'mealplan.add.tabDb': 'Food DB',
+  'mealplan.add.secPantry': 'In your pantry',
+  'mealplan.add.secRecipes': 'Your recipes',
+  'mealplan.add.secDb': 'Open Food Facts results',
+  'mealplan.add.dbLoading': 'Searching Open Food Facts…',
+  'mealplan.add.dbEmpty': 'No products found',
+  'mealplan.add.dbError': 'Could not reach the food database. Try again.',
+  'mealplan.add.dbTypeToSearch': 'Type to search the food database',
+  'mealplan.add.emptyPantry': 'Your pantry is empty',
+  'mealplan.add.emptyRecipes': 'No recipes yet',
+  // quantity prompt
+  'mealplan.qty.title': 'How much are you adding?',
+  'mealplan.qty.kcalPreview': '≈ {kcal} kcal · {p}g protein',
+  'mealplan.qty.autoGrocery': 'Not in your pantry — will be added to your grocery list automatically.',
+  'mealplan.qty.confirm': 'Add to {slot}',
   'mealplan.pickLibrary': 'Pick from library',
 
   // meal plan slots
@@ -443,7 +464,7 @@ export const pl: Record<TKey, string> = {
   'common.search': 'Szukaj',
 
   'nav.recipes': 'Przepisy',
-  'nav.planner': 'Plan',
+  'nav.planner': 'Meal Planner',
   'nav.grocery': 'Zakupy',
   'nav.profile': 'Profil',
 
@@ -777,6 +798,25 @@ export const pl: Record<TKey, string> = {
   'mealplan.sub': 'Zaplanuj śniadania, obiady i kolacje na tydzień',
   'mealplan.dayTotal': '{day} {date} — razem',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
+
+  'mealplan.add.title': 'Dodaj do {slot} · {day}',
+  'mealplan.add.search': 'Szukaj w spiżarni, przepisach, produktach…',
+  'mealplan.add.tabPantry': 'Spiżarnia',
+  'mealplan.add.tabRecipes': 'Moje przepisy',
+  'mealplan.add.tabDb': 'Baza produktów',
+  'mealplan.add.secPantry': 'W Twojej spiżarni',
+  'mealplan.add.secRecipes': 'Twoje przepisy',
+  'mealplan.add.secDb': 'Wyniki z Open Food Facts',
+  'mealplan.add.dbLoading': 'Przeszukuję bazę Open Food Facts…',
+  'mealplan.add.dbEmpty': 'Nie znaleziono produktów',
+  'mealplan.add.dbError': 'Nie udało się połączyć z bazą produktów. Spróbuj ponownie.',
+  'mealplan.add.dbTypeToSearch': 'Wpisz nazwę produktu',
+  'mealplan.add.emptyPantry': 'Twoja spiżarnia jest pusta',
+  'mealplan.add.emptyRecipes': 'Brak przepisów',
+  'mealplan.qty.title': 'Ile dodajesz?',
+  'mealplan.qty.kcalPreview': '≈ {kcal} kcal · {p}g białka',
+  'mealplan.qty.autoGrocery': 'Produktu nie ma w spiżarni — zostanie automatycznie dodany do listy zakupów.',
+  'mealplan.qty.confirm': 'Dodaj do {slot}',
   'mealplan.pickLibrary': 'Wybierz z biblioteki',
 
   'mealplan.slot.breakfast': 'Śniadanie',
