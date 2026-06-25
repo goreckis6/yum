@@ -154,7 +154,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
     if (pantryId) {
       entry = { type: 'pantry', pantryId, name, grams: qty, kcal, p, c: cv, f };
     } else {
-      entry = { type: 'food', name, brand, grams: qty, kcal, p, c: cv, f };
+      entry = { type: 'food', name, brand, imageUrl: dbItem?.imageUrl, grams: qty, kcal, p, c: cv, f };
       if (fromDb && dbItem) {
         addGroceryItem({
           id: `gm${Date.now()}`,

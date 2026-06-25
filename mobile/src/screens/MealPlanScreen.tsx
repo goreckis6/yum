@@ -119,11 +119,13 @@ function SlotEntryCard({
   const tint = isPantry ? '#dcfce7' : '#dbeafe';
   const brand = entry.type === 'food' ? entry.brand : undefined;
   const pantryImg = isPantry ? getPantryItem((entry as any).pantryId)?.imageUrl : undefined;
+  const foodImg = entry.type === 'food' ? entry.imageUrl : undefined;
+  const thumbImg = pantryImg || foodImg;
 
   return (
     <View style={styles.slotCard}>
-      {pantryImg ? (
-        <Image source={{ uri: pantryImg }} style={styles.thumb} resizeMode="cover" />
+      {thumbImg ? (
+        <Image source={{ uri: thumbImg }} style={styles.thumb} resizeMode="cover" />
       ) : (
         <View style={[styles.thumb, { backgroundColor: tint, alignItems: 'center', justifyContent: 'center' }]}>
           <Icon name={isPantry ? 'barcode' : 'link'} size={22} color={isPantry ? '#15803d' : '#1d4ed8'} />
