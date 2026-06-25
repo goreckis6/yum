@@ -229,7 +229,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       let n = 0;
       Object.values(s.mealPlan).forEach((day) => {
         if (!day) return;
-        (['Breakfast', 'Lunch', 'Dinner'] as MealSlot[]).forEach((slot) => {
+        (['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'] as MealSlot[]).forEach((slot) => {
           const entry = day[slot];
           if (!entry || entry.type !== 'recipe') return;
           const rec = s.recipes.find((r) => r.id === entry.recipeId);

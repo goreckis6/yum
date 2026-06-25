@@ -357,11 +357,17 @@ export const en = {
 
   // meal slots
   'slot.Breakfast': 'Breakfast',
+  'slot.SecondBreakfast': 'Second breakfast',
   'slot.Lunch': 'Lunch',
   'slot.Dinner': 'Dinner',
+  'slot.Snack': 'Snack',
+  'slot.Supper': 'Supper',
   'slot.addBreakfast': '+ Add breakfast',
+  'slot.addSecondBreakfast': '+ Add second breakfast',
   'slot.addLunch': '+ Add lunch',
   'slot.addDinner': '+ Add dinner',
+  'slot.addSnack': '+ Add snack',
+  'slot.addSupper': '+ Add supper',
 
   // day short labels
   'day.Mon': 'Mon',
@@ -374,7 +380,7 @@ export const en = {
 
   // meal plan
   'mealplan.title': 'Meal plan',
-  'mealplan.sub': 'Plan breakfast, lunch & dinner for the week',
+  'mealplan.sub': 'Plan all your meals for the week',
   'mealplan.dayTotal': '{day} {date} total',
   'mealplan.addWeek': 'Add week to grocery list',
 
@@ -400,12 +406,12 @@ export const en = {
   'mealplan.qty.confirm': 'Add to {slot}',
   'mealplan.pickLibrary': 'Pick from library',
 
-  // meal plan slots
+  // kept for backward compat (toast messages use slot.* keys directly now)
   'mealplan.slot.breakfast': 'Breakfast',
-  'mealplan.slot.lunch': 'Second breakfast',
-  'mealplan.slot.dinner': 'Lunch',
-  'mealplan.slot.supper': 'Dinner',
-  'mealplan.slot.snacks': 'Snacks',
+  'mealplan.slot.lunch': 'Lunch',
+  'mealplan.slot.dinner': 'Dinner',
+  'mealplan.slot.supper': 'Supper',
+  'mealplan.slot.snacks': 'Snack',
 
   // pantry matching
   'mealplan.match.full': 'You have everything',
@@ -792,11 +798,17 @@ export const pl: Record<TKey, string> = {
   'aisle.Frozen': 'Mrożonki',
 
   'slot.Breakfast': 'Śniadanie',
-  'slot.Lunch': 'Obiad',
-  'slot.Dinner': 'Kolacja',
+  'slot.SecondBreakfast': 'II Śniadanie',
+  'slot.Lunch': 'Lunch',
+  'slot.Dinner': 'Obiad',
+  'slot.Snack': 'Przekąska',
+  'slot.Supper': 'Kolacja',
   'slot.addBreakfast': '+ Dodaj śniadanie',
-  'slot.addLunch': '+ Dodaj obiad',
-  'slot.addDinner': '+ Dodaj kolację',
+  'slot.addSecondBreakfast': '+ Dodaj II śniadanie',
+  'slot.addLunch': '+ Dodaj lunch',
+  'slot.addDinner': '+ Dodaj obiad',
+  'slot.addSnack': '+ Dodaj przekąskę',
+  'slot.addSupper': '+ Dodaj kolację',
 
   'day.Mon': 'Pon',
   'day.Tue': 'Wt',
@@ -807,7 +819,7 @@ export const pl: Record<TKey, string> = {
   'day.Sun': 'Nd',
 
   'mealplan.title': 'Plan posiłków',
-  'mealplan.sub': 'Zaplanuj śniadania, obiady i kolacje na tydzień',
+  'mealplan.sub': 'Zaplanuj wszystkie posiłki na tydzień',
   'mealplan.dayTotal': '{day} {date} — razem',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
 
@@ -832,10 +844,10 @@ export const pl: Record<TKey, string> = {
   'mealplan.pickLibrary': 'Wybierz z biblioteki',
 
   'mealplan.slot.breakfast': 'Śniadanie',
-  'mealplan.slot.lunch': 'Drugie śniadanie',
+  'mealplan.slot.lunch': 'Lunch',
   'mealplan.slot.dinner': 'Obiad',
   'mealplan.slot.supper': 'Kolacja',
-  'mealplan.slot.snacks': 'Przekąski',
+  'mealplan.slot.snacks': 'Przekąska',
 
   'mealplan.match.full': 'Masz wszystkie składniki',
   'mealplan.match.partial': 'Brakuje {count} składnika',

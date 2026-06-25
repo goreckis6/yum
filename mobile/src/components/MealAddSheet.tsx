@@ -28,8 +28,11 @@ type Tab = 'pantry' | 'recipes' | 'db';
 
 const SLOT_LABEL: Record<MealSlot, TKey> = {
   Breakfast: 'slot.Breakfast',
+  SecondBreakfast: 'slot.SecondBreakfast',
   Lunch: 'slot.Lunch',
   Dinner: 'slot.Dinner',
+  Snack: 'slot.Snack',
+  Supper: 'slot.Supper',
 };
 
 interface QtyTarget {

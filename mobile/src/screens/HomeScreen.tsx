@@ -247,7 +247,7 @@ export function HomeScreen() {
     : [];
 
   const selPlan = mealPlan[selectedDay] || {};
-  const slots = (['Breakfast', 'Lunch', 'Dinner'] as MealSlot[]).map((slot) => {
+  const slots = (['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'] as MealSlot[]).map((slot) => {
     const entry = selPlan[slot];
     const rec = entry?.type === 'recipe' ? getRecipe(entry.recipeId) : undefined;
     return { slot, rec };
@@ -465,7 +465,7 @@ export function HomeScreen() {
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekRow}>
         {DAYS.map((d) => {
           const plan = mealPlan[d.day] || {};
-          const hasAny = ['Breakfast', 'Lunch', 'Dinner'].some((s) => plan[s as MealSlot]);
+          const hasAny = (['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'] as MealSlot[]).some((s) => plan[s]);
           const sel = selectedDay === d.day;
           return (
             <Pressable

@@ -1,4 +1,5 @@
-import { AppState, DayKey } from '../types';
+import { ALL_SLOTS, AppState, DayKey } from '../types';
+export { ALL_SLOTS as SLOTS };
 
 export const DAYS: { day: DayKey; date: number }[] = [
   { day: 'Mon', date: 15 },
@@ -10,7 +11,6 @@ export const DAYS: { day: DayKey; date: number }[] = [
   { day: 'Sun', date: 21 },
 ];
 
-export const SLOTS = ['Breakfast', 'Lunch', 'Dinner'] as const;
 
 export const AISLE_ORDER = [
   'Produce',

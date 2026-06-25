@@ -3,7 +3,7 @@ import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'rea
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DAYS } from '../data/seed';
+import { DAYS, SLOTS } from '../data/seed';
 import { useApp } from '../context/AppContext';
 import { MealAddSheet } from '../components/MealAddSheet';
 import { ThemeColors } from '../theme/colors';
@@ -16,11 +16,13 @@ import type { TKey } from '../i18n/translations';
 import { matchIngredients, MatchResult } from '../lib/ingredientMatch';
 import { Icon } from '../components/Icon';
 
-const SLOTS: MealSlot[] = ['Breakfast', 'Lunch', 'Dinner'];
 const ADD_SLOT: Record<MealSlot, TKey> = {
   Breakfast: 'slot.addBreakfast',
+  SecondBreakfast: 'slot.addSecondBreakfast',
   Lunch: 'slot.addLunch',
   Dinner: 'slot.addDinner',
+  Snack: 'slot.addSnack',
+  Supper: 'slot.addSupper',
 };
 
 /* ─── MatchBadge ─────────────────────────────────────────────── */

@@ -17,7 +17,7 @@ interface Props {
   onConfirm: () => void;
 }
 
-const SLOTS: MealSlot[] = ['Breakfast', 'Lunch', 'Dinner'];
+const SLOTS: MealSlot[] = ['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'];
 
 export function MealPickerSheet({
   visible,

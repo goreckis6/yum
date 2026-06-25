@@ -93,7 +93,8 @@ export interface GroceryItem {
   merged?: boolean;
 }
 
-export type MealSlot = 'Breakfast' | 'Lunch' | 'Dinner';
+export type MealSlot = 'Breakfast' | 'SecondBreakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Supper';
+export const ALL_SLOTS: MealSlot[] = ['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'];
 export type DayKey = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat' | 'Sun';
 
 export type MealEntry =
