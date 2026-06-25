@@ -373,6 +373,35 @@ export const en = {
   'mealplan.addWeek': 'Add week to grocery list',
   'mealplan.pickLibrary': 'Pick from library',
 
+  // meal plan slots
+  'mealplan.slot.breakfast': 'Breakfast',
+  'mealplan.slot.lunch': 'Second breakfast',
+  'mealplan.slot.dinner': 'Lunch',
+  'mealplan.slot.supper': 'Dinner',
+  'mealplan.slot.snacks': 'Snacks',
+
+  // pantry matching
+  'mealplan.match.full': 'You have everything',
+  'mealplan.match.partial': 'Missing {count} ingredient',
+  'mealplan.match.partialPlural': 'Missing {count} ingredients',
+  'mealplan.match.addMissing': 'Add missing items to shopping list?',
+  'mealplan.match.addBtn': 'Add to list',
+
+  // cook from fridge
+  'mealplan.cook.btn': 'What can I cook today?',
+  'mealplan.cook.aiTitle': 'From your pantry',
+  'mealplan.cook.noMatch': 'No exact recipe found, but you could make:',
+
+  // add link history
+  'addSheet.history.title': 'Recently pasted links',
+  'addSheet.history.clearAll': 'Clear history',
+  'addSheet.history.empty': 'No link history yet',
+
+  // pantry screen extras
+  'pantry.statusExpiring': 'Expiring soon',
+  'pantry.statusOk': 'In pantry',
+  'pantry.compose': 'Cook with selected ({count})',
+
   // onboarding
   'onboarding.t1': 'Save recipes from anywhere',
   'onboarding.b1': 'Paste a link from any blog, Instagram or Pinterest — we pull out the full recipe automatically.',
@@ -749,6 +778,30 @@ export const pl: Record<TKey, string> = {
   'mealplan.dayTotal': '{day} {date} — razem',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
   'mealplan.pickLibrary': 'Wybierz z biblioteki',
+
+  'mealplan.slot.breakfast': 'Śniadanie',
+  'mealplan.slot.lunch': 'Drugie śniadanie',
+  'mealplan.slot.dinner': 'Obiad',
+  'mealplan.slot.supper': 'Kolacja',
+  'mealplan.slot.snacks': 'Przekąski',
+
+  'mealplan.match.full': 'Masz wszystkie składniki',
+  'mealplan.match.partial': 'Brakuje {count} składnika',
+  'mealplan.match.partialPlural': 'Brakuje {count} składników',
+  'mealplan.match.addMissing': 'Czy dodać brakujące produkty do listy zakupów?',
+  'mealplan.match.addBtn': 'Dodaj do zakupów',
+
+  'mealplan.cook.btn': 'Co mogę dziś ugotować?',
+  'mealplan.cook.aiTitle': 'Danie z Twojej spiżarni',
+  'mealplan.cook.noMatch': 'Nie znaleziono dokładnego przepisu, ale możesz przygotować to:',
+
+  'addSheet.history.title': 'Ostatnio wklejane linki',
+  'addSheet.history.clearAll': 'Wyczyść historię',
+  'addSheet.history.empty': 'Brak skopiowanych linków w historii',
+
+  'pantry.statusExpiring': 'Kończy się ważność',
+  'pantry.statusOk': 'W spiżarni',
+  'pantry.compose': 'Komponuj posiłek z zaznaczonych ({count})',
 
   'onboarding.t1': 'Zapisuj przepisy z dowolnego miejsca',
   'onboarding.b1': 'Wklej link z bloga, Instagrama lub Pinteresta — automatycznie wyciągniemy cały przepis.',
