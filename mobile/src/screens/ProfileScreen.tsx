@@ -1,11 +1,12 @@
 import React from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { usePremium } from '../context/PremiumContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme, useThemeCtx, ThemeMode } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -42,6 +43,7 @@ export function ProfileScreen() {
   const { mode, setMode } = useThemeCtx();
   const { recipes, receipts, pantry, unitSystem, setUnitSystem, showToast } = useApp();
   const { user, signOut } = useAuth();
+  const { isPremium, managementURL } = usePremium();
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
@@ -124,6 +126,40 @@ export function ProfileScreen() {
         <Text style={styles.statLabel}>{t('profile.recipesSynced')}</Text>
       </View>
 
+      <Text style={styles.section}>Premium</Text>
+      <View style={styles.premiumCard}>
+        <View style={styles.premiumTop}>
+          <Text style={styles.premiumTitle}>YumiShare Premium</Text>
+          {isPremium && (
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>Active</Text>
+            </View>
+          )}
+        </View>
+        <Text style={styles.premiumSub}>
+          {isPremium
+            ? 'You have full access to every feature.'
+            : 'Unlock recipe imports, meal planning and more.'}
+        </Text>
+        <Pressable
+          style={styles.premiumBtn}
+          onPress={() => {
+            // Prefer RevenueCat's per-user management link; otherwise fall back
+            // to the platform's generic subscriptions page.
+            const fallback =
+              Platform.OS === 'ios'
+                ? 'https://apps.apple.com/account/subscriptions'
+                : 'https://play.google.com/store/account/subscriptions';
+            const url = managementURL || fallback;
+            Linking.openURL(url).catch(() => showToast(t('profile.comingSoon')));
+          }}
+        >
+          <Text style={styles.premiumBtnText}>
+            {isPremium ? 'Manage subscription' : 'Upgrade to Premium'}
+          </Text>
+        </Pressable>
+      </View>
+
       <Text style={styles.section}>{t('profile.appearance')}</Text>
       <View style={styles.segment}>
         {THEME_OPTIONS.map((opt) => {
@@ -143,29 +179,6 @@ export function ProfileScreen() {
           return (
             <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setLang(opt.key)}>
               <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <Text style={styles.section}>{t('profile.units' as TKey)}</Text>
-      <View style={styles.unitsCard}>
-        {(['metric', 'imperial'] as const).map((key) => {
-          const on = (unitSystem ?? 'metric') === key;
-          return (
-            <Pressable
-              key={key}
-              style={[styles.unitOption, on && styles.unitOptionOn]}
-              onPress={() => setUnitSystem(key)}
-            >
-              <View style={[styles.unitRadio, on && styles.unitRadioOn]}>
-                {on && <View style={styles.unitRadioDot} />}
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.unitLabel, on && styles.unitLabelOn]}>
-                  {key === 'metric' ? t('profile.units.metric' as TKey) : t('profile.units.imperial' as TKey)}
-                </Text>
-              </View>
             </Pressable>
           );
         })}
@@ -238,6 +251,32 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   statCard: { backgroundColor: c.accent, borderRadius: 18, padding: 18, marginBottom: 24 },
   statNum: { fontFamily: fonts.displayExtra, fontSize: 32, color: '#fff' },
   statLabel: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.7)', marginTop: 4 },
+
+  premiumCard: {
+    backgroundColor: c.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: c.border,
+    padding: 16,
+    marginBottom: 24,
+  },
+  premiumTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  premiumTitle: { fontFamily: fonts.display, fontSize: 17, color: c.ink },
+  premiumBadge: {
+    backgroundColor: '#16A34A',
+    borderRadius: 8,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+  },
+  premiumBadgeText: { fontSize: 12, fontWeight: '800', color: '#fff' },
+  premiumSub: { fontSize: 13.5, fontWeight: '500', color: c.grayMuted, marginTop: 6, marginBottom: 14 },
+  premiumBtn: {
+    backgroundColor: c.accent,
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  premiumBtnText: { fontSize: 14.5, fontWeight: '700', color: '#fff' },
   segment: {
     flexDirection: 'row',
     backgroundColor: c.surfaceAlt,

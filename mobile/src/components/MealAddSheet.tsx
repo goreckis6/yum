@@ -60,7 +60,7 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(c), [c]);
-  const { pantry, recipes, grocery, addGroceryItem } = useApp();
+  const { pantry, recipes, grocery } = useApp();
 
   const [tab, setTab] = useState<Tab>('pantry');
   const [query, setQuery] = useState('');
@@ -155,15 +155,6 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
       entry = { type: 'pantry', pantryId, name, grams: qty, kcal, p, c: cv, f };
     } else {
       entry = { type: 'food', name, brand, imageUrl: dbItem?.imageUrl, grams: qty, kcal, p, c: cv, f };
-      if (fromDb && dbItem) {
-        addGroceryItem({
-          id: `gm${Date.now()}`,
-          a: `${qty}g`, n: name,
-          aisle: 'Pantry',
-          recipe: brand || 'Food DB',
-          checked: false,
-        });
-      }
     }
     setQtyTarget(null);
     onAdd(entry);
@@ -441,14 +432,6 @@ function QtyStep({ target, qty, setQty, slotLabel, kcal, p, cv, f, styles, c, t,
         <MacroChip label="C" value={cv} styles={styles} />
         <MacroChip label="F" value={f} styles={styles} />
       </View>
-
-      {/* Auto-grocery note */}
-      {target.fromDb && (
-        <View style={styles.autoNote}>
-          <Icon name="cart" size={14} color={c.warningText} />
-          <Text style={styles.autoNoteText}>{t('mealplan.qty.autoGrocery' as TKey)}</Text>
-        </View>
-      )}
 
       {/* Actions */}
       <View style={styles.qtyActions}>

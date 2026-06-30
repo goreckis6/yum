@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '../config/api';
+import { authHeader, mapApiError } from './http';
 import { Recipe } from '../types';
 
 export interface ExtractedRecipe extends Omit<Recipe, 'id'> {}
@@ -12,13 +13,13 @@ async function postJson(path: string, body: unknown, timeoutMs = 60000) {
   try {
     const res = await fetch(`${base}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
       body: JSON.stringify(body),
       signal: controller.signal,
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `Request failed (${res.status})`);
+      throw mapApiError(res.status, err);
     }
     return res.json();
   } catch (e: any) {

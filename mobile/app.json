@@ -2,16 +2,18 @@
   "expo": {
     "name": "YumiShare",
     "slug": "yumshare",
+    "scheme": "yumshare",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
       "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#F6F6F4"
     },
     "ios": {
+      "bundleIdentifier": "com.yumshare.app",
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
@@ -44,7 +46,9 @@
         {
           "cameraPermission": "YumiShare needs camera access to scan product barcodes."
         }
-      ]
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
     ]
   }
 }

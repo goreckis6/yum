@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { sumAmounts } from '../utils/amounts';
 import { SEED_STATE } from '../data/seed';
 import { loadState, saveState } from '../storage/persist';
 import {
@@ -202,10 +203,8 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
         recipe.ingredients.forEach((ing) => {
           const ex = list.find((g) => g.n.toLowerCase() === ing.n.toLowerCase());
           if (ex) {
-            if (!ex.merged) {
-              ex.a = `${ex.a} + ${ing.a}`;
-              ex.merged = true;
-            }
+            ex.a = sumAmounts(ex.a, ing.a);
+            ex.merged = true;
             ex.checked = false;
           } else {
             list.push({
@@ -238,7 +237,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
           if (!rec) return;
           rec.ingredients.forEach((ing) => {
             const ex = list.find((g) => g.n.toLowerCase() === ing.n.toLowerCase());
-            if (ex) { ex.checked = false; }
+            if (ex) { ex.a = sumAmounts(ex.a, ing.a); ex.merged = true; ex.checked = false; }
             else {
               list.push({
                 id: `gw${Date.now()}_${n++}`,

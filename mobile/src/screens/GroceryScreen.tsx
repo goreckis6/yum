@@ -23,6 +23,7 @@ import { RootStackParamList } from '../navigation/types';
 import { IngredientIcon } from '../components/IngredientIcon';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
+import { parseAmt, formatValue } from '../utils/amounts';
 
 type GroupBy = 'aisle' | 'recipe';
 
@@ -37,106 +38,28 @@ const AISLE_ICON: Record<Aisle, string> = {
 
 const SWIPE_THRESHOLD = 72;
 
-// ─── ingredient consolidation ────────────────────────────────────────────────
-
-const UNICODE_FRACS: [string, number][] = [
-  ['¾', 0.75], ['⅔', 0.6667], ['⅝', 0.625], ['½', 0.5],
-  ['⅜', 0.375], ['⅓', 0.3333], ['¼', 0.25], ['⅛', 0.125], ['⅞', 0.875],
+// Sort order for the Calculate view: meat first, pantry/spices last
+const CALC_AISLE_ORDER: Aisle[] = [
+  'Meat & Seafood',
+  'Produce',
+  'Dairy & Eggs',
+  'Bakery',
+  'Frozen',
+  'Pantry',
 ];
-
-// Normalize unit aliases so "tablespoons" === "tbsp", "cups" === "cup", etc.
-const UNIT_ALIASES: Record<string, string> = {
-  tablespoon: 'tbsp', tablespoons: 'tbsp',
-  teaspoon: 'tsp', teaspoons: 'tsp',
-  cups: 'cup',
-  gram: 'g', grams: 'g',
-  kilogram: 'kg', kilograms: 'kg',
-  milliliter: 'ml', milliliters: 'ml', millilitre: 'ml', millilitres: 'ml',
-  liter: 'l', liters: 'l', litre: 'l', litres: 'l',
-  ounce: 'oz', ounces: 'oz',
-  pound: 'lb', pounds: 'lb',
-  cloves: 'clove',
-  slices: 'slice',
-  cans: 'can',
-  bunches: 'bunch',
-  sprigs: 'sprig',
-  stalks: 'stalk',
-  heads: 'head',
-  pieces: 'piece', pcs: 'piece',
-  bags: 'bag',
-  packages: 'pkg', package: 'pkg', packs: 'pkg', pack: 'pkg',
-  handfuls: 'handful',
-  pinches: 'pinch',
-};
-
-function normalizeUnit(u: string): string {
-  const low = u.toLowerCase().trim();
-  return UNIT_ALIASES[low] ?? low;
-}
-
-function parseAmt(a: string): { value: number; unit: string } {
-  const s = (a || '').trim();
-  if (!s) return { value: 0, unit: '' };
-
-  let value = 0;
-  let rest = s;
-
-  // "1½", "2½" etc — integer + immediately adjacent unicode fraction
-  const intFracM = s.match(/^(\d+)\s*([¼-¾⅐-⅞])(.*)/u);
-  if (intFracM) {
-    const frac = UNICODE_FRACS.find(([sym]) => sym === intFracM[2]);
-    if (frac) { value = parseInt(intFracM[1], 10) + frac[1]; rest = intFracM[3].trim(); }
-  }
-
-  // standalone unicode fraction
-  if (value === 0) {
-    const frac = UNICODE_FRACS.find(([sym]) => s.startsWith(sym));
-    if (frac) { value = frac[1]; rest = s.slice(frac[0].length).trim(); }
-  }
-
-  // slash fraction "1/2", "3/4"
-  if (value === 0) {
-    const m = s.match(/^(\d+)\s*\/\s*(\d+)(.*)/);
-    if (m) { value = parseInt(m[1]) / parseInt(m[2]); rest = m[3].trim(); }
-  }
-
-  // plain integer or decimal, possibly with leading non-digit chars (e.g. "~100g", "about 2")
-  if (value === 0) {
-    const m = s.match(/(\d+(?:[.,]\d+)?)(.*)/);
-    if (m) { value = parseFloat(m[1].replace(',', '.')); rest = m[2].trim(); }
-  }
-
-  // unit = first word of rest (handles "100 g", "2 cups", "3 cloves", "to taste")
-  const unitWord = rest.split(/\s+/)[0] ?? '';
-  return { value, unit: normalizeUnit(unitWord) };
-}
-
-function formatValue(v: number): string {
-  if (v <= 0) return '';
-  const whole = Math.floor(v);
-  const frac = v - whole;
-  const FRAC_MAP: [number, string][] = [
-    [0.875,'⅞'],[0.75,'¾'],[0.6667,'⅔'],[0.625,'⅝'],
-    [0.5,'½'],[0.375,'⅜'],[0.3333,'⅓'],[0.25,'¼'],[0.125,'⅛'],
-  ];
-  const match = FRAC_MAP.find(([f]) => Math.abs(frac - f) < 0.04);
-  if (match) return whole > 0 ? `${whole}${match[1]}` : match[1];
-  if (Math.abs(frac) < 0.04) return String(whole || Math.round(v));
-  return v.toFixed(1).replace('.0', '');
-}
 
 interface Consolidated {
   name: string;
+  aisle: Aisle;
   total: string;
   recipes: string[];
   merged: boolean;
 }
 
 function consolidate(items: GroceryItem[]): Consolidated[] {
-  // Simple case-insensitive key — no aggressive suffix stripping
   const normName = (s: string) => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
-  type Entry = { name: string; byUnit: Map<string, number>; noValueAmts: string[]; recipes: string[] };
+  type Entry = { name: string; aisle: Aisle; byUnit: Map<string, number>; noValueAmts: string[]; recipes: string[] };
   const map = new Map<string, Entry>();
 
   items.forEach((item) => {
@@ -144,14 +67,13 @@ function consolidate(items: GroceryItem[]): Consolidated[] {
     const { value, unit } = parseAmt(item.a);
 
     if (!map.has(key)) {
-      map.set(key, { name: item.n, byUnit: new Map(), noValueAmts: [], recipes: [] });
+      map.set(key, { name: item.n, aisle: item.aisle, byUnit: new Map(), noValueAmts: [], recipes: [] });
     }
     const entry = map.get(key)!;
 
     if (value > 0) {
       entry.byUnit.set(unit, (entry.byUnit.get(unit) ?? 0) + value);
     } else if (item.a?.trim()) {
-      // keep non-numeric amounts (e.g. "to taste", "a handful") without duplicating
       if (!entry.noValueAmts.includes(item.a.trim())) {
         entry.noValueAmts.push(item.a.trim());
       }
@@ -160,7 +82,7 @@ function consolidate(items: GroceryItem[]): Consolidated[] {
     if (!entry.recipes.includes(item.recipe)) entry.recipes.push(item.recipe);
   });
 
-  return Array.from(map.values()).map((e) => {
+  const result = Array.from(map.values()).map((e) => {
     const parts: string[] = [];
     e.byUnit.forEach((val, unit) => {
       parts.push(formatValue(val) + (unit ? ' ' + unit : ''));
@@ -168,11 +90,20 @@ function consolidate(items: GroceryItem[]): Consolidated[] {
     parts.push(...e.noValueAmts);
     return {
       name: e.name,
+      aisle: e.aisle,
       total: parts.filter(Boolean).join(' + ') || '—',
       recipes: e.recipes,
       merged: e.recipes.length > 1,
     };
   });
+
+  result.sort((a, b) => {
+    const ai = CALC_AISLE_ORDER.indexOf(a.aisle);
+    const bi = CALC_AISLE_ORDER.indexOf(b.aisle);
+    return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+  });
+
+  return result;
 }
 
 // ─── SwipeableRow ─────────────────────────────────────────────────────────────

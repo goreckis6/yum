@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '../config/api';
+import { authHeader, mapApiError } from './http';
 import { ReceiptCategory, ReceiptItem } from '../types';
 
 export interface ExtractedReceipt {
@@ -20,13 +21,13 @@ export async function extractReceiptFromImage(
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/extract-receipt-image`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ imageBase64, mimeType }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
+    throw mapApiError(res.status, err);
   }
 
   return res.json();

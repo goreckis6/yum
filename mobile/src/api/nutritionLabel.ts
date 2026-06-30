@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from '../config/api';
+import { authHeader, mapApiError } from './http';
 
 export interface LabelMacros {
   kcal: number;
@@ -30,13 +31,13 @@ export async function extractNutritionFromLabels(
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/extract-nutrition-label`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ images: shots }),
   });
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
+    throw mapApiError(res.status, err);
   }
 
   return res.json();

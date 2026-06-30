@@ -18,6 +18,8 @@ import { fonts } from '../theme/fonts';
 import { DayKey, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { cleanStep, isToTaste, scaleAmount } from '../utils/scale';
+import { convertAmount } from '../utils/amounts';
+import { UnitSystem } from '../types';
 import { useI18n } from '../i18n/I18nContext';
 import { CoverArt } from '../components/CoverArt';
 import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet';
@@ -57,7 +59,11 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
     customCookbooks,
     createCookbook,
     toggleRecipeInCookbook,
+    unitSystem,
   } = useApp();
+
+  const [localUnit, setLocalUnit] = React.useState<UnitSystem>(unitSystem);
+  React.useEffect(() => { setLocalUnit(unitSystem); }, [unitSystem]);
 
   const addOptions: SheetOption[] = [
     ...customCookbooks.map((cb) => {
@@ -261,6 +267,21 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             </View>
           </View>
 
+          <View style={styles.unitToggleRow}>
+            <Pressable
+              style={[styles.unitTab, localUnit === 'metric' && styles.unitTabOn]}
+              onPress={() => setLocalUnit('metric')}
+            >
+              <Text style={[styles.unitTabText, localUnit === 'metric' && styles.unitTabTextOn]}>Metric</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.unitTab, localUnit === 'imperial' && styles.unitTabOn]}
+              onPress={() => setLocalUnit('imperial')}
+            >
+              <Text style={[styles.unitTabText, localUnit === 'imperial' && styles.unitTabTextOn]}>Imperial</Text>
+            </Pressable>
+          </View>
+
           <View style={styles.sectionHead}>
             <Text style={styles.sectionTitle}>
               {hasGroups ? ingredientGroups[0][0] || t('recipe.ingredients') : t('recipe.ingredients')}
@@ -287,7 +308,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
                       </View>
                       <IngredientIcon name={ing.n} aisle={ing.aisle} size={30} muted={checked} />
                       <Text style={[styles.ingName, checked && styles.ingChecked]}>{ing.n}</Text>
-                      <Text style={[styles.ingAmt, checked && styles.ingChecked]}>{scaleAmount(ing.a, factor)}</Text>
+                      <Text style={[styles.ingAmt, checked && styles.ingChecked]}>{convertAmount(scaleAmount(ing.a, factor), localUnit)}</Text>
                     </Pressable>
                   );
                 })}
@@ -524,6 +545,20 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   statNum: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.ink },
   statLabel: { fontSize: 11, fontWeight: '600', color: c.grayMid, marginTop: 3 },
+  unitToggleRow: {
+    flexDirection: 'row',
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 12,
+    padding: 3,
+    marginBottom: 16,
+    marginTop: 4,
+  },
+  unitTab: {
+    flex: 1, paddingVertical: 8, alignItems: 'center', borderRadius: 10,
+  },
+  unitTabOn: { backgroundColor: c.accent },
+  unitTabText: { fontSize: 13, fontWeight: '700', color: c.grayMid },
+  unitTabTextOn: { color: '#fff' },
   sectionHead: {
     flexDirection: 'row',
     alignItems: 'baseline',

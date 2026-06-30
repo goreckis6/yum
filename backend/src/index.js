@@ -26,6 +26,90 @@ const supabaseAdmin =
     ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
     : null;
 
+// ─── AI endpoint protection ───────────────────────────────────────────────
+// The expensive OpenAI routes below are guarded by three layers:
+//   requireAuth     — only logged-in users (valid Supabase JWT) get through
+//   requirePremium  — only active RevenueCat subscribers (with a dev bypass)
+//   rateLimit       — caps each user to AI_DAILY_LIMIT calls per day
+// so that nobody can burn the OpenAI budget by hitting the open URLs.
+
+const RC_SECRET_KEY = process.env.RC_SECRET_KEY;
+// 'off' (default) lets everything through so the app works before the App
+// Store / Play products exist. Set to 'on' once subscriptions go live.
+const PREMIUM_ENFORCEMENT = process.env.PREMIUM_ENFORCEMENT || 'off';
+const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 30;
+// Must match the entitlement identifier in RevenueCat (and the mobile app)
+// EXACTLY, including capitalisation and spaces.
+const RC_ENTITLEMENT = process.env.RC_ENTITLEMENT || 'YumiSharev1';
+
+// Verify the caller's Supabase access token → attaches req.user.
+async function requireAuth(req, res, next) {
+  if (!supabaseAdmin) {
+    return res.status(503).json({ error: 'Auth not configured on the server.' });
+  }
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  if (!token) return res.status(401).json({ error: 'Missing auth token' });
+
+  const { data, error } = await supabaseAdmin.auth.getUser(token);
+  if (error || !data?.user) return res.status(401).json({ error: 'Invalid session' });
+  req.user = data.user;
+  next();
+}
+
+// Cache RevenueCat lookups briefly so we don't call their API on every request.
+const premiumCache = new Map(); // userId -> { active, expires }
+const PREMIUM_TTL_MS = 60 * 1000;
+
+async function requirePremium(req, res, next) {
+  if (PREMIUM_ENFORCEMENT !== 'on') return next(); // dev bypass
+
+  const userId = req.user.id;
+  const cached = premiumCache.get(userId);
+  if (cached && cached.expires > Date.now()) {
+    if (cached.active) return next();
+    return res.status(403).json({ error: 'premium_required' });
+  }
+
+  try {
+    const r = await fetch(`https://api.revenuecat.com/v1/subscribers/${userId}`, {
+      headers: { Authorization: `Bearer ${RC_SECRET_KEY}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await r.json();
+    const ent = data?.subscriber?.entitlements?.[RC_ENTITLEMENT];
+    const active = !!ent && (!ent.expires_date || new Date(ent.expires_date) > new Date());
+    premiumCache.set(userId, { active, expires: Date.now() + PREMIUM_TTL_MS });
+    if (!active) return res.status(403).json({ error: 'premium_required' });
+    next();
+  } catch (err) {
+    console.error('requirePremium error:', err);
+    // Fail closed — don't hand out free AI when RevenueCat is unreachable.
+    return res.status(503).json({ error: 'Could not verify subscription' });
+  }
+}
+
+// In-memory per-user daily counter. Resets when the UTC day changes.
+const rateBuckets = new Map(); // userId -> { day, count }
+
+function rateLimit(req, res, next) {
+  const userId = req.user.id;
+  const day = new Date().toISOString().slice(0, 10);
+  const bucket = rateBuckets.get(userId);
+  if (!bucket || bucket.day !== day) {
+    rateBuckets.set(userId, { day, count: 1 });
+    return next();
+  }
+  if (bucket.count >= AI_DAILY_LIMIT) {
+    return res.status(429).json({ error: 'rate_limited', limit: AI_DAILY_LIMIT });
+  }
+  bucket.count += 1;
+  next();
+}
+
+// Convenience: the full guard chain for AI endpoints.
+const aiGuard = [requireAuth, requirePremium, rateLimit];
+
 const RECIPE_SCHEMA = `{
   "title": "string",
   "app": "string (source platform e.g. TikTok, Instagram, Blog, YouTube)",
@@ -314,7 +398,7 @@ app.get('/health', (_req, res) => {
   });
 });
 
-app.post('/api/extract-recipe', async (req, res) => {
+app.post('/api/extract-recipe', ...aiGuard, async (req, res) => {
   try {
     const { url } = req.body;
     if (!url || typeof url !== 'string') {
@@ -358,7 +442,7 @@ app.post('/api/extract-recipe', async (req, res) => {
   }
 });
 
-app.post('/api/extract-recipe-image', async (req, res) => {
+app.post('/api/extract-recipe-image', ...aiGuard, async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg' } = req.body;
     if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -418,7 +502,7 @@ app.post('/api/extract-recipe-image', async (req, res) => {
   }
 });
 
-app.post('/api/extract-receipt-image', async (req, res) => {
+app.post('/api/extract-receipt-image', ...aiGuard, async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg' } = req.body;
     if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -479,7 +563,7 @@ app.post('/api/extract-receipt-image', async (req, res) => {
   }
 });
 
-app.post('/api/extract-nutrition-label', async (req, res) => {
+app.post('/api/extract-nutrition-label', ...aiGuard, async (req, res) => {
   try {
     // Accept either a single image or several photos of the SAME product label
     // (e.g. a bottle that can't be captured in one shot).
@@ -783,7 +867,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-app.post('/api/enrich-recipe', async (req, res) => {
+app.post('/api/enrich-recipe', ...aiGuard, async (req, res) => {
   try {
     const { recipe } = req.body;
     if (!recipe || typeof recipe !== 'object') {

@@ -5,17 +5,14 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Modal,
-  PanResponder,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -25,24 +22,6 @@ import { extractRecipeFromUrl } from '../api/recipes';
 import { Recipe } from '../types';
 
 type Step = 'menu' | 'link' | 'loading';
-
-const RECENT_KEY = '@yumshare/recent_links';
-const MAX_RECENT = 10;
-const SWIPE_THRESHOLD = 72;
-
-
-async function loadRecent(): Promise<string[]> {
-  try {
-    const raw = await AsyncStorage.getItem(RECENT_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-async function saveRecent(links: string[]) {
-  try { await AsyncStorage.setItem(RECENT_KEY, JSON.stringify(links)); } catch {}
-}
 
 interface Props {
   visible: boolean;
@@ -69,13 +48,9 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const [clipUrl, setClipUrl] = useState<string | null>(null);
   const [msgIdx, setMsgIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [recent, setRecent] = useState<string[]>([]);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const inputRef = useRef<TextInput>(null);
-
-  // Load recent links once on mount
-  useEffect(() => { loadRecent().then(setRecent); }, []);
 
   useEffect(() => {
     if (!visible) {
@@ -94,7 +69,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
           setClipUrl(text);
         }
       });
-      // Don't auto-focus — keyboard opens only when user taps the input
     }
   }, [step]);
 
@@ -114,23 +88,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const goLink = () => crossFade(() => setStep('link'));
   const goBack = () => { Keyboard.dismiss(); crossFade(() => { setStep('menu'); setError(null); }); };
 
-  const pushRecent = useCallback((u: string) => {
-    const next = [u, ...recent.filter((r) => r !== u)].slice(0, MAX_RECENT);
-    setRecent(next);
-    saveRecent(next);
-  }, [recent]);
-
-  const removeRecent = useCallback((u: string) => {
-    const next = recent.filter((r) => r !== u);
-    setRecent(next);
-    saveRecent(next);
-  }, [recent]);
-
-  const clearAllRecent = useCallback(() => {
-    setRecent([]);
-    saveRecent([]);
-  }, []);
-
   const submit = async (finalUrl?: string) => {
     const u = (finalUrl ?? url).trim() || clipUrl || '';
     if (!u) return;
@@ -138,7 +95,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
     crossFade(() => { setStep('loading'); setError(null); });
     try {
       const { recipe } = await extractRecipeFromUrl(u);
-      pushRecent(u);
       const draft: Recipe = { ...recipe, id: `imp${Date.now()}` };
       onClose();
       onRecipeReady(draft);
@@ -151,12 +107,10 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      {/* KAV pushes the sheet up when keyboard opens */}
       <KeyboardAvoidingView
         style={styles.kav}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {/* Backdrop — only dismisses on menu step */}
         <Pressable
           style={StyleSheet.absoluteFillObject}
           onPress={step === 'menu' ? onClose : Keyboard.dismiss}
@@ -164,7 +118,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
         <View style={styles.sheet}>
           <View style={styles.handle} />
-          <Animated.View style={{ opacity: fadeAnim }}>
+          <Animated.View style={[{ opacity: fadeAnim }, styles.content]}>
             {step === 'menu' && (
               <MenuView
                 styles={styles} c={c} t={t}
@@ -181,12 +135,9 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
                 url={url} setUrl={setUrl}
                 clipUrl={clipUrl} error={error}
                 canSubmit={canSubmit}
-                recent={recent}
                 onBack={goBack}
                 onSubmit={() => submit()}
-                onSubmitUrl={(u: string) => submit(u)}
-                onRemoveRecent={removeRecent}
-                onClearAll={clearAllRecent}
+                onSubmitClip={() => submit(clipUrl ?? '')}
                 inputRef={inputRef}
               />
             )}
@@ -197,51 +148,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
         </View>
       </KeyboardAvoidingView>
     </Modal>
-  );
-}
-
-/* ─── SwipeRow ───────────────────────────────────────────────── */
-
-function SwipeRow({ url, styles, c, t, onSelect, onRemove }: {
-  url: string; styles: any; c: ThemeColors; t: (k: string) => string;
-  onSelect: () => void; onRemove: () => void;
-}) {
-  const tx = useRef(new Animated.Value(0)).current;
-
-  const pan = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < 14,
-    onPanResponderMove: (_, g) => { if (g.dx < 0) tx.setValue(g.dx); },
-    onPanResponderRelease: (_, g) => {
-      if (g.dx < -SWIPE_THRESHOLD) {
-        Animated.timing(tx, { toValue: -300, duration: 180, useNativeDriver: true }).start(onRemove);
-      } else {
-        Animated.spring(tx, { toValue: 0, useNativeDriver: true }).start();
-      }
-    },
-    onPanResponderTerminate: () => {
-      Animated.spring(tx, { toValue: 0, useNativeDriver: true }).start();
-    },
-  }), []);
-
-  const domain = (() => { try { return new URL(url).hostname.replace('www.', ''); } catch { return url; } })();
-
-  return (
-    <View style={styles.recentRowOuter}>
-      {/* Delete background */}
-      <View style={styles.recentDeleteBg}>
-        <Text style={styles.recentDeleteLabel}>{t('addSheet.recentDelete')}</Text>
-      </View>
-      <Animated.View style={[styles.recentRow, { transform: [{ translateX: tx }] }]} {...pan.panHandlers}>
-        <Pressable style={styles.recentRowInner} onPress={onSelect}>
-          <Icon name="link" size={14} color={c.grayMid} />
-          <Text style={styles.recentDomain} numberOfLines={1}>{domain}</Text>
-          <Text style={styles.recentUrlText} numberOfLines={1}>{url}</Text>
-        </Pressable>
-        <Pressable onPress={onRemove} hitSlop={8} style={styles.recentXBtn}>
-          <Text style={styles.recentXText}>✕</Text>
-        </Pressable>
-      </Animated.View>
-    </View>
   );
 }
 
@@ -308,11 +214,8 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
   );
 }
 
-function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent,
-  onBack, onSubmit, onSubmitUrl, onRemoveRecent, onClearAll, inputRef }: any) {
-
-  const hasRecent = recent.length > 0;
-
+function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit,
+  onBack, onSubmit, onSubmitClip, inputRef }: any) {
   return (
     <>
       <View style={styles.linkHeader}>
@@ -322,9 +225,8 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent
         <Text style={styles.title}>{t('addSheet.pasteLink')}</Text>
       </View>
 
-      {/* Clipboard suggestion — only when no manual input yet */}
       {clipUrl && !url && (
-        <Pressable style={styles.clipCard} onPress={() => setUrl(clipUrl)}>
+        <Pressable style={styles.clipCard} onPress={() => onSubmitClip()}>
           <View style={styles.clipIconBox}>
             <Icon name="link" size={16} color="#fff" />
           </View>
@@ -366,35 +268,6 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit, recent
       >
         <Text style={styles.submitText}>{t('addSheet.confirmLink')}</Text>
       </Pressable>
-
-      {/* Recent links */}
-      {hasRecent && (
-        <>
-          <View style={styles.recentHeader}>
-            <Text style={styles.recentTitle}>{t('addSheet.recentTitle')}</Text>
-            <Pressable onPress={onClearAll} hitSlop={8}>
-              <Text style={styles.recentClearAll}>{t('addSheet.recentClearAll')}</Text>
-            </Pressable>
-          </View>
-          <ScrollView
-            style={styles.recentList}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-            {recent.map((u: string) => (
-              <SwipeRow
-                key={u}
-                url={u}
-                styles={styles}
-                c={c}
-                t={t}
-                onSelect={() => { setUrl(u); onSubmitUrl(u); }}
-                onRemove={() => onRemoveRecent(u)}
-              />
-            ))}
-          </ScrollView>
-        </>
-      )}
     </>
   );
 }
@@ -421,12 +294,14 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 20,
       paddingBottom: Platform.OS === 'ios' ? 10 : 36,
       paddingTop: 12,
+      minHeight: '50%',
       maxHeight: '88%',
     },
     handle: {
       width: 42, height: 5, borderRadius: 3,
       backgroundColor: c.border, alignSelf: 'center', marginBottom: 16,
     },
+    content: { flex: 1 },
     title: { fontFamily: fonts.display, fontSize: 22, color: c.ink, marginBottom: 14 },
     sectionLabel: {
       fontSize: 11, fontWeight: '700', color: c.grayMid,
@@ -509,32 +384,8 @@ const makeStyles = (c: ThemeColors) =>
     submitDisabled: { backgroundColor: c.border },
     submitText: { color: '#fff', fontWeight: '700', fontSize: 15.5 },
 
-    /* Recent links */
-    recentHeader: {
-      flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8,
-    },
-    recentTitle: { fontSize: 12, fontWeight: '700', color: c.grayMid, textTransform: 'uppercase', letterSpacing: 0.6 },
-    recentClearAll: { fontSize: 12.5, fontWeight: '700', color: '#DC2626' },
-    recentList: { maxHeight: 200 },
-
-    recentRowOuter: { position: 'relative', marginBottom: 6, borderRadius: 12, overflow: 'hidden' },
-    recentDeleteBg: {
-      position: 'absolute', right: 0, top: 0, bottom: 0, width: 80,
-      backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center',
-    },
-    recentDeleteLabel: { fontSize: 12, fontWeight: '700', color: '#DC2626' },
-    recentRow: { backgroundColor: c.surface, borderRadius: 12, flexDirection: 'row', alignItems: 'center' },
-    recentRowInner: {
-      flexDirection: 'row', alignItems: 'center', gap: 8,
-      paddingLeft: 12, paddingVertical: 11, flex: 1, minWidth: 0,
-    },
-    recentDomain: { fontSize: 12.5, fontWeight: '700', color: c.ink, flexShrink: 0, maxWidth: 80 },
-    recentUrlText: { fontSize: 11.5, color: c.grayMid, flex: 1, minWidth: 0 },
-    recentXBtn: { paddingHorizontal: 12, paddingVertical: 11, flexShrink: 0 },
-    recentXText: { color: c.grayMid, fontSize: 14 },
-
     /* Loading step */
-    loadingWrap: { alignItems: 'center', paddingVertical: 36 },
+    loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 36 },
     loadingMsg: { fontFamily: fonts.display, fontSize: 19, color: c.ink, textAlign: 'center', marginBottom: 6 },
     loadingHint: { fontSize: 13, fontWeight: '500', color: c.grayMid },
   });

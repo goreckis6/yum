@@ -60,25 +60,45 @@ export async function uploadBase64Image(
   }
 }
 
-// Upload a local image to Supabase Storage and return its public URL. Remote
-// URLs (already http...) and empty values pass through unchanged, so this is
-// safe to call on every save.
+// True if the URL already lives in our own Supabase bucket — no need to
+// re-upload an image we already host.
+function isOwnStorageUrl(uri: string): boolean {
+  return uri.includes(`/${BUCKET}/`);
+}
+
+// Persist a recipe cover to Supabase Storage and return its permanent public
+// URL. Handles three cases:
+//   • local file/picker URIs (file:, content:, ph:…) → read + upload
+//   • remote http(s) URLs (e.g. Instagram/Facebook og:image) → fetch + upload,
+//     because those CDN links are signed and EXPIRE after hours/days, leaving a
+//     blank cover later. Re-hosting them makes covers permanent.
+//   • already-hosted Supabase URLs and empty values → pass through unchanged.
 export async function uploadImageIfLocal(
   uri: string | undefined,
   userId: string,
   folder?: string,
 ): Promise<string | undefined> {
-  if (!uri || !isLocalUri(uri)) return uri;
-  if (!isSupabaseConfigured) return uri; // offline / not configured → keep local uri
+  if (!uri) return uri;
+  if (!isSupabaseConfigured) return uri; // offline / not configured → keep uri
+  if (isOwnStorageUrl(uri)) return uri; // already permanent in our bucket
 
   try {
-    // Read the local file as raw bytes (Expo SDK 54 filesystem API), then
-    // resize via the backend before uploading.
-    const original = await new File(uri).bytes();
-    const bytes = await resizeBase64(encode(original.buffer as ArrayBuffer));
+    let base64: string;
+    if (isLocalUri(uri)) {
+      // Read the local file as raw bytes (Expo SDK 54 filesystem API).
+      const original = await new File(uri).bytes();
+      base64 = encode(original.buffer as ArrayBuffer);
+    } else {
+      // Remote URL — download it before it expires, then re-host it.
+      const res = await fetch(uri);
+      if (!res.ok) return uri; // unreachable → keep the original link
+      const ab = await res.arrayBuffer();
+      base64 = encode(ab);
+    }
+    const bytes = await resizeBase64(base64);
     return (await putBytes(bytes, userId, folder)) ?? uri;
   } catch (e: any) {
     console.error('[storage] upload FAILED', e?.message, e?.statusCode, e?.error, e?.status);
-    return uri;
+    return uri; // on any failure keep the original so we don't lose the cover
   }
 }

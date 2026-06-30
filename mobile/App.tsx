@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import * as Linking from 'expo-linking';
+import { supabase } from './src/lib/supabase';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
@@ -14,10 +16,11 @@ import {
 } from '@expo-google-fonts/hanken-grotesk';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { PremiumProvider, usePremium } from './src/context/PremiumContext';
 import { AuthScreen } from './src/screens/AuthScreen';
+import { PaywallScreen } from './src/screens/PaywallScreen';
 import { MainNavigator } from './src/navigation/MainNavigator';
 import { RootStackParamList } from './src/navigation/types';
 import { ThemeProvider, useTheme, useThemeCtx } from './src/theme/ThemeContext';
@@ -77,6 +80,26 @@ function RootNavigator() {
 }
 
 export default function App() {
+  // Handle OAuth deep link callback (exp://IP:PORT/--/auth/callback?code=...)
+  useEffect(() => {
+    const handleUrl = async (url: string) => {
+      if (!url.includes('auth/callback')) return;
+      const queryStr = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
+      const code = new URLSearchParams(queryStr).get('code');
+      if (code) {
+        console.log('[OAuth] deep link code received, exchanging...');
+        await supabase.auth.exchangeCodeForSession(code);
+      }
+    };
+
+    // App opened via deep link while closed
+    Linking.getInitialURL().then((url) => { if (url) handleUrl(url); });
+
+    // App foregrounded via deep link while running
+    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, []);
+
   const [fontsLoaded] = useFonts({
     Newsreader_600SemiBold,
     Newsreader_700Bold,
@@ -98,8 +121,10 @@ export default function App() {
       <I18nProvider>
         <ThemeProvider>
           <AuthProvider>
-            <ThemedStatusBar />
-            <Gate />
+            <PremiumProvider>
+              <ThemedStatusBar />
+              <Gate />
+            </PremiumProvider>
           </AuthProvider>
         </ThemeProvider>
       </I18nProvider>
@@ -112,18 +137,13 @@ function ThemedStatusBar() {
   return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }
 
-const ONBOARDED_KEY = '@yumshare/onboarded';
-
 function Gate() {
   const { session, user, initializing } = useAuth();
+  const { isPremium, isLoading: premiumLoading } = usePremium();
   const c = useTheme();
-  const [seenOnboarding, setSeenOnboarding] = React.useState<boolean | null>(null);
+  const [showAuth, setShowAuth] = React.useState(false);
 
-  React.useEffect(() => {
-    AsyncStorage.getItem(ONBOARDED_KEY).then((v) => setSeenOnboarding(v === '1'));
-  }, []);
-
-  if (initializing || seenOnboarding === null) {
+  if (initializing) {
     return (
       <View style={[styles.loading, { backgroundColor: c.bg }]}>
         <ActivityIndicator size="large" color={c.ink} />
@@ -131,20 +151,25 @@ function Gate() {
     );
   }
 
-  // First launch (any user, before sign-in): show onboarding once per device.
-  if (!seenOnboarding && (!session || !user)) {
+  if (!session || !user) {
+    if (!showAuth) {
+      return <OnboardingScreen onDone={() => setShowAuth(true)} />;
+    }
+    return <AuthScreen onBack={() => setShowAuth(false)} />;
+  }
+
+  // Logged in but still resolving subscription state.
+  if (premiumLoading) {
     return (
-      <OnboardingScreen
-        onDone={() => {
-          AsyncStorage.setItem(ONBOARDED_KEY, '1').catch(() => {});
-          setSeenOnboarding(true);
-        }}
-      />
+      <View style={[styles.loading, { backgroundColor: c.bg }]}>
+        <ActivityIndicator size="large" color={c.ink} />
+      </View>
     );
   }
 
-  if (!session || !user) {
-    return <AuthScreen />;
+  // Everything is behind the subscription — gate the whole app.
+  if (!isPremium) {
+    return <PaywallScreen />;
   }
 
   return (
