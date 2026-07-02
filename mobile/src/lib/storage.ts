@@ -14,21 +14,39 @@ function isLocalUri(uri: string): boolean {
 // Ask the backend (sharp) to downscale + recompress a base64 image. Reliable
 // across platforms and avoids the native image-manipulator/blob issues on iOS.
 // Returns resized JPEG bytes, or the decoded original if resize is unavailable.
+//
+// Retries a few times: hosts like Railway cold-start and answer the first hit
+// with a 502/timeout while booting. Without a retry that single failure falls
+// straight through to the full-size original, bloating storage (a 3 MB cover
+// that should have been ~110 KB). Each attempt has its own timeout so a hung
+// request can't block the whole import.
 async function resizeBase64(base64: string): Promise<Uint8Array> {
-  try {
-    const res = await fetch(`${getApiBaseUrl()}/api/resize-image`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base64, maxWidth: MAX_WIDTH, quality: QUALITY }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return new Uint8Array(decode(data.base64));
+  const url = `${getApiBaseUrl()}/api/resize-image`;
+  const body = JSON.stringify({ base64, maxWidth: MAX_WIDTH, quality: QUALITY });
+  const ATTEMPTS = 3;
+  for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: controller.signal,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return new Uint8Array(decode(data.base64));
+      }
+    } catch {
+      /* timed out or network error — retry below */
+    } finally {
+      clearTimeout(timer);
     }
-  } catch {
-    /* fall back to original below */
+    // Give a cold server a moment to finish booting before retrying.
+    if (attempt < ATTEMPTS - 1) await new Promise((r) => setTimeout(r, 1500));
   }
-  return new Uint8Array(decode(base64));
+  return new Uint8Array(decode(base64)); // last resort: keep the original
 }
 
 async function putBytes(bytes: Uint8Array, userId: string, folder?: string): Promise<string | undefined> {
