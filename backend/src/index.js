@@ -14,22 +14,36 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// The OpenAI SDK v4 ships node-fetch@2 as its HTTP layer, which throws
-// ERR_STREAM_PREMATURE_CLOSE while decompressing gzip'd responses — surfacing to
-// users as "Premature close" during recipe extraction. That error happens while
-// reading the response body, so the SDK's own retry never catches it. Node 22
-// (Railway's runtime) has a native fetch (undici) that handles gzip correctly,
-// so hand it to the SDK explicitly. maxRetries/timeout still guard the request
-// leg against transient connection drops.
-const nativeFetch = globalThis.fetch ? globalThis.fetch.bind(globalThis) : undefined;
 const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      fetch: nativeFetch,
-      maxRetries: 4,
-      timeout: 90000,
-    })
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 4, timeout: 90000 })
   : null;
+
+// The OpenAI SDK v4 ships node-fetch@2, which intermittently throws
+// ERR_STREAM_PREMATURE_CLOSE while decompressing gzip'd responses. That fires
+// during the response body read, so the SDK's built-in retry never catches it
+// and users saw "Premature close" during extraction. (Swapping in native undici
+// fetch trades this for an "invalid content-length" rejection, so we stay on
+// node-fetch.) Wrap completions in an app-level retry: a premature close is
+// transient, and a fresh request almost always succeeds on the next attempt.
+async function aiChat(params) {
+  const create = openai.chat.completions.create.bind(openai.chat.completions);
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      return await create(params);
+    } catch (err) {
+      lastErr = err;
+      const codes = `${err?.code || ''} ${err?.cause?.code || ''} ${err?.name || ''} ${err?.message || ''}`;
+      const retryable = /PREMATURE_CLOSE|ECONNRESET|ETIMEDOUT|EPIPE|socket hang up|APIConnection|Connection error|fetch failed/i.test(codes);
+      if (attempt < 2 && retryable) {
+        await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
 
 // Admin Supabase client (service role) — used only for account deletion.
 const SUPABASE_URL = process.env.SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -369,7 +383,7 @@ function buildMockRecipe(url) {
 async function extractWithOpenAI(url, pageContent) {
   const source = detectSource(url);
 
-  const completion = await openai.chat.completions.create({
+  const completion = await aiChat({
     model: 'gpt-5.4-mini',
     response_format: { type: 'json_object' },
     messages: [
@@ -467,7 +481,7 @@ app.post('/api/extract-recipe-image', ...aiGuard, async (req, res) => {
       return res.json({ recipe: buildMockRecipe('scan://photo'), demo: true });
     }
 
-    const completion = await openai.chat.completions.create({
+    const completion = await aiChat({
       model: 'gpt-5.4-mini',
       response_format: { type: 'json_object' },
       messages: [
@@ -527,7 +541,7 @@ app.post('/api/extract-receipt-image', ...aiGuard, async (req, res) => {
       return res.json({ receipt: buildMockReceipt(), demo: true });
     }
 
-    const completion = await openai.chat.completions.create({
+    const completion = await aiChat({
       model: 'gpt-5.4-mini',
       response_format: { type: 'json_object' },
       messages: [
@@ -597,7 +611,7 @@ app.post('/api/extract-nutrition-label', ...aiGuard, async (req, res) => {
       return res.json({ product: buildMockNutrition(), demo: true });
     }
 
-    const completion = await openai.chat.completions.create({
+    const completion = await aiChat({
       model: 'gpt-5.4-mini',
       response_format: { type: 'json_object' },
       messages: [
@@ -905,7 +919,7 @@ Rules:
 - Do NOT add ingredients not implied by the existing list
 - Return ONLY valid JSON matching this schema exactly: ${RECIPE_SCHEMA}`;
 
-    const completion = await openai.chat.completions.create({
+    const completion = await aiChat({
       model: 'gpt-5.4-mini',
       response_format: { type: 'json_object' },
       messages: [{ role: 'user', content: prompt }],
