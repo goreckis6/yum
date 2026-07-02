@@ -14,12 +14,21 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// maxRetries covers transient backend→OpenAI connection drops ("Premature
-// close" / APIConnectionError), which the default of 2 didn't always survive;
-// the SDK retries these with exponential backoff. timeout caps a single attempt
-// so a stuck request fails fast enough to be retried instead of hanging.
+// The OpenAI SDK v4 ships node-fetch@2 as its HTTP layer, which throws
+// ERR_STREAM_PREMATURE_CLOSE while decompressing gzip'd responses — surfacing to
+// users as "Premature close" during recipe extraction. That error happens while
+// reading the response body, so the SDK's own retry never catches it. Node 22
+// (Railway's runtime) has a native fetch (undici) that handles gzip correctly,
+// so hand it to the SDK explicitly. maxRetries/timeout still guard the request
+// leg against transient connection drops.
+const nativeFetch = globalThis.fetch ? globalThis.fetch.bind(globalThis) : undefined;
 const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 4, timeout: 90000 })
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      fetch: nativeFetch,
+      maxRetries: 4,
+      timeout: 90000,
+    })
   : null;
 
 // Admin Supabase client (service role) — used only for account deletion.
