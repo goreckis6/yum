@@ -14,8 +14,19 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Accept-Encoding: identity is the real fix for the "Premature close" errors:
+// node-fetch@2 (bundled by openai@4) throws ERR_STREAM_PREMATURE_CLOSE while
+// *decompressing* gzip'd responses, and for some payloads it fails on every
+// attempt. Asking OpenAI not to gzip skips node-fetch's Gunzip path entirely.
+// Recipe JSON is a few KB, so shipping it uncompressed costs nothing. aiChat's
+// retry (below) stays as a safety net for genuinely transient drops.
 const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 4, timeout: 90000 })
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      maxRetries: 4,
+      timeout: 90000,
+      defaultHeaders: { 'Accept-Encoding': 'identity' },
+    })
   : null;
 
 // The OpenAI SDK v4 ships node-fetch@2, which intermittently throws
