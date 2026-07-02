@@ -14,8 +14,12 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// maxRetries covers transient backend→OpenAI connection drops ("Premature
+// close" / APIConnectionError), which the default of 2 didn't always survive;
+// the SDK retries these with exponential backoff. timeout caps a single attempt
+// so a stuck request fails fast enough to be retried instead of hanging.
 const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY, maxRetries: 4, timeout: 90000 })
   : null;
 
 // Admin Supabase client (service role) — used only for account deletion.
