@@ -258,6 +258,30 @@ function isPinterestUrl(url) {
   }
 }
 
+function isYouTubeUrl(url) {
+  try {
+    const host = new URL(url).hostname.replace('www.', '');
+    return host === 'youtu.be' || host.endsWith('youtube.com');
+  } catch {
+    return false;
+  }
+}
+
+function youTubeVideoId(url) {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace('www.', '');
+    if (host === 'youtu.be') return u.pathname.slice(1).split('/')[0];
+    if (u.searchParams.get('v')) return u.searchParams.get('v');
+    const parts = u.pathname.split('/'); // /shorts/<id> or /embed/<id>
+    const i = parts.findIndex((p) => p === 'shorts' || p === 'embed');
+    if (i >= 0 && parts[i + 1]) return parts[i + 1];
+    return '';
+  } catch {
+    return '';
+  }
+}
+
 // TikTok doesn't expose the caption in og: tags, but its official oEmbed
 // endpoint returns the full description, author and thumbnail. Short vm.tiktok
 // links are resolved to their canonical URL first.
@@ -365,9 +389,64 @@ async function fetchPinterest(url) {
   };
 }
 
+// YouTube truncates og:description, but the full video description — where
+// creators paste the recipe — lives in the embedded player JSON as
+// videoDetails.shortDescription. Pull it from there. Works for watch?v=,
+// youtu.be short links and /shorts/. The thumbnail is derived from the video id
+// (hqdefault always exists, unlike maxresdefault).
+async function fetchYouTube(url) {
+  const BROWSER_UA =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+  const videoId = youTubeVideoId(url);
+  let title = '';
+  let description = '';
+  let author = '';
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    });
+    const html = await res.text();
+    const $ = cheerio.load(html);
+    title = $('meta[property="og:title"]').attr('content') || '';
+    // Robust JSON-string capture (handles escaped quotes) for the full description.
+    const dm = html.match(/"shortDescription":"((?:[^"\\]|\\.)*)"/);
+    if (dm) {
+      try {
+        description = JSON.parse(`"${dm[1]}"`);
+      } catch {
+        /* leave description empty */
+      }
+    }
+    const am = html.match(/"author":"((?:[^"\\]|\\.)*)"/);
+    if (am) {
+      try {
+        author = JSON.parse(`"${am[1]}"`);
+      } catch {
+        /* ignore */
+      }
+    }
+  } catch {
+    /* fall back to whatever we captured */
+  }
+
+  const thumb = videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '';
+  const caption = `${title}\n${description}`.trim();
+  return {
+    jsonLd: '',
+    og: { title, description, image: thumb },
+    captionText: caption,
+    bodyText: caption,
+    handle: author ? `@${author.replace(/\s+/g, '')}` : '@channel',
+  };
+}
+
 async function fetchPageText(url) {
   if (isTikTokUrl(url)) return fetchTikTok(url);
   if (isPinterestUrl(url)) return fetchPinterest(url);
+  if (isYouTubeUrl(url)) return fetchYouTube(url);
   const social = isSocialUrl(url);
   const userAgent = social
     ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
