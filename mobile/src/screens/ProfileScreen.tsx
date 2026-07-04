@@ -263,7 +263,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   premiumTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   premiumTitle: { fontFamily: fonts.display, fontSize: 17, color: c.ink },
   premiumBadge: {
-    backgroundColor: '#16A34A',
+    backgroundColor: c.successText,
     borderRadius: 8,
     paddingVertical: 3,
     paddingHorizontal: 9,
@@ -322,8 +322,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   rowText: { flex: 1, fontSize: 15, fontWeight: '600', color: c.ink },
   rowRight: { fontSize: 14, fontWeight: '600', color: c.grayMid },
   chevron: { fontSize: 20, color: c.gray },
-  deleteText: { color: '#DC2626' },
+  deleteText: { color: c.dangerText },
   logout: { marginTop: 4, alignItems: 'center', paddingVertical: 14 },
-  logoutText: { fontSize: 15, fontWeight: '700', color: '#B91C1C' },
+  logoutText: { fontSize: 15, fontWeight: '700', color: c.dangerText },
   apiHint: { fontSize: 11, color: c.grayMid, textAlign: 'center', marginTop: 16 },
 });

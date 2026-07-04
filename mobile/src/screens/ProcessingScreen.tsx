@@ -93,6 +93,6 @@ const makeStyles = (c: ThemeColors) =>
       textAlign: 'center',
       marginBottom: 8,
     },
-    error: { fontSize: 14, color: '#B91C1C', textAlign: 'center', marginBottom: 12 },
+    error: { fontSize: 14, color: c.dangerText, textAlign: 'center', marginBottom: 12 },
     hint: { fontSize: 13, fontWeight: '500', color: c.grayMid, textAlign: 'center' },
   });

@@ -241,7 +241,7 @@ const makeStyles = (c: ThemeColors) =>
 
     empty: { fontSize: 15, fontWeight: '600', color: c.grayMuted, marginVertical: 32 },
 
-    error: { fontSize: 13, fontWeight: '600', color: '#DC2626', marginBottom: 12, textAlign: 'center' },
+    error: { fontSize: 13, fontWeight: '600', color: c.dangerText, marginBottom: 12, textAlign: 'center' },
 
     cta: {
       alignSelf: 'stretch',

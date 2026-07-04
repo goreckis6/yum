@@ -631,8 +631,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   completedTitle: { fontSize: 12, fontWeight: '700', color: c.grayMid, textTransform: 'uppercase', letterSpacing: 0.5 },
   scanBoughtBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#f0fdf4', borderRadius: 12, paddingVertical: 10,
-    borderWidth: 1, borderColor: '#86efac', marginBottom: 10,
+    backgroundColor: c.successBg, borderRadius: 12, paddingVertical: 10,
+    borderWidth: 1, borderColor: c.successBorder, marginBottom: 10,
   },
   scanBoughtText: { fontSize: 13, fontWeight: '700', color: '#15803d' },
   rowNameDone: { flex: 1, fontSize: 14, fontWeight: '500', color: c.grayMid, textDecorationLine: 'line-through' },

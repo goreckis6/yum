@@ -455,7 +455,7 @@ const makeStyles = (c: ThemeColors) =>
     thumbXText: { color: '#fff', fontSize: 15, fontWeight: '700', marginTop: -2 },
     thumbAdd: { width: 76, height: 76, borderRadius: 12, borderWidth: 1.5, borderColor: c.border, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center', backgroundColor: c.surface },
     shotsCount: { fontSize: 12.5, fontWeight: '600', color: c.grayMid, marginBottom: 4 },
-    errText: { fontSize: 13, fontWeight: '600', color: '#DC2626', marginTop: 6 },
+    errText: { fontSize: 13, fontWeight: '600', color: c.dangerText, marginTop: 6 },
     btnDisabled: { opacity: 0.5 },
     prodRow: { flexDirection: 'row', gap: 13, alignItems: 'center', marginBottom: 16 },
     prodImg: { width: 56, height: 56, borderRadius: 12, backgroundColor: c.surfaceAlt },

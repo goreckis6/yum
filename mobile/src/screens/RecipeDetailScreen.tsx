@@ -476,7 +476,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  favBtnOn: { backgroundColor: '#FEE2E2' },
+  favBtnOn: { backgroundColor: c.dangerBg },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 18 },
   tagChip: {
     paddingVertical: 6,

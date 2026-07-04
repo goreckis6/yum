@@ -183,7 +183,7 @@ const makeStyles = (c: ThemeColors) =>
     retakeBtnText: { fontSize: 13, fontWeight: '700', color: '#241B12' },
     busyOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(27,23,18,0.55)', alignItems: 'center', justifyContent: 'center', gap: 12 },
     busyText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-    error: { fontSize: 13, fontWeight: '600', color: '#DC2626', marginBottom: 12 },
+    error: { fontSize: 13, fontWeight: '600', color: c.dangerText, marginBottom: 12 },
     btnPrimary: { backgroundColor: c.accent, borderRadius: 16, paddingVertical: 16, alignItems: 'center', marginBottom: 10 },
     btnDisabled: { opacity: 0.6 },
     btnPrimaryText: { color: '#fff', fontSize: 16, fontWeight: '700' },

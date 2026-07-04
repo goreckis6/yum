@@ -259,7 +259,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
 
   warn: {
     fontSize: 13, fontWeight: '600', color: '#B45309',
-    backgroundColor: '#FEF3C7', padding: 12, borderRadius: 12, marginBottom: 20,
+    backgroundColor: c.warning, padding: 12, borderRadius: 12, marginBottom: 20,
   },
 
   socialBtn: {
@@ -300,7 +300,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     fontSize: 15, fontWeight: '500', color: c.ink,
     marginBottom: 10, borderWidth: 1, borderColor: c.border,
   },
-  error: { fontSize: 13, fontWeight: '600', color: '#DC2626', marginBottom: 8 },
+  error: { fontSize: 13, fontWeight: '600', color: c.dangerText, marginBottom: 8 },
   notice: { fontSize: 13, fontWeight: '600', color: '#15803D', marginBottom: 8 },
 
   submitBtn: {

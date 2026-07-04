@@ -141,7 +141,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   clipBadge: { fontSize: 11, fontWeight: '600', color: c.grayMid, marginBottom: 3 },
-  clipUrl: { fontSize: 13, fontWeight: '600', color: '#3A3A3A' },
+  clipUrl: { fontSize: 13, fontWeight: '600', color: c.grayLight },
   pasteBtn: {
     backgroundColor: c.accent,
     fontSize: 13,

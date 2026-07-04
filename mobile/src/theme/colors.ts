@@ -21,6 +21,13 @@ export interface ThemeColors {
   warning: string;
   warningText: string;
   scrim: string;
+  // Semantic states (success = "have it"/done, danger = remove/destructive).
+  // Each theme supplies dark-appropriate values so these never stay bright.
+  successBg: string;
+  successText: string;
+  successBorder: string;
+  dangerBg: string;
+  dangerText: string;
 }
 
 export const lightColors: ThemeColors = {
@@ -42,6 +49,11 @@ export const lightColors: ThemeColors = {
   warning: '#FEF3C7',
   warningText: '#92400E',
   scrim: 'rgba(27,23,18,0.45)',
+  successBg: '#F0FDF4',
+  successText: '#16A34A',
+  successBorder: '#BBF7D0',
+  dangerBg: '#FEE2E2',
+  dangerText: '#DC2626',
 };
 
 export const darkColors: ThemeColors = {
@@ -63,6 +75,11 @@ export const darkColors: ThemeColors = {
   warning: '#37302A',
   warningText: '#F3D9A8',
   scrim: 'rgba(0,0,0,0.55)',
+  successBg: '#1E2A1C',
+  successText: '#8FBF7E',
+  successBorder: '#2F4029',
+  dangerBg: '#3A231F',
+  dangerText: '#E8998C',
 };
 
 export const lightTints = ['#E9EEE2', '#F7E9E0', '#F3D9A8', '#F8F3EB', '#F4EEE4'];

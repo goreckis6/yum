@@ -333,8 +333,8 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.surface, borderRadius: 18, padding: 11,
       borderWidth: 1.5, borderColor: 'transparent',
     },
-    slotCardFull: { borderColor: '#86efac', backgroundColor: '#f0fdf4' },
-    slotCardPartial: { borderColor: '#fde68a', backgroundColor: '#fffbeb' },
+    slotCardFull: { borderColor: c.successBorder, backgroundColor: c.successBg },
+    slotCardPartial: { borderColor: c.gold, backgroundColor: c.warning },
 
     thumb: {
       width: 62, height: 62, borderRadius: 13,
@@ -353,21 +353,21 @@ const makeStyles = (c: ThemeColors) =>
       alignSelf: 'flex-start', marginTop: 7,
     },
     badgeFull: { backgroundColor: '#dcfce7' },
-    badgePartial: { backgroundColor: '#fef3c7' },
+    badgePartial: { backgroundColor: c.warning },
     badgeDot: { fontSize: 7, lineHeight: 12 },
     badgeText: { fontSize: 11.5, fontWeight: '700' },
     badgeTextFull: { color: '#15803d' },
-    badgeTextPartial: { color: '#92400e' },
-    badgeArrow: { fontSize: 14, color: '#92400e', lineHeight: 16 },
+    badgeTextPartial: { color: c.warningText },
+    badgeArrow: { fontSize: 14, color: c.warningText, lineHeight: 16 },
 
     remove: {
       width: 30, height: 30, borderRadius: 15,
-      backgroundColor: '#F3F3F3', alignItems: 'center', justifyContent: 'center',
+      backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center',
       flexShrink: 0,
     },
 
     addSlot: {
-      borderWidth: 1.5, borderColor: '#DADADA', borderStyle: 'dashed',
+      borderWidth: 1.5, borderColor: c.border, borderStyle: 'dashed',
       borderRadius: 18, paddingVertical: 18, alignItems: 'center',
     },
     addText: { fontSize: 14, fontWeight: '700', color: c.gray },
@@ -380,6 +380,6 @@ const makeStyles = (c: ThemeColors) =>
     totalsKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: c.ink, marginTop: 2 },
     macros: { fontSize: 13, fontWeight: '600', color: c.grayMid, marginTop: 6 },
 
-    weekBtn: { backgroundColor: '#EBEBEB', borderRadius: 16, paddingVertical: 15, alignItems: 'center' },
-    weekBtnText: { fontSize: 15, fontWeight: '700', color: '#2A2A2A' },
+    weekBtn: { backgroundColor: c.surfaceAlt, borderRadius: 16, paddingVertical: 15, alignItems: 'center' },
+    weekBtnText: { fontSize: 15, fontWeight: '700', color: c.grayLight },
   });

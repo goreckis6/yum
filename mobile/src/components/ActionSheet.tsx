@@ -148,7 +148,7 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 8,
     },
     optionText: { fontSize: 15, fontWeight: '700', color: c.ink },
-    optionDestructive: { color: '#DC2626' },
+    optionDestructive: { color: c.dangerText },
     cancel: { paddingVertical: 14, alignItems: 'center', marginTop: 8 },
     cancelText: { fontSize: 15, fontWeight: '700', color: c.grayMid },
     input: {

@@ -260,7 +260,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       marginTop: 6,
     },
-    deleteText: { fontSize: 15, fontWeight: '700', color: '#DC2626' },
+    deleteText: { fontSize: 15, fontWeight: '700', color: c.dangerText },
     closeBtn: { backgroundColor: c.accent, borderRadius: 14, paddingHorizontal: 22, paddingVertical: 12 },
     closeText: { color: '#fff', fontSize: 15, fontWeight: '700' },
     zoomRoot: { flex: 1, backgroundColor: '#000' },

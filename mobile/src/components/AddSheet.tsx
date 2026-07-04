@@ -376,7 +376,7 @@ const makeStyles = (c: ThemeColors) =>
     inputFocused: { borderColor: c.accent },
     input: { flex: 1, fontSize: 14.5, fontWeight: '500', color: c.ink, paddingVertical: 13 },
     clearBtn: { color: c.grayMid, fontSize: 15, paddingHorizontal: 4 },
-    errorText: { fontSize: 13, color: '#B91C1C', fontWeight: '600', marginBottom: 10 },
+    errorText: { fontSize: 13, color: c.dangerText, fontWeight: '600', marginBottom: 10 },
     submitBtn: {
       backgroundColor: c.accent, borderRadius: 14,
       paddingVertical: 15, alignItems: 'center', marginBottom: 16,
