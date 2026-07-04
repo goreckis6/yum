@@ -248,6 +248,16 @@ function isTikTokUrl(url) {
   }
 }
 
+function isPinterestUrl(url) {
+  try {
+    const host = new URL(url).hostname.replace('www.', '');
+    // pin.it is the short-link domain; pinterest.* covers all country TLDs.
+    return host === 'pin.it' || host.includes('pinterest.');
+  } catch {
+    return false;
+  }
+}
+
 // TikTok doesn't expose the caption in og: tags, but its official oEmbed
 // endpoint returns the full description, author and thumbnail. Short vm.tiktok
 // links are resolved to their canonical URL first.
@@ -296,8 +306,68 @@ async function fetchTikTok(url) {
   };
 }
 
+// A Pinterest pin is a bookmark, not the recipe itself — its og:description is
+// only a short teaser. The real recipe lives on the external blog the pin links
+// to. Resolve the pin (pin.it short links included), pull that outbound link out
+// of the embedded pin JSON, and extract from the destination page, which usually
+// carries a full JSON-LD Recipe. Fall back to the pin's own metadata if there is
+// no usable outbound link.
+async function fetchPinterest(url) {
+  const BROWSER_UA =
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+  let html = '';
+  let pinImage = '';
+  let pinTitle = '';
+  let pinDesc = '';
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(15000),
+    });
+    html = await res.text();
+    const $ = cheerio.load(html);
+    pinImage = $('meta[property="og:image"]').attr('content') || '';
+    pinTitle = $('meta[property="og:title"]').attr('content') || '';
+    pinDesc = $('meta[property="og:description"]').attr('content') || '';
+  } catch {
+    /* fall through to whatever metadata we managed to read */
+  }
+
+  // The pin's outbound link (the source blog) sits in the embedded pin JSON as
+  // a "link" field; skip Pinterest's own URLs and its image CDN.
+  let outbound = '';
+  for (const m of html.matchAll(/"link"\s*:\s*"(https?:[^"]+)"/g)) {
+    const candidate = m[1].replace(/\\\//g, '/');
+    if (!/pinterest\.|pinimg\.com|pin\.it/.test(candidate)) {
+      outbound = candidate;
+      break;
+    }
+  }
+
+  if (outbound) {
+    try {
+      const page = await fetchPageText(outbound);
+      // Keep the pin's image as a cover fallback if the blog exposes none.
+      if (!page.og.image && pinImage) page.og.image = pinImage;
+      return page;
+    } catch {
+      /* destination unreachable — fall back to the pin's own metadata below */
+    }
+  }
+
+  return {
+    jsonLd: '',
+    og: { title: pinTitle, description: pinDesc, image: pinImage },
+    captionText: `${pinTitle}\n${pinDesc}`,
+    bodyText: `${pinTitle}\n${pinDesc}`,
+  };
+}
+
 async function fetchPageText(url) {
   if (isTikTokUrl(url)) return fetchTikTok(url);
+  if (isPinterestUrl(url)) return fetchPinterest(url);
   const social = isSocialUrl(url);
   const userAgent = social
     ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
