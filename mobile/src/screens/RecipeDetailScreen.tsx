@@ -329,7 +329,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           </View>
 
           <Pressable style={styles.addGroceriesBtn} onPress={() => setGrocerySheetOpen(true)}>
-            <Icon name="cart" size={18} color="#fff" />
+            <Icon name="cart" size={18} color={c.accent} />
             <Text style={styles.addGroceriesText}>{t('recipe.addToGroceries')}</Text>
           </Pressable>
 
@@ -590,13 +590,15 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 9,
-    backgroundColor: c.accent,
+    backgroundColor: c.bg,
+    borderWidth: 1.5,
+    borderColor: c.accent,
     borderRadius: 16,
     paddingVertical: 15,
     marginTop: 4,
     marginBottom: 24,
   },
-  addGroceriesText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  addGroceriesText: { color: c.accent, fontSize: 15, fontWeight: '700' },
   ingList: { marginBottom: 22 },
   ingGroupHead: {
     fontFamily: fonts.display,
