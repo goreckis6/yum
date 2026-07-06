@@ -120,8 +120,8 @@ export function AuthScreen({ onBack }: Props) {
           )}
         </Pressable>
 
-        {/* Apple — iOS only, requires Apple Developer account + Bundle ID */}
-        {false && Platform.OS === 'ios' && (
+        {/* Apple — iOS only (Apple Developer account + Sign In with Apple set up) */}
+        {Platform.OS === 'ios' && (
           <Pressable
             style={[styles.socialBtn, styles.appleBtn, anyBusy && styles.btnDisabled]}
             onPress={handleApple}
