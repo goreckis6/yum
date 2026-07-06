@@ -36,7 +36,3 @@ Thumbs.db
 
 # Backend runtime uploads
 uploads/
-
-# Landing page — never commit (per project owner)
-landing/
-**/landing/
