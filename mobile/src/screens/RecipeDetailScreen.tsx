@@ -24,6 +24,7 @@ import { UnitSystem } from '../types';
 import { useI18n } from '../i18n/I18nContext';
 import { CoverArt } from '../components/CoverArt';
 import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet';
+import { GrocerySheet } from '../components/GrocerySheet';
 import Svg, { Path, Line } from 'react-native-svg';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'RecipeDetail'>;
@@ -88,6 +89,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
+  const [grocerySheetOpen, setGrocerySheetOpen] = useState(false);
 
   const handleDelete = () => {
     removeRecipe(route.params.id);
@@ -326,6 +328,11 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             ))}
           </View>
 
+          <Pressable style={styles.addGroceriesBtn} onPress={() => setGrocerySheetOpen(true)}>
+            <Icon name="cart" size={18} color="#fff" />
+            <Text style={styles.addGroceriesText}>{t('recipe.addToGroceries')}</Text>
+          </Pressable>
+
           <Text style={styles.sectionTitle}>{t('recipe.method')}</Text>
           <View style={styles.methodList}>
             {recipe.steps.map((step, i) => (
@@ -341,13 +348,9 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
       </ScrollView>
 
       <View style={styles.actionBar}>
-        <Pressable style={styles.actionPrimary} onPress={() => addRecipeToGrocery(recipe.id)}>
-          <Icon name="cart" size={17} color="#fff" />
-          <Text style={styles.actionPrimaryText}>{t('recipe.grocery')}</Text>
-        </Pressable>
-        <Pressable style={styles.actionSecondary} onPress={() => setPickerOpen(true)}>
-          <Icon name="calendar" size={17} color={c.ink} />
-          <Text style={styles.actionSecondaryText}>{t('recipe.mealPlan')}</Text>
+        <Pressable style={styles.actionPrimary} onPress={() => setPickerOpen(true)}>
+          <Icon name="calendar" size={17} color="#fff" />
+          <Text style={styles.actionPrimaryText}>{t('recipe.mealPlan')}</Text>
         </Pressable>
         <Pressable style={styles.actionIcon} onPress={() => setAddOpen(true)}>
           <Icon name="grid" size={17} color={c.ink} />
@@ -399,6 +402,12 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           toggleRecipeInCookbook(cbId, route.params.id);
           showToast(`Added to ${title}`);
         }}
+      />
+
+      <GrocerySheet
+        visible={grocerySheetOpen}
+        onClose={() => setGrocerySheetOpen(false)}
+        recipe={recipe}
       />
     </>
   );
@@ -576,6 +585,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   sectionTitle: { fontFamily: fonts.display, fontSize: 19, color: c.ink, marginTop: 4, marginBottom: 8 },
   sectionAction: { fontSize: 12.5, fontWeight: '600', color: c.accent },
+  addGroceriesBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    backgroundColor: c.accent,
+    borderRadius: 16,
+    paddingVertical: 15,
+    marginTop: 4,
+    marginBottom: 24,
+  },
+  addGroceriesText: { color: '#fff', fontSize: 15, fontWeight: '700' },
   ingList: { marginBottom: 22 },
   ingGroupHead: {
     fontFamily: fonts.display,

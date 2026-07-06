@@ -468,6 +468,20 @@ export const en = {
   'onboarding.continue': 'Continue',
   'onboarding.s3title': 'Plan, shop & track',
   'onboarding.s3body': 'Plan your week, auto-build grocery lists, and scan receipts to track spending.',
+  'aiConsent.title': 'Before you start',
+  'aiConsent.body':
+    'YumiShare uses OpenAI to turn recipe links and photos into structured recipes. By continuing, you agree to securely share the content you import — post captions, images, and the photos you scan — with our AI partner (OpenAI) for recipe extraction.',
+  'aiConsent.privacy': 'Read our Privacy Policy',
+  'aiConsent.agree': 'Agree & continue',
+  'error.network': 'Connection lost. Please check your internet and try again.',
+  'recipe.addToGroceries': 'Add to groceries',
+  'grocerySheet.title': 'Add items',
+  'grocerySheet.servings': 'servings',
+  'grocerySheet.ingredients': 'INGREDIENTS',
+  'grocerySheet.selectAll': 'Select all',
+  'grocerySheet.deselectAll': 'Deselect all',
+  'grocerySheet.add': 'Add {n} items',
+  'grocerySheet.addNone': 'Select items to add',
 } as const;
 
 export type TKey = keyof typeof en;
@@ -908,6 +922,20 @@ export const pl: Record<TKey, string> = {
   'onboarding.continue': 'Dalej',
   'onboarding.s3title': 'Planuj, kupuj, śledź',
   'onboarding.s3body': 'Zaplanuj tydzień, twórz listy zakupów i skanuj paragony, by śledzić wydatki.',
+  'aiConsent.title': 'Zanim zaczniesz',
+  'aiConsent.body':
+    'YumiShare korzysta z OpenAI, aby zamieniać linki i zdjęcia w gotowe przepisy. Kontynuując, zgadzasz się na bezpieczne przekazanie importowanych treści — opisów postów, obrazów i skanowanych zdjęć — naszemu partnerowi AI (OpenAI) w celu wyodrębnienia przepisu.',
+  'aiConsent.privacy': 'Przeczytaj Politykę prywatności',
+  'aiConsent.agree': 'Akceptuję i kontynuuję',
+  'error.network': 'Utracono połączenie. Sprawdź internet i spróbuj ponownie.',
+  'recipe.addToGroceries': 'Dodaj do zakupów',
+  'grocerySheet.title': 'Dodaj produkty',
+  'grocerySheet.servings': 'porcji',
+  'grocerySheet.ingredients': 'SKŁADNIKI',
+  'grocerySheet.selectAll': 'Zaznacz wszystkie',
+  'grocerySheet.deselectAll': 'Odznacz wszystkie',
+  'grocerySheet.add': 'Dodaj {n} produktów',
+  'grocerySheet.addNone': 'Zaznacz produkty',
 };
 
 export const DICTS: Record<Lang, Record<string, string>> = { en, pl };

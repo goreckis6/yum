@@ -3,6 +3,7 @@ import { sumAmounts } from '../utils/amounts';
 import { SEED_STATE } from '../data/seed';
 import { loadState, saveState } from '../storage/persist';
 import {
+  Aisle,
   AppState,
   CookbookCover,
   DayKey,
@@ -36,6 +37,10 @@ interface AppContextValue extends AppState {
   removeGrocery: (id: string) => void;
   clearCheckedGrocery: () => void;
   addRecipeToGrocery: (recipeId: string) => void;
+  addIngredientsToGrocery: (
+    recipeTitle: string,
+    ingredients: { a: string; n: string; aisle: Aisle }[],
+  ) => void;
   addPantryToGrocery: (pantryId: string) => void;
   addGroceryItem: (item: GroceryItem) => void;
   addWeekToGrocery: () => void;
@@ -224,6 +229,37 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     [state.recipes, showToast],
   );
 
+  // Add an explicit, already-scaled subset of ingredients (used by the
+  // "Add to groceries" sheet where the user picks items and servings).
+  const addIngredientsToGrocery = useCallback(
+    (recipeTitle: string, ingredients: { a: string; n: string; aisle: Aisle }[]) => {
+      setState((s) => {
+        const list = [...s.grocery];
+        let added = 0;
+        ingredients.forEach((ing) => {
+          const ex = list.find((g) => g.n.toLowerCase() === ing.n.toLowerCase());
+          if (ex) {
+            ex.a = sumAmounts(ex.a, ing.a);
+            ex.merged = true;
+            ex.checked = false;
+          } else {
+            list.push({
+              id: `g${Date.now()}_${added++}`,
+              a: ing.a,
+              n: ing.n,
+              aisle: ing.aisle,
+              recipe: recipeTitle,
+              checked: false,
+            });
+          }
+        });
+        return { ...s, grocery: list };
+      });
+      showToast('Added to grocery list');
+    },
+    [showToast],
+  );
+
   const addWeekToGrocery = useCallback(() => {
     setState((s) => {
       const list = [...s.grocery];
@@ -398,6 +434,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       removeGrocery,
       clearCheckedGrocery,
       addRecipeToGrocery,
+      addIngredientsToGrocery,
       addPantryToGrocery,
       addGroceryItem,
       addWeekToGrocery,
@@ -437,6 +474,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       removeGrocery,
       clearCheckedGrocery,
       addRecipeToGrocery,
+      addIngredientsToGrocery,
       addPantryToGrocery,
       addGroceryItem,
       addWeekToGrocery,
