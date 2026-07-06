@@ -150,7 +150,11 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
 
         <View style={styles.sheet}>
           <View style={styles.sourcePill}>
-            <View style={[styles.sourceDot, { backgroundColor: recipe.sourceTint }]} />
+            {recipe.imageUrl ? (
+              <Image source={{ uri: recipe.imageUrl }} style={styles.sourceDot} resizeMode="cover" />
+            ) : (
+              <View style={[styles.sourceDot, { backgroundColor: recipe.sourceTint }]} />
+            )}
             <Text style={styles.sourceHandle}>{recipe.handle}</Text>
             <Text style={styles.sourceApp}> on {recipe.app}</Text>
           </View>
@@ -407,11 +411,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: c.scrim,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backIcon: { fontSize: 28, color: c.ink, marginTop: -4 },
+  backIcon: { fontSize: 28, color: '#fff', marginTop: -4 },
   editBtn: {
     position: 'absolute',
     top: 58,
@@ -419,11 +423,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     height: 40,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    backgroundColor: c.scrim,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  editText: { fontSize: 14, fontWeight: '700', color: c.ink },
+  editText: { fontSize: 14, fontWeight: '700', color: '#fff' },
   heroLabel: {
     fontSize: 10,
     color: 'rgba(255,255,255,0.92)',
