@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -91,7 +91,11 @@ export function PromptModal({ visible, title, placeholder, confirmLabel = 'Creat
   const [value, setValue] = useState('');
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <Pressable style={styles.backdrop} onPress={onCancel}>
+      <KeyboardAvoidingView
+        style={styles.backdrop}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
         <Pressable style={styles.card} onPress={() => {}}>
           <Text style={styles.title}>{title}</Text>
           <TextInput
@@ -117,7 +121,7 @@ export function PromptModal({ visible, title, placeholder, confirmLabel = 'Creat
             <Text style={styles.cancelText}>Cancel</Text>
           </Pressable>
         </Pressable>
-      </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
