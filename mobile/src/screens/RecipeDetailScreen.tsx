@@ -137,7 +137,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           ) : recipe.cover ? (
             <CoverArt cover={recipe.cover} title={recipe.title} fontSize={30} />
           ) : null}
-          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
             <Text style={styles.backIcon}>‹</Text>
           </Pressable>
           <Pressable

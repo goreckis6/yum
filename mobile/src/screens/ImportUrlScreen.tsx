@@ -42,7 +42,7 @@ export function ImportUrlScreen({ navigation }: Props) {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
-      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 

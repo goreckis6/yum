@@ -215,7 +215,7 @@ export function ScanBarcodeScreen({ navigation }: Props) {
 
   const Header = () => (
     <View style={[styles.header, { top: insets.top + 8 }]}>
-      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
       <Text style={styles.headerTitle}>{t('barcode.title')}</Text>

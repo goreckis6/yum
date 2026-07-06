@@ -49,7 +49,7 @@ export function PantryScreen({ navigation }: Props) {
   return (
     <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
       <View style={styles.headerRow}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
           <Text style={styles.backIcon}>‹</Text>
         </Pressable>
         <Text style={styles.title}>{t('pantry.title')}</Text>

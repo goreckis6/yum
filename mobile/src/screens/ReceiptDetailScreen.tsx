@@ -69,7 +69,7 @@ export function ReceiptDetailScreen({ navigation, route }: Props) {
           </View>
         )}
 
-        <Pressable style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => navigation.goBack()}>
+        <Pressable style={[styles.backBtn, { top: insets.top + 8 }]} onPress={() => navigation.goBack()} hitSlop={10}>
           <Text style={styles.backIcon}>‹</Text>
         </Pressable>
 

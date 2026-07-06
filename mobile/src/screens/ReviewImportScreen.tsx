@@ -174,7 +174,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
-      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+      <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
 

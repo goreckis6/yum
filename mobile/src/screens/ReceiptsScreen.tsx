@@ -198,7 +198,7 @@ export function ReceiptsScreen({ navigation }: Props) {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.headerRow}>
-          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
             <Text style={styles.backIcon}>‹</Text>
           </Pressable>
           <Text style={styles.brand}>{t('receipts.title')}</Text>

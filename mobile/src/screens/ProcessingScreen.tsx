@@ -52,7 +52,11 @@ export function ProcessingScreen({ navigation, route }: Props) {
       })
       .catch((err: Error) => {
         clearInterval(interval);
-        setError(err.message);
+        // Show a clean, localized message for offline/timeout instead of the
+        // raw technical string (App Store 2.1 — no white screen / clear errors).
+        const m = err?.message || '';
+        const isNet = /reach the server|timed out|network request failed|connection|network/i.test(m);
+        setError(isNet ? t('error.network') : m);
       });
 
     return () => clearInterval(interval);
