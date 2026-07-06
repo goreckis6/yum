@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -149,15 +150,20 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
         </View>
 
         <View style={styles.sheet}>
-          <View style={styles.sourcePill}>
-            {recipe.imageUrl ? (
-              <Image source={{ uri: recipe.imageUrl }} style={styles.sourceDot} resizeMode="cover" />
-            ) : (
-              <View style={[styles.sourceDot, { backgroundColor: recipe.sourceTint }]} />
-            )}
+          <Pressable
+            style={styles.sourcePill}
+            onPress={() => recipe.sourceUrl && Linking.openURL(recipe.sourceUrl)}
+            disabled={!recipe.sourceUrl}
+            hitSlop={6}
+          >
             <Text style={styles.sourceHandle}>{recipe.handle}</Text>
             <Text style={styles.sourceApp}> on {recipe.app}</Text>
-          </View>
+            {recipe.sourceUrl ? (
+              <View style={{ marginLeft: 7 }}>
+                <Icon name="link" size={13} color={c.grayMid} />
+              </View>
+            ) : null}
+          </Pressable>
 
           <Text style={styles.title}>{recipe.title}</Text>
 
@@ -453,12 +459,10 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderWidth: 1,
     borderColor: c.border,
     paddingVertical: 8,
-    paddingHorizontal: 13,
-    paddingLeft: 8,
+    paddingHorizontal: 14,
     borderRadius: 999,
     marginBottom: 16,
   },
-  sourceDot: { width: 26, height: 26, borderRadius: 13, marginRight: 9 },
   sourceHandle: { fontSize: 13, fontWeight: '600', color: c.ink },
   sourceApp: { fontSize: 13, fontWeight: '500', color: c.grayMid },
   title: {
