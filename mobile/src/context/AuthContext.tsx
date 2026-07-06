@@ -110,6 +110,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: credential.identityToken,
       });
       if (error) return { error: error.message };
+      // Apple only returns the name on the FIRST authorization — persist it now
+      // so the profile shows a real name instead of the email prefix.
+      const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      if (fullName) {
+        await supabase.auth.updateUser({ data: { full_name: fullName } }).catch(() => {});
+      }
       return {};
     } catch (e: any) {
       if (e?.code === 'ERR_REQUEST_CANCELED') return {};

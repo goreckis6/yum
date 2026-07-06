@@ -11,6 +11,7 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme, useThemeCtx, ThemeMode } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
+import { LINKS as LEGAL } from '../config/links';
 import { Lang, TKey } from '../i18n/translations';
 import { Icon, IconName } from '../components/Icon';
 import { ActionSheet } from '../components/ActionSheet';
@@ -27,10 +28,11 @@ const LANG_OPTIONS: { key: Lang; label: string }[] = [
 const SUPPORT_EMAIL = '3dstudiopoland@gmail.com';
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
-// Fill these in to make the links live; empty = shows a "coming soon" toast.
+// Legal URLs live in one shared place (config/links) so the AI consent screen
+// and this menu stay in sync; social links stay local. Empty = "coming soon".
 const LINKS = {
-  terms: '',
-  privacy: '',
+  terms: LEGAL.terms,
+  privacy: LEGAL.privacy,
   instagram: '',
   tiktok: '',
   x: '',
@@ -116,7 +118,9 @@ export function ProfileScreen() {
           <Text style={styles.avatarText}>YS</Text>
         </View>
         <View>
-          <Text style={styles.name}>{user?.email?.split('@')[0] ?? 'YumiShare'}</Text>
+          <Text style={styles.name}>
+            {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'YumiShare'}
+          </Text>
           <Text style={styles.email}>{user?.email ?? ''}</Text>
         </View>
       </View>
