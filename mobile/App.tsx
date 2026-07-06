@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/lib/supabase';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { useShareIntent } from 'expo-share-intent';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   useFonts,
@@ -28,6 +30,7 @@ import { I18nProvider } from './src/i18n/I18nContext';
 import { ImportUrlScreen } from './src/screens/ImportUrlScreen';
 import { ScanRecipeScreen } from './src/screens/ScanRecipeScreen';
 import { OnboardingScreen } from './src/screens/OnboardingScreen';
+import { AIConsentScreen } from './src/screens/AIConsentScreen';
 import { ProcessingScreen } from './src/screens/ProcessingScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { ReviewImportScreen } from './src/screens/ReviewImportScreen';
@@ -41,6 +44,39 @@ import { ReviewReceiptScreen } from './src/screens/ReviewReceiptScreen';
 import { Toast } from './src/components/Toast';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
+
+// When the app is opened via the iOS/Android share sheet, route the shared URL
+// straight into the normal import flow (Processing → extract → ReviewImport →
+// save), the same as pasting a link. Only mounted once the user is signed in and
+// past the gates, so the extraction runs authenticated.
+function ShareIntentHandler() {
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent();
+
+  useEffect(() => {
+    if (!hasShareIntent) return;
+    const raw = (shareIntent.webUrl || shareIntent.text || '').trim();
+    const url = /^https?:\/\//i.test(raw) ? raw : '';
+    if (!url) {
+      resetShareIntent();
+      return;
+    }
+    // Navigation may not be mounted on the very first frame after a cold start.
+    let tries = 0;
+    const go = () => {
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('Processing', { url });
+        resetShareIntent();
+      } else if (tries++ < 40) {
+        setTimeout(go, 150);
+      }
+    };
+    go();
+  }, [hasShareIntent, shareIntent, resetShareIntent]);
+
+  return null;
+}
 
 function RootNavigator() {
   const { ready, toast } = useApp();
@@ -137,18 +173,38 @@ function ThemedStatusBar() {
   return <StatusBar style={isDark ? 'light' : 'dark'} />;
 }
 
+const AI_CONSENT_KEY = 'ai_consent_v1';
+
 function Gate() {
   const { session, user, initializing } = useAuth();
   const { isPremium, isLoading: premiumLoading } = usePremium();
   const c = useTheme();
   const [showAuth, setShowAuth] = React.useState(false);
+  // null = still loading the stored flag, false = must consent, true = consented.
+  const [consented, setConsented] = React.useState<boolean | null>(null);
 
-  if (initializing) {
+  useEffect(() => {
+    AsyncStorage.getItem(AI_CONSENT_KEY)
+      .then((v) => setConsented(v === 'true'))
+      .catch(() => setConsented(false));
+  }, []);
+
+  const acceptConsent = () => {
+    setConsented(true);
+    AsyncStorage.setItem(AI_CONSENT_KEY, 'true').catch(() => {});
+  };
+
+  if (initializing || consented === null) {
     return (
       <View style={[styles.loading, { backgroundColor: c.bg }]}>
         <ActivityIndicator size="large" color={c.ink} />
       </View>
     );
+  }
+
+  // AI consent (App Store 5.1.2) must precede any AI feature — gate everything.
+  if (!consented) {
+    return <AIConsentScreen onAgree={acceptConsent} />;
   }
 
   if (!session || !user) {
@@ -174,8 +230,9 @@ function Gate() {
 
   return (
     <AppProvider userId={user.id}>
-      <NavigationContainer>
+      <NavigationContainer ref={navigationRef}>
         <RootNavigator />
+        <ShareIntentHandler />
       </NavigationContainer>
     </AppProvider>
   );
