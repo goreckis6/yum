@@ -6,6 +6,7 @@ import OpenAI from 'openai';
 import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
 import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -63,6 +64,55 @@ const supabaseAdmin =
   SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
     ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })
     : null;
+
+// ─── Sign in with Apple: token revocation ──────────────────────────────────
+// Apple requires apps that offer Sign in with Apple to revoke the user's token
+// when they delete their account. We exchange the native authorizationCode for
+// a refresh token at sign-in, store it, and revoke it on deletion.
+const APPLE_TEAM_ID = process.env.APPLE_TEAM_ID;
+const APPLE_KEY_ID = process.env.APPLE_KEY_ID;
+const APPLE_CLIENT_ID = process.env.APPLE_CLIENT_ID || 'com.yumshare.app';
+// .p8 contents; supports either real newlines or \n-escaped in the env var.
+const APPLE_PRIVATE_KEY = (process.env.APPLE_PRIVATE_KEY || '').replace(/\\n/g, '\n');
+const appleConfigured = !!(APPLE_TEAM_ID && APPLE_KEY_ID && APPLE_PRIVATE_KEY);
+
+// Short-lived JWT that authenticates us to Apple's token endpoints.
+function appleClientSecret() {
+  return jwt.sign({}, APPLE_PRIVATE_KEY, {
+    algorithm: 'ES256',
+    keyid: APPLE_KEY_ID,
+    issuer: APPLE_TEAM_ID,
+    audience: 'https://appleid.apple.com',
+    subject: APPLE_CLIENT_ID,
+    expiresIn: '10m',
+  });
+}
+
+async function appleTokenRequest(path, params) {
+  const res = await fetch(`https://appleid.apple.com/auth/${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: APPLE_CLIENT_ID,
+      client_secret: appleClientSecret(),
+      ...params,
+    }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `apple ${path} failed`);
+  return data;
+}
+
+// Trade the one-time authorizationCode for a long-lived refresh token.
+async function appleExchangeCode(code) {
+  const data = await appleTokenRequest('token', { code, grant_type: 'authorization_code' });
+  return data.refresh_token;
+}
+
+// Revoke a stored refresh token so the app no longer has access.
+async function appleRevoke(refreshToken) {
+  await appleTokenRequest('revoke', { token: refreshToken, token_type_hint: 'refresh_token' });
+}
 
 // ─── AI endpoint protection ───────────────────────────────────────────────
 // The expensive OpenAI routes below are guarded by three layers:
@@ -1017,6 +1067,31 @@ app.post('/api/receipts/export', async (req, res) => {
   }
 });
 
+// Store the Apple refresh token (from the native sign-in authorizationCode) so
+// we can revoke it later. Called by the app right after a successful Apple login.
+app.post('/api/apple/link', async (req, res) => {
+  try {
+    if (!supabaseAdmin || !appleConfigured) return res.json({ ok: false, skipped: true });
+    const { accessToken, authorizationCode } = req.body;
+    if (!accessToken || !authorizationCode) {
+      return res.status(400).json({ error: 'accessToken and authorizationCode are required' });
+    }
+    const { data, error } = await supabaseAdmin.auth.getUser(accessToken);
+    if (error || !data?.user) return res.status(401).json({ error: 'Invalid session' });
+
+    const refreshToken = await appleExchangeCode(authorizationCode);
+    if (refreshToken) {
+      await supabaseAdmin
+        .from('apple_tokens')
+        .upsert({ user_id: data.user.id, refresh_token: refreshToken }, { onConflict: 'user_id' });
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('apple/link error:', err);
+    res.status(500).json({ error: err.message || 'Failed to link Apple account' });
+  }
+});
+
 app.post('/api/delete-account', async (req, res) => {
   try {
     if (!supabaseAdmin) {
@@ -1033,6 +1108,22 @@ app.post('/api/delete-account', async (req, res) => {
       return res.status(401).json({ error: 'Invalid session' });
     }
     const userId = data.user.id;
+
+    // Revoke the user's Apple token first (App Store requirement). Never let a
+    // revoke failure block the deletion the user asked for.
+    if (appleConfigured) {
+      try {
+        const { data: tok } = await supabaseAdmin
+          .from('apple_tokens')
+          .select('refresh_token')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (tok?.refresh_token) await appleRevoke(tok.refresh_token);
+        await supabaseAdmin.from('apple_tokens').delete().eq('user_id', userId);
+      } catch (e) {
+        console.warn('apple revoke failed (continuing delete):', e.message);
+      }
+    }
 
     // Remove the user's stored data, then the auth user itself.
     await supabaseAdmin.from('app_state').delete().eq('user_id', userId);

@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase } from '../lib/supabase';
+import { getApiBaseUrl } from '../config/api';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -118,6 +119,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .trim();
       if (fullName) {
         await supabase.auth.updateUser({ data: { full_name: fullName } }).catch(() => {});
+      }
+      // Hand the one-time authorizationCode to the backend so it can store a
+      // refresh token and revoke the Apple authorization on account deletion
+      // (App Store requirement). Best-effort — never block sign-in on this.
+      if (credential.authorizationCode) {
+        try {
+          const { data: sess } = await supabase.auth.getSession();
+          const token = sess.session?.access_token;
+          if (token) {
+            await fetch(`${getApiBaseUrl()}/api/apple/link`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                accessToken: token,
+                authorizationCode: credential.authorizationCode,
+              }),
+            });
+          }
+        } catch {
+          /* ignore — revocation just won't be available for this account */
+        }
       }
       return {};
     } catch (e: any) {

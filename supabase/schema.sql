@@ -49,3 +49,15 @@ drop policy if exists "recipe_images_delete_own" on storage.objects;
 create policy "recipe_images_delete_own" on storage.objects
   for delete to authenticated
   using (bucket_id = 'recipe-images' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- 3) Apple refresh tokens — stored so the backend can revoke the user's Sign in
+-- with Apple authorization on account deletion (App Store requirement). Only the
+-- service role (backend) touches this table; no client access.
+create table if not exists public.apple_tokens (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  refresh_token text not null,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.apple_tokens enable row level security;
+-- No policies → RLS denies all anon/authenticated access; service role bypasses.
