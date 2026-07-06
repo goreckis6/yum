@@ -191,8 +191,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     stepBtn: { width: 36, height: 40, alignItems: 'center', justifyContent: 'center' },
     stepSign: { fontSize: 22, color: c.ink, fontWeight: '600' },
-    stepValue: { fontSize: 17, fontWeight: '800', color: c.ink, minWidth: 26, textAlign: 'center' },
-    servingsLabel: { fontSize: 15, fontWeight: '500', color: c.grayLight },
+    stepValue: { fontFamily: fonts.display, fontSize: 19, fontWeight: '700', color: c.ink, minWidth: 26, textAlign: 'center' },
+    servingsLabel: { fontFamily: fonts.body, fontSize: 15, color: c.grayLight },
     listHeader: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -202,8 +202,8 @@ const makeStyles = (c: ThemeColors) =>
       paddingTop: 16,
       paddingBottom: 10,
     },
-    listHeaderText: { fontSize: 12, fontWeight: '800', letterSpacing: 1, color: c.accent },
-    selectAll: { fontSize: 14, fontWeight: '700', color: c.accent },
+    listHeaderText: { fontFamily: fonts.bodyBold, fontSize: 12, letterSpacing: 1, color: c.accent },
+    selectAll: { fontFamily: fonts.bodyBold, fontSize: 14, color: c.accent },
     list: { flexGrow: 0 },
     row: {
       flexDirection: 'row',
@@ -212,8 +212,8 @@ const makeStyles = (c: ThemeColors) =>
       borderBottomWidth: 1,
       borderBottomColor: c.border,
     },
-    amt: { flex: 1, fontSize: 16, fontWeight: '800', color: c.ink },
-    name: { fontWeight: '500', color: c.ink },
+    amt: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 16, color: c.ink },
+    name: { fontFamily: fonts.body, color: c.ink },
     checkbox: {
       width: 26,
       height: 26,
@@ -234,5 +234,5 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 14,
     },
     addBtnOff: { backgroundColor: c.gray },
-    addText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+    addText: { fontFamily: fonts.bodyBold, color: '#fff', fontSize: 16 },
   });
