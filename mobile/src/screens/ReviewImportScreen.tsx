@@ -350,12 +350,14 @@ export function ReviewImportScreen({ navigation, route }: Props) {
                       value={ing.a}
                       onChangeText={(a) => updateIngredient(i, { a })}
                       placeholder={t('reviewImport.amount')}
+                      placeholderTextColor={c.gray}
                     />
                     <TextInput
                       style={styles.ingName}
                       value={ing.n}
                       onChangeText={(n) => updateIngredient(i, { n })}
                       placeholder={t('reviewImport.ingredient')}
+                      placeholderTextColor={c.gray}
                     />
                     <Pressable onPress={() => removeIngredient(i)}>
                       <Text style={styles.remove}>✕</Text>
@@ -508,6 +510,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: 10,
     fontSize: 14,
     fontWeight: '700',
+    color: c.ink,
   },
   ingName: {
     flex: 1,
@@ -515,6 +518,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
+    color: c.ink,
   },
   remove: { color: c.gray, fontSize: 16, padding: 8 },
   addIng: { marginBottom: 16 },

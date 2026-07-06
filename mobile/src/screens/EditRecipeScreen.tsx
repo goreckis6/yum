@@ -197,8 +197,8 @@ export function EditRecipeScreen({ navigation, route }: Props) {
       <Text style={styles.section}>Ingredients</Text>
       {draft.ingredients.map((ing, i) => (
         <View key={i} style={styles.ingRow}>
-          <TextInput style={styles.ingAmt} value={ing.a} onChangeText={(a) => updateIngredient(i, { a })} placeholder="amount" />
-          <TextInput style={styles.ingName} value={ing.n} onChangeText={(n) => updateIngredient(i, { n })} placeholder="ingredient" />
+          <TextInput style={styles.ingAmt} value={ing.a} onChangeText={(a) => updateIngredient(i, { a })} placeholder="amount" placeholderTextColor={c.gray} />
+          <TextInput style={styles.ingName} value={ing.n} onChangeText={(n) => updateIngredient(i, { n })} placeholder="ingredient" placeholderTextColor={c.gray} />
           <Pressable onPress={() => removeIngredient(i)}>
             <Text style={styles.remove}>✕</Text>
           </Pressable>
@@ -287,8 +287,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   stepValue: { fontSize: 16, fontWeight: '700', color: c.ink },
   section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginTop: 8, marginBottom: 12 },
   ingRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
-  ingAmt: { width: 72, backgroundColor: c.surface, borderRadius: 10, padding: 10, fontSize: 14, fontWeight: '700' },
-  ingName: { flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 10, fontSize: 14 },
+  ingAmt: { width: 72, backgroundColor: c.surface, borderRadius: 10, padding: 10, fontSize: 14, fontWeight: '700', color: c.ink },
+  ingName: { flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 10, fontSize: 14, color: c.ink },
   remove: { color: c.gray, fontSize: 16, padding: 8 },
   addBtn: { marginBottom: 16 },
   addText: { fontSize: 14, fontWeight: '700', color: c.ink },
