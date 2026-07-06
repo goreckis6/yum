@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import Svg, { Path, ClipPath, Rect, Defs, G } from 'react-native-svg';
+import { Icon } from '../components/Icon';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -131,7 +132,7 @@ export function AuthScreen({ onBack }: Props) {
               <ActivityIndicator color="#fff" />
             ) : (
               <>
-                <Text style={styles.appleIcon}></Text>
+                <Icon name="apple" size={18} color="#fff" />
                 <Text style={styles.appleText}>Continue with Apple</Text>
               </>
             )}
@@ -272,7 +273,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   googleText: { fontSize: 15, fontWeight: '700', color: '#1F1F1F' },
 
   appleBtn: { backgroundColor: '#000' },
-  appleIcon: { fontSize: 18, color: '#fff', marginTop: -2 },
   appleText: { fontSize: 15, fontWeight: '700', color: '#fff' },
 
   divider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 4, marginBottom: 12 },
