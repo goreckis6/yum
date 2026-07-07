@@ -35,6 +35,7 @@ import { ProcessingScreen } from './src/screens/ProcessingScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { CookingModeScreen } from './src/screens/CookingModeScreen';
 import { MealReminderSync } from './src/components/MealReminderSync';
+import { ensureNotificationPermission } from './src/lib/notifications';
 import { ReviewImportScreen } from './src/screens/ReviewImportScreen';
 import { EditRecipeScreen } from './src/screens/EditRecipeScreen';
 import { ReceiptsScreen } from './src/screens/ReceiptsScreen';
@@ -185,6 +186,7 @@ function ThemedStatusBar() {
 }
 
 const AI_CONSENT_KEY = 'ai_consent_v1';
+const NOTIF_ASKED_KEY = 'notif_asked_v1';
 
 function Gate() {
   const { session, user, initializing } = useAuth();
@@ -204,6 +206,18 @@ function Gate() {
     setConsented(true);
     AsyncStorage.setItem(AI_CONSENT_KEY, 'true').catch(() => {});
   };
+
+  // Ask for notification permission once, right after the user is signed in and
+  // has consented — so the system "Allow / Don't Allow" prompt shows up front
+  // (iOS only ever shows it once), rather than only when toggling reminders.
+  useEffect(() => {
+    if (!session || !user || consented !== true) return;
+    AsyncStorage.getItem(NOTIF_ASKED_KEY).then((v) => {
+      if (v) return;
+      AsyncStorage.setItem(NOTIF_ASKED_KEY, '1').catch(() => {});
+      ensureNotificationPermission().catch(() => {});
+    });
+  }, [session, user, consented]);
 
   if (initializing || consented === null) {
     return (
