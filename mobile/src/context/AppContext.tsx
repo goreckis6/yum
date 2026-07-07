@@ -46,8 +46,8 @@ interface AppContextValue extends AppState {
   addGroceryItem: (item: GroceryItem) => void;
   addWeekToGrocery: () => void;
   setMealPlan: (plan: MealPlan) => void;
-  assignMeal: (day: DayKey, slot: MealSlot, entry: MealEntry) => void;
-  removeMeal: (day: DayKey, slot: MealSlot) => void;
+  assignMeal: (date: string, slot: MealSlot, entry: MealEntry) => void;
+  removeMeal: (date: string, slot: MealSlot) => void;
   toggleMade: (recipeId: string) => void;
   logCooked: (recipeId: string) => void;
   toggleIngredient: (recipeId: string, index: number) => void;
@@ -312,18 +312,18 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, mealPlan: plan }));
   }, []);
 
-  const assignMeal = useCallback((day: DayKey, slot: MealSlot, entry: MealEntry) => {
+  const assignMeal = useCallback((date: string, slot: MealSlot, entry: MealEntry) => {
     setState((s) => {
       const mp = { ...s.mealPlan };
-      mp[day] = { ...mp[day], [slot]: entry };
+      mp[date] = { ...mp[date], [slot]: entry };
       return { ...s, mealPlan: mp };
     });
   }, []);
 
-  const removeMeal = useCallback((day: DayKey, slot: MealSlot) => {
+  const removeMeal = useCallback((date: string, slot: MealSlot) => {
     setState((s) => {
       const mp = { ...s.mealPlan };
-      if (mp[day]) mp[day] = { ...mp[day], [slot]: null };
+      if (mp[date]) mp[date] = { ...mp[date], [slot]: null };
       return { ...s, mealPlan: mp };
     });
   }, []);

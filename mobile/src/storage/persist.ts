@@ -3,19 +3,23 @@ import { AppState, MealEntry, MealPlan } from '../types';
 import { SEED_STATE } from '../data/seed';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
-// Stored data may have slot values as bare recipe ID strings (pre-MealEntry era).
+// The plan is now keyed by ISO date ("YYYY-MM-DD"). Keep only date-keyed days;
+// legacy weekday-template keys (Mon…Sun) are dropped on migration. Also migrate
+// bare recipe-ID slot values (pre-MealEntry era) to MealEntry.
 function migrateMealPlan(raw: any): MealPlan {
   if (!raw || typeof raw !== 'object') return {};
+  const isDate = (k: string) => /^\d{4}-\d{2}-\d{2}$/.test(k);
   const out: MealPlan = {};
-  for (const day of Object.keys(raw) as any[]) {
+  for (const day of Object.keys(raw)) {
+    if (!isDate(day)) continue; // drop legacy Mon…Sun entries
     const dayRaw = raw[day];
     if (!dayRaw || typeof dayRaw !== 'object') continue;
-    out[day as keyof MealPlan] = {};
+    out[day] = {};
     for (const slot of Object.keys(dayRaw) as any[]) {
       const v = dayRaw[slot];
-      if (v == null) { (out[day as keyof MealPlan] as any)[slot] = null; }
-      else if (typeof v === 'string') { (out[day as keyof MealPlan] as any)[slot] = { type: 'recipe', recipeId: v } satisfies MealEntry; }
-      else { (out[day as keyof MealPlan] as any)[slot] = v as MealEntry; }
+      if (v == null) { (out[day] as any)[slot] = null; }
+      else if (typeof v === 'string') { (out[day] as any)[slot] = { type: 'recipe', recipeId: v } satisfies MealEntry; }
+      else { (out[day] as any)[slot] = v as MealEntry; }
     }
   }
   return out;

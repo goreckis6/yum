@@ -1,16 +1,6 @@
-import { ALL_SLOTS, AppState, DayKey } from '../types';
+import { ALL_SLOTS, AppState } from '../types';
 import { FREE_IMPORT_CREDITS } from '../config/credits';
 export { ALL_SLOTS as SLOTS };
-
-export const DAYS: { day: DayKey; date: number }[] = [
-  { day: 'Mon', date: 15 },
-  { day: 'Tue', date: 16 },
-  { day: 'Wed', date: 17 },
-  { day: 'Thu', date: 18 },
-  { day: 'Fri', date: 19 },
-  { day: 'Sat', date: 20 },
-  { day: 'Sun', date: 21 },
-];
 
 
 export const AISLE_ORDER = [
@@ -80,13 +70,5 @@ export const SEED_STATE: AppState = {
     },
   ],
   grocery: [],
-  mealPlan: {
-    Mon: {},
-    Tue: {},
-    Wed: {},
-    Thu: {},
-    Fri: {},
-    Sat: {},
-    Sun: {},
-  },
+  mealPlan: {},
 };

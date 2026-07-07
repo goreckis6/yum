@@ -26,8 +26,8 @@ export function MealReminderSync() {
       const ok = await ensureNotificationPermission();
       if (!ok || cancelled) return;
 
-      await scheduleMealReminders(mealPlan, mealReminders.lead, (day, slot) => {
-        const entry = mealPlan[day]?.[slot];
+      await scheduleMealReminders(mealPlan, mealReminders.lead, (date, slot) => {
+        const entry = mealPlan[date]?.[slot];
         if (!entry) return null;
         const name = entry.type === 'recipe' ? getRecipe(entry.recipeId)?.title : entry.name;
         if (!name) return null;

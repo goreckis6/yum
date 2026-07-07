@@ -104,7 +104,10 @@ export type MealEntry =
   | { type: 'food'; name: string; brand?: string; imageUrl?: string; grams: number; kcal: number; p: number; c: number; f: number }
   | { type: 'pantry'; pantryId: string; name: string; grams: number; kcal: number; p: number; c: number; f: number };
 
-export type MealPlan = Partial<Record<DayKey, Partial<Record<MealSlot, MealEntry | null>>>>;
+// Keyed by a local calendar date ("YYYY-MM-DD") so the planner has real history
+// and a future window, not a fixed weekly template. DayKey is still used for
+// weekday labels (derived from the date).
+export type MealPlan = Partial<Record<string, Partial<Record<MealSlot, MealEntry | null>>>>;
 
 export type UnitSystem = 'metric' | 'imperial';
 

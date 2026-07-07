@@ -440,6 +440,10 @@ export const en = {
   'mealplan.sub': 'Plan all your meals for the week',
   'mealplan.dayTotal': '{day} {date} total',
   'mealplan.dayNutrition': 'Daily nutrition',
+  'mealplan.day': 'Day',
+  'mealplan.today': 'Today',
+  'mealplan.calendar': 'Calendar',
+  'mealplan.pickDate': 'Pick a date',
   'mealplan.noMeals': 'No meals planned yet — add one below.',
   'mealplan.addWeek': 'Add week to grocery list',
 
@@ -951,6 +955,10 @@ export const pl: Record<TKey, string> = {
   'mealplan.sub': 'Zaplanuj wszystkie posiłki na tydzień',
   'mealplan.dayTotal': '{day} {date} — razem',
   'mealplan.dayNutrition': 'Bilans dnia',
+  'mealplan.day': 'Dzień',
+  'mealplan.today': 'Dziś',
+  'mealplan.calendar': 'Kalendarz',
+  'mealplan.pickDate': 'Wybierz datę',
   'mealplan.noMeals': 'Brak zaplanowanych posiłków — dodaj poniżej.',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
 

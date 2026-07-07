@@ -20,7 +20,7 @@ import { fonts } from '../theme/fonts';
 import { Icon } from './Icon';
 import { useI18n } from '../i18n/I18nContext';
 import { useApp } from '../context/AppContext';
-import { DayKey, MealEntry, MealSlot, PantryItem, Recipe } from '../types';
+import { MealEntry, MealSlot, PantryItem, Recipe } from '../types';
 import { OFFSearchResult, searchProducts } from '../api/openfoodfacts';
 import type { TKey } from '../i18n/translations';
 
@@ -50,12 +50,12 @@ interface QtyTarget {
 interface Props {
   visible: boolean;
   slot: MealSlot;
-  day: DayKey;
+  dayLabel: string;
   onClose: () => void;
   onAdd: (entry: MealEntry) => void;
 }
 
-export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
+export function MealAddSheet({ visible, slot, dayLabel, onClose, onAdd }: Props) {
   const c = useTheme();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
@@ -207,8 +207,8 @@ export function MealAddSheet({ visible, slot, day, onClose, onAdd }: Props) {
                   <Text style={styles.closeIcon}>‹</Text>
                 </Pressable>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.slotChip}>{slotLabel} · {day}</Text>
-                  <Text style={styles.title}>{t('mealplan.add.title' as TKey, { slot: slotLabel, day })}</Text>
+                  <Text style={styles.slotChip}>{slotLabel} · {dayLabel}</Text>
+                  <Text style={styles.title}>{t('mealplan.add.title' as TKey, { slot: slotLabel, day: dayLabel })}</Text>
                 </View>
               </View>
 

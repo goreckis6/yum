@@ -21,7 +21,8 @@ import { Icon } from '../components/Icon';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
-import { DayKey, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
+import { MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
+import { todayISO } from '../utils/dates';
 import { RootStackParamList } from '../navigation/types';
 import { cleanStep, isToTaste, scaleAmount } from '../utils/scale';
 import { timeAgo } from '../utils/relativeTime';
@@ -92,7 +93,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   const recipe = getRecipe(route.params.id);
   const [servings, setServings] = useState(recipe?.servings ?? 4);
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [pickDay, setPickDay] = useState<DayKey>('Wed');
+  const [pickDate, setPickDate] = useState<string>(todayISO());
   const [pickSlot, setPickSlot] = useState<MealSlot>('Dinner');
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -476,15 +477,15 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
       <MealPickerSheet
         visible={pickerOpen}
         recipeTitle={recipe.title}
-        selectedDay={pickDay}
+        selectedDate={pickDate}
         selectedSlot={pickSlot}
         onClose={() => setPickerOpen(false)}
-        onSelectDay={setPickDay}
+        onSelectDate={setPickDate}
         onSelectSlot={setPickSlot}
         onConfirm={() => {
-          assignMeal(pickDay, pickSlot, { type: 'recipe', recipeId: recipe.id });
+          assignMeal(pickDate, pickSlot, { type: 'recipe', recipeId: recipe.id });
           setPickerOpen(false);
-          showToast(`Added to ${pickDay}`);
+          showToast(t('recipe.mealPlan'));
         }}
       />
 

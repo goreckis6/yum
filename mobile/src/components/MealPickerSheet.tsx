@@ -1,18 +1,20 @@
 import React, { useMemo } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { DAYS } from '../data/seed';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
-import { DayKey, MealSlot } from '../types';
+import { MealSlot } from '../types';
+import { useI18n } from '../i18n/I18nContext';
+import type { TKey } from '../i18n/translations';
+import { dayOfMonth, isTodayISO, todayISO, weekdayKey, windowISO } from '../utils/dates';
 
 interface Props {
   visible: boolean;
   recipeTitle: string;
-  selectedDay: DayKey;
+  selectedDate: string;
   selectedSlot: MealSlot;
   onClose: () => void;
-  onSelectDay: (day: DayKey) => void;
+  onSelectDate: (date: string) => void;
   onSelectSlot: (slot: MealSlot) => void;
   onConfirm: () => void;
 }
@@ -22,17 +24,19 @@ const SLOTS: MealSlot[] = ['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'S
 export function MealPickerSheet({
   visible,
   recipeTitle,
-  selectedDay,
+  selectedDate,
   selectedSlot,
   onClose,
-  onSelectDay,
+  onSelectDate,
   onSelectSlot,
   onConfirm,
 }: Props) {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
-  const dayObj = DAYS.find((d) => d.day === selectedDay);
-  const dayLabel = dayObj ? `${dayObj.day} ${dayObj.date}` : selectedDay;
+  // Two weeks starting today (planning ahead; history stays in the planner).
+  const days = useMemo(() => windowISO(todayISO(), 0, 13), []);
+  const dayLabel = `${t(`day.${weekdayKey(selectedDate)}` as TKey)} ${dayOfMonth(selectedDate)}`;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -42,18 +46,20 @@ export function MealPickerSheet({
           <Text style={styles.title}>Add to meal plan</Text>
           <Text style={styles.recipe}>{recipeTitle}</Text>
 
-          <Text style={styles.section}>DAY</Text>
+          <Text style={styles.section}>{t('mealplan.day' as TKey).toUpperCase()}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayRow}>
-            {DAYS.map((d) => {
-              const on = d.day === selectedDay;
+            {days.map((iso) => {
+              const on = iso === selectedDate;
               return (
                 <Pressable
-                  key={d.day}
+                  key={iso}
                   style={[styles.dayBtn, on && styles.dayBtnOn]}
-                  onPress={() => onSelectDay(d.day)}
+                  onPress={() => onSelectDate(iso)}
                 >
-                  <Text style={[styles.dayLabel, on && styles.dayLabelOn]}>{d.day}</Text>
-                  <Text style={[styles.dayDate, on && styles.dayDateOn]}>{d.date}</Text>
+                  <Text style={[styles.dayLabel, on && styles.dayLabelOn]}>
+                    {isTodayISO(iso) ? t('mealplan.today' as TKey) : t(`day.${weekdayKey(iso)}` as TKey)}
+                  </Text>
+                  <Text style={[styles.dayDate, on && styles.dayDateOn]}>{dayOfMonth(iso)}</Text>
                 </Pressable>
               );
             })}

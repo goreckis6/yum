@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
-import { DayKey, MealPlan, MealSlot } from '../types';
+import { MealPlan, MealSlot } from '../types';
+import { fromISO } from '../utils/dates';
 
 // Show meal reminders (with sound) even while the app is foregrounded.
 Notifications.setNotificationHandler({
@@ -21,12 +22,8 @@ const SLOT_TIME: Record<MealSlot, { h: number; m: number }> = {
   Supper: { h: 20, m: 0 },
 };
 
-// expo-notifications weekday is 1=Sunday … 7=Saturday.
-const DAY_WEEKDAY: Record<DayKey, number> = {
-  Sun: 1, Mon: 2, Tue: 3, Wed: 4, Thu: 5, Fri: 6, Sat: 7,
-};
-
 const KIND = 'meal-reminder';
+const MAX_SCHEDULED = 60; // stay under the iOS 64 pending-notification limit
 
 export async function ensureNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
@@ -46,38 +43,42 @@ export async function cancelMealReminders(): Promise<void> {
   );
 }
 
-// Clear and re-create weekly reminders for every planned meal. `content` returns
-// the localized title/body (with the meal's name) or null to skip a slot.
+// Clear and re-create one-time reminders for each FUTURE planned meal, firing
+// `leadMinutes` before the slot's default time. `content` returns the localized
+// title/body (with the meal's name) or null to skip.
 export async function scheduleMealReminders(
   plan: MealPlan,
   leadMinutes: number,
-  content: (day: DayKey, slot: MealSlot) => { title: string; body: string } | null,
+  content: (date: string, slot: MealSlot) => { title: string; body: string } | null,
 ): Promise<void> {
   await cancelMealReminders();
 
-  for (const day of Object.keys(plan) as DayKey[]) {
-    const slots = plan[day];
+  const now = Date.now();
+  const jobs: { when: Date; title: string; body: string }[] = [];
+
+  for (const date of Object.keys(plan)) {
+    const slots = plan[date];
     if (!slots) continue;
     for (const slot of Object.keys(slots) as MealSlot[]) {
       if (!slots[slot]) continue;
-      const body = content(day, slot);
-      if (!body) continue;
-
       const t = SLOT_TIME[slot];
-      let total = t.h * 60 + t.m - leadMinutes;
-      if (total < 0) total += 24 * 60; // wrap before midnight
-      const hour = Math.floor(total / 60);
-      const minute = total % 60;
+      const when = fromISO(date);
+      when.setHours(t.h, t.m, 0, 0);
+      when.setMinutes(when.getMinutes() - leadMinutes);
+      if (when.getTime() <= now) continue; // skip past meals
 
-      await Notifications.scheduleNotificationAsync({
-        content: { title: body.title, body: body.body, sound: true, data: { kind: KIND } },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-          weekday: DAY_WEEKDAY[day],
-          hour,
-          minute,
-        },
-      });
+      const body = content(date, slot);
+      if (!body) continue;
+      jobs.push({ when, title: body.title, body: body.body });
     }
+  }
+
+  // Soonest first, capped so we never blow past the OS pending limit.
+  jobs.sort((a, b) => a.when.getTime() - b.when.getTime());
+  for (const job of jobs.slice(0, MAX_SCHEDULED)) {
+    await Notifications.scheduleNotificationAsync({
+      content: { title: job.title, body: job.body, sound: true, data: { kind: KIND } },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: job.when },
+    });
   }
 }

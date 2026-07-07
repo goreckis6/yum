@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { DAYS, SLOTS } from '../data/seed';
+import { SLOTS } from '../data/seed';
 import { useApp } from '../context/AppContext';
 import { MealAddSheet } from '../components/MealAddSheet';
+import { CalendarSheet } from '../components/CalendarSheet';
+import { addDaysISO, dayOfMonth, isTodayISO, rangeISO, todayISO, weekdayKey } from '../utils/dates';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -154,12 +156,40 @@ export function MealPlanScreen() {
     mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
     addWeekToGrocery, addRecipeToGrocery, showToast,
   } = useApp();
-  const [selectedDay, setSelectedDay] = useState<DayKey>('Wed');
+  const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [addOpen, setAddOpen] = useState(false);
   const [addSlot, setAddSlot] = useState<MealSlot>('Dinner');
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const insets = useSafeAreaInsets();
 
-  const dayPlan = mealPlan[selectedDay] || {};
+  const stripRef = useRef<FlatList<string>>(null);
+  const PILL_W = 58; // pill width (50) + marginRight (8)
+
+  // A continuous strip spanning today's ±7 window AND the selected day, so a
+  // far date picked from the calendar (e.g. a year out) fills in every day in
+  // between to scroll through. Capped by rangeISO to stay sane.
+  const days = useMemo(() => {
+    const today = todayISO();
+    const start = selectedDate < today ? selectedDate : addDaysISO(today, -7);
+    const end = selectedDate > today ? selectedDate : addDaysISO(today, 7);
+    return rangeISO(start, end);
+  }, [selectedDate]);
+
+  // Keep the selected day scrolled into view (centered).
+  useEffect(() => {
+    const i = days.indexOf(selectedDate);
+    if (i < 0) return;
+    requestAnimationFrame(() => {
+      try { stripRef.current?.scrollToIndex({ index: i, viewPosition: 0.5, animated: true }); } catch {}
+    });
+  }, [selectedDate, days]);
+
+  const dayPlan = mealPlan[selectedDate] || {};
+  const dayHasMeals = (iso: string) => {
+    const p = mealPlan[iso];
+    return !!p && SLOTS.some((s) => p[s]);
+  };
+  const dayLabel = `${isTodayISO(selectedDate) ? t('mealplan.today') : t(`day.${weekdayKey(selectedDate)}` as TKey)} ${dayOfMonth(selectedDate)}`;
 
   // Pre-compute pantry match only for recipe entries
   const matches = useMemo(() => {
@@ -219,25 +249,41 @@ export function MealPlanScreen() {
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
       >
-        <Text style={styles.title}>{t('mealplan.title')}</Text>
-        <Text style={styles.sub}>{t('mealplan.sub')}</Text>
+        <View style={styles.titleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>{t('mealplan.title')}</Text>
+            <Text style={styles.sub}>{t('mealplan.sub')}</Text>
+          </View>
+          <Pressable style={styles.calBtn} onPress={() => setCalendarOpen(true)} hitSlop={8}>
+            <Icon name="calendar" size={20} color={c.accent} />
+          </Pressable>
+        </View>
 
-        {/* Day strip */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekRow}>
-          {DAYS.map((d) => {
-            const plan = mealPlan[d.day] || {};
-            const hasAny = SLOTS.some((s) => plan[s]);
-            const sel = selectedDay === d.day;
+        {/* Day strip — continuous from today's window through the selected day */}
+        <FlatList
+          ref={stripRef}
+          data={days}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.weekRow}
+          contentContainerStyle={styles.weekRowContent}
+          keyExtractor={(iso) => iso}
+          getItemLayout={(_, i) => ({ length: PILL_W, offset: PILL_W * i, index: i })}
+          initialScrollIndex={Math.max(0, days.indexOf(selectedDate))}
+          onScrollToIndexFailed={() => {}}
+          renderItem={({ item: iso }) => {
+            const hasAny = dayHasMeals(iso);
+            const sel = selectedDate === iso;
+            const today = isTodayISO(iso);
             return (
               <Pressable
-                key={d.day}
-                style={[styles.dayPill, sel && styles.dayPillOn]}
-                onPress={() => setSelectedDay(d.day)}
+                style={[styles.dayPill, sel && styles.dayPillOn, today && !sel && styles.dayPillToday]}
+                onPress={() => setSelectedDate(iso)}
               >
                 <Text style={[styles.dayLabel, sel && styles.dayLabelOn]}>
-                  {t(`day.${d.day}` as TKey)}
+                  {today ? t('mealplan.today') : t(`day.${weekdayKey(iso)}` as TKey)}
                 </Text>
-                <Text style={[styles.dayDate, sel && styles.dayDateOn]}>{d.date}</Text>
+                <Text style={[styles.dayDate, sel && styles.dayDateOn]}>{dayOfMonth(iso)}</Text>
                 <View
                   style={[
                     styles.dot,
@@ -246,17 +292,15 @@ export function MealPlanScreen() {
                 />
               </Pressable>
             );
-          })}
-        </ScrollView>
+          }}
+        />
 
         {/* Daily nutrition dashboard */}
         <View style={styles.dayCard}>
           <View style={styles.dayCardTop}>
             <View style={{ flexShrink: 1 }}>
               <Text style={styles.dayCardLabel}>{t('mealplan.dayNutrition')}</Text>
-              <Text style={styles.dayCardDay}>
-                {t(`day.${selectedDay}` as TKey)} {DAYS.find((d) => d.day === selectedDay)?.date ?? ''}
-              </Text>
+              <Text style={styles.dayCardDay}>{dayLabel}</Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={styles.dayCardKcal}>{dayKcal.toLocaleString()}</Text>
@@ -302,7 +346,7 @@ export function MealPlanScreen() {
                   getPantryItem={getPantryItem}
                   styles={styles}
                   t={t}
-                  onRemove={() => removeMeal(selectedDay, slot)}
+                  onRemove={() => removeMeal(selectedDate, slot)}
                   onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
                   onAddMissing={handleAddMissing}
                 />
@@ -326,13 +370,21 @@ export function MealPlanScreen() {
       <MealAddSheet
         visible={addOpen}
         slot={addSlot}
-        day={selectedDay}
+        dayLabel={dayLabel}
         onClose={() => setAddOpen(false)}
         onAdd={(entry) => {
-          assignMeal(selectedDay, addSlot, entry);
+          assignMeal(selectedDate, addSlot, entry);
           setAddOpen(false);
           showToast(t('mealplan.slot.added' as TKey, { slot: t(`slot.${addSlot}` as TKey) }));
         }}
+      />
+
+      <CalendarSheet
+        visible={calendarOpen}
+        selected={selectedDate}
+        hasMeals={dayHasMeals}
+        onSelect={setSelectedDate}
+        onClose={() => setCalendarOpen(false)}
       />
     </>
   );
@@ -344,14 +396,21 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
     content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
+    titleRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 18 },
     title: { fontFamily: fonts.display, fontSize: 28, color: c.ink },
-    sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4, marginBottom: 18 },
-    weekRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
+    sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4 },
+    calBtn: {
+      width: 44, height: 44, borderRadius: 22,
+      backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center', marginTop: 4,
+    },
+    weekRow: { marginBottom: 22, marginHorizontal: -20 },
+    weekRowContent: { paddingHorizontal: 20 },
     dayPill: {
       width: 50, borderRadius: 16, paddingVertical: 12,
       alignItems: 'center', backgroundColor: c.surface, marginRight: 8,
     },
     dayPillOn: { backgroundColor: c.accent },
+    dayPillToday: { borderWidth: 1.5, borderColor: c.accent },
     dayLabel: { fontSize: 11.5, fontWeight: '700', color: c.grayMid },
     dayLabelOn: { color: 'rgba(255,255,255,0.85)' },
     dayDate: { fontFamily: fonts.display, fontSize: 17, fontWeight: '700', color: c.ink, marginTop: 6 },

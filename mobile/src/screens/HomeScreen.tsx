@@ -15,7 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RecipeCard } from '../components/RecipeCard';
 import { CoverArt, COVER_PRESETS } from '../components/CoverArt';
 import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet';
-import { DAYS } from '../data/seed';
+import { dayOfMonth, isTodayISO, todayISO, weekdayKey, windowISO } from '../utils/dates';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { usePremium } from '../context/PremiumContext';
@@ -26,7 +26,8 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
-import { DayKey, FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
+import type { TKey } from '../i18n/translations';
+import { FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
 
 function plRecipes(n: number, lang: string): string {
   if (lang === 'pl') {
@@ -99,7 +100,8 @@ export function HomeScreen() {
   const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
   const [colorTarget, setColorTarget] = useState<string | null>(null);
   const [newOpen, setNewOpen] = useState(false);
-  const [selectedDay, setSelectedDay] = useState<DayKey>('Wed');
+  const [selectedDate, setSelectedDate] = useState<string>(todayISO());
+  const planDays = useMemo(() => windowISO(todayISO(), 7, 7), []);
   const [handsFree, setHandsFree] = useState(false);
 
   const filtered = useMemo(() => {
@@ -251,7 +253,8 @@ export function HomeScreen() {
       }))
     : [];
 
-  const selPlan = mealPlan[selectedDay] || {};
+  const selPlan = mealPlan[selectedDate] || {};
+  const planDayLabel = `${isTodayISO(selectedDate) ? t('mealplan.today') : t(`day.${weekdayKey(selectedDate)}` as TKey)} ${dayOfMonth(selectedDate)}`;
   const slots = (['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'] as MealSlot[]).map((slot) => {
     const entry = selPlan[slot];
     const rec = entry?.type === 'recipe' ? getRecipe(entry.recipeId) : undefined;
@@ -466,20 +469,28 @@ export function HomeScreen() {
 
   const renderPlan = () => (
     <>
-      <Text style={styles.planTitle}>This week</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.weekRow}>
-        {DAYS.map((d) => {
-          const plan = mealPlan[d.day] || {};
+      <Text style={styles.planTitle}>{t('mealplan.title')}</Text>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.weekRow}
+        contentOffset={{ x: 7 * 58 - 120, y: 0 }}
+      >
+        {planDays.map((iso) => {
+          const plan = mealPlan[iso] || {};
           const hasAny = (['Breakfast', 'SecondBreakfast', 'Lunch', 'Dinner', 'Snack', 'Supper'] as MealSlot[]).some((s) => plan[s]);
-          const sel = selectedDay === d.day;
+          const sel = selectedDate === iso;
+          const today = isTodayISO(iso);
           return (
             <Pressable
-              key={d.day}
+              key={iso}
               style={[styles.dayPill, sel && styles.dayPillOn]}
-              onPress={() => setSelectedDay(d.day)}
+              onPress={() => setSelectedDate(iso)}
             >
-              <Text style={[styles.dayPillLabel, sel && styles.dayPillLabelOn]}>{d.day}</Text>
-              <Text style={[styles.dayPillDate, sel && styles.dayPillDateOn]}>{d.date}</Text>
+              <Text style={[styles.dayPillLabel, sel && styles.dayPillLabelOn]}>
+                {today ? t('mealplan.today') : t(`day.${weekdayKey(iso)}` as TKey)}
+              </Text>
+              <Text style={[styles.dayPillDate, sel && styles.dayPillDateOn]}>{dayOfMonth(iso)}</Text>
               <View style={[styles.dayDot, { backgroundColor: hasAny ? (sel ? '#fff' : c.accent) : 'transparent' }]} />
             </Pressable>
           );
@@ -508,7 +519,7 @@ export function HomeScreen() {
                   {rec.time} min · {rec.kcal} kcal
                 </Text>
               </View>
-              <Pressable style={styles.removeBtn} onPress={() => removeMeal(selectedDay, slot)}>
+              <Pressable style={styles.removeBtn} onPress={() => removeMeal(selectedDate, slot)}>
                 <Text style={styles.removeText}>✕</Text>
               </Pressable>
             </Pressable>
@@ -525,9 +536,7 @@ export function HomeScreen() {
 
       <View style={styles.dayTotal}>
         <View>
-          <Text style={styles.dayTotalLabel}>
-            {selectedDay} {DAYS.find((d) => d.day === selectedDay)?.date} total
-          </Text>
+          <Text style={styles.dayTotalLabel}>{planDayLabel}</Text>
           <Text style={styles.dayTotalKcal}>
             {dayKcal.toLocaleString()} <Text style={styles.kcalUnit}>kcal</Text>
           </Text>
