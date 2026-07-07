@@ -34,7 +34,12 @@ async function performOAuth(provider: 'google' | 'apple'): Promise<{ error?: str
     if (error || !data.url) return { error: error?.message ?? 'OAuth failed' };
     console.log('[OAuth] opening url:', data.url.slice(0, 80));
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+    // Ephemeral session: don't share cookies with Safari, so iOS skips the
+    // "…wants to use <supabase domain> to sign in / share information" consent
+    // dialog. Sign-in still works; the user just doesn't see the raw domain.
+    const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo, {
+      preferEphemeralSession: true,
+    });
     console.log('[OAuth] result:', result.type);
 
     if (result.type !== 'success') return {};
