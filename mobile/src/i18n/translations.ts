@@ -444,6 +444,10 @@ export const en = {
   'mealplan.today': 'Today',
   'mealplan.calendar': 'Calendar',
   'mealplan.pickDate': 'Pick a date',
+  'water.title': 'Water',
+  'water.cup': 'Cup',
+  'water.rec': "Today it's ~{temp}° — aim for {ml} ml",
+  'water.recDefault': 'Aim for about {ml} ml today',
   'mealplan.noMeals': 'No meals planned yet — add one below.',
   'mealplan.addWeek': 'Add week to grocery list',
 
@@ -959,6 +963,10 @@ export const pl: Record<TKey, string> = {
   'mealplan.today': 'Dziś',
   'mealplan.calendar': 'Kalendarz',
   'mealplan.pickDate': 'Wybierz datę',
+  'water.title': 'Woda',
+  'water.cup': 'Kubek',
+  'water.rec': 'Dziś jest ~{temp}° — zalecane {ml} ml',
+  'water.recDefault': 'Dziś zalecane ok. {ml} ml',
   'mealplan.noMeals': 'Brak zaplanowanych posiłków — dodaj poniżej.',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
 

@@ -69,6 +69,7 @@ interface AppContextValue extends AppState {
   grantCredits: (n: number) => void;
   setCredits: (n: number) => void;
   setMealReminders: (patch: Partial<AppState['mealReminders']>) => void;
+  addWater: (date: string, deltaMl: number) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -463,6 +464,13 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, mealReminders: { ...s.mealReminders, ...patch } }));
   }, []);
 
+  const addWater = useCallback((date: string, deltaMl: number) => {
+    setState((s) => {
+      const next = Math.max(0, (s.water?.[date] ?? 0) + deltaMl);
+      return { ...s, water: { ...s.water, [date]: next } };
+    });
+  }, []);
+
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -522,6 +530,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       grantCredits,
       setCredits,
       setMealReminders,
+      addWater,
     }),
     [
       state,
@@ -567,6 +576,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       grantCredits,
       setCredits,
       setMealReminders,
+      addWater,
     ],
   );
 

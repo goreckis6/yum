@@ -127,6 +127,7 @@ export interface AppState {
   unitSystem: UnitSystem;
   credits: number; // free recipe-import credits remaining
   mealReminders: MealReminderSettings;
+  water: Record<string, number>; // ml drunk, keyed by ISO date
 }
 
 export interface MealReminderSettings {

@@ -7,6 +7,7 @@ import { SLOTS } from '../data/seed';
 import { useApp } from '../context/AppContext';
 import { MealAddSheet } from '../components/MealAddSheet';
 import { CalendarSheet } from '../components/CalendarSheet';
+import { WaterCard } from '../components/WaterCard';
 import { addDaysISO, dayOfMonth, isTodayISO, rangeISO, todayISO, weekdayKey } from '../utils/dates';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -154,7 +155,7 @@ export function MealPlanScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
-    addWeekToGrocery, addRecipeToGrocery, showToast,
+    addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater,
   } = useApp();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [addOpen, setAddOpen] = useState(false);
@@ -165,15 +166,16 @@ export function MealPlanScreen() {
   const stripRef = useRef<FlatList<string>>(null);
   const PILL_W = 58; // pill width (50) + marginRight (8)
 
-  // A continuous strip spanning today's ±7 window AND the selected day, so a
-  // far date picked from the calendar (e.g. a year out) fills in every day in
-  // between to scroll through. Capped by rangeISO to stay sane.
-  const days = useMemo(() => {
-    const today = todayISO();
-    const start = selectedDate < today ? selectedDate : addDaysISO(today, -7);
-    const end = selectedDate > today ? selectedDate : addDaysISO(today, 7);
-    return rangeISO(start, end);
-  }, [selectedDate]);
+  // A wide, continuous strip (≈2 months back, a year ahead) so you can scroll
+  // freely in both directions; it extends further if a more distant day is
+  // picked from the calendar. Start/end are stable for in-range taps so the
+  // list doesn't rebuild on every selection.
+  const today = todayISO();
+  const backEnd = addDaysISO(today, -60);
+  const fwdEnd = addDaysISO(today, 365);
+  const start = selectedDate < backEnd ? selectedDate : backEnd;
+  const end = selectedDate > fwdEnd ? selectedDate : fwdEnd;
+  const days = useMemo(() => rangeISO(start, end), [start, end]);
 
   // Keep the selected day scrolled into view (centered).
   useEffect(() => {
@@ -329,6 +331,9 @@ export function MealPlanScreen() {
             <Text style={styles.dayCardEmpty}>{t('mealplan.noMeals')}</Text>
           )}
         </View>
+
+        {/* Water tracker (weather-aware goal) */}
+        <WaterCard intakeMl={water?.[selectedDate] ?? 0} onAdd={(ml) => addWater(selectedDate, ml)} />
 
         {/* Slots */}
         {SLOTS.map((slot) => {

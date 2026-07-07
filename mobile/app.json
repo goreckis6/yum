@@ -59,7 +59,13 @@
         }
       ],
       "expo-audio",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "YumiShare uses your location to check the local temperature and suggest how much water to drink."
+        }
+      ]
     ]
   }
 }
