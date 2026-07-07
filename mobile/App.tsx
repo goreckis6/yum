@@ -33,6 +33,7 @@ import { OnboardingScreen } from './src/screens/OnboardingScreen';
 import { AIConsentScreen } from './src/screens/AIConsentScreen';
 import { ProcessingScreen } from './src/screens/ProcessingScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
+import { CookingModeScreen } from './src/screens/CookingModeScreen';
 import { ReviewImportScreen } from './src/screens/ReviewImportScreen';
 import { EditRecipeScreen } from './src/screens/EditRecipeScreen';
 import { ReceiptsScreen } from './src/screens/ReceiptsScreen';
@@ -98,6 +99,7 @@ function RootNavigator() {
       >
         <Stack.Screen name="Main" component={MainNavigator} />
         <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
+        <Stack.Screen name="CookingMode" component={CookingModeScreen} />
         <Stack.Screen name="ImportUrl" component={ImportUrlScreen} />
         <Stack.Screen name="ScanRecipe" component={ScanRecipeScreen} />
         <Stack.Screen name="Processing" component={ProcessingScreen} />

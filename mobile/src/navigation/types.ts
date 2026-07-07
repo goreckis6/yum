@@ -3,6 +3,7 @@ export type RootStackParamList = {
   Main: undefined;
   Home: undefined;
   RecipeDetail: { id: string };
+  CookingMode: { id: string };
   ImportUrl: undefined;
   ScanRecipe: undefined;
   Processing: { url: string } | { imageBase64: string; mimeType: string };

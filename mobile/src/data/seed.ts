@@ -34,6 +34,7 @@ export const SEED_STATE: AppState = {
   hasOnboarded: true,
   unitSystem: 'metric',
   made: {},
+  madeHistory: {},
   ingChecked: {},
   favorites: {},
   cookbookCovers: {},

@@ -1,5 +1,6 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   Image,
   PanResponder,
@@ -9,6 +10,8 @@ import {
   Text,
   View,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,6 +24,8 @@ import { fonts } from '../theme/fonts';
 import { Aisle, GroceryItem } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { IngredientIcon } from '../components/IngredientIcon';
+import { Icon } from '../components/Icon';
+import { GroceryShareCard, GroceryShareSection } from '../components/GroceryShareCard';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { parseAmt, formatValue } from '../utils/amounts';
@@ -191,6 +196,33 @@ export function GroceryScreen() {
     }, 80);
   };
 
+  // Capture the branded shopping-list card as an image and hand it to the OS
+  // share sheet — WhatsApp, Messages, Instagram, Notes, etc.
+  const shareCardRef = useRef<View>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+
+  const shareList = async () => {
+    if (shareSections.length === 0 || shareBusy) return;
+    try {
+      setShareBusy(true);
+      await new Promise((r) => setTimeout(r, 70)); // let the card lay out
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1, result: 'tmpfile' });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: t('grocery.shareTitle'),
+          UTI: 'public.png',
+        });
+      } else {
+        showToast(t('recipe.shareFailed'));
+      }
+    } catch {
+      showToast(t('recipe.shareFailed'));
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
   const aisleLabel = (name: string) =>
     (['Produce', 'Meat & Seafood', 'Dairy & Eggs', 'Bakery', 'Pantry', 'Frozen'] as const).includes(name as never)
       ? t(`aisle.${name}` as TKey)
@@ -206,6 +238,20 @@ export function GroceryScreen() {
   const hasMore = allPantryItems.length > PANTRY_PREVIEW;
 
   const consolidated = useMemo(() => consolidate(active), [active]);
+
+  // Group the consolidated list by aisle for the branded share image.
+  const shareSections = useMemo<GroceryShareSection[]>(() => {
+    const byAisle = new Map<Aisle, { name: string; amount: string }[]>();
+    for (const item of consolidated) {
+      const arr = byAisle.get(item.aisle) ?? [];
+      arr.push({ name: item.name, amount: item.total && item.total !== '—' ? item.total : '' });
+      byAisle.set(item.aisle, arr);
+    }
+    return Array.from(byAisle.entries()).map(([aisle, items]) => ({
+      label: aisleLabel(aisle),
+      items,
+    }));
+  }, [consolidated]);
 
   const groups = useMemo(() => {
     if (groupBy === 'aisle') {
@@ -227,11 +273,23 @@ export function GroceryScreen() {
   }, [active, groupBy]);
 
   return (
-    <ScrollView
-      ref={scrollRef}
-      style={styles.container}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
-    >
+    <>
+      {/* Off-screen branded card captured for "share as image". Kept behind the
+          opaque ScrollView (zIndex -1) so it renders fully yet stays invisible. */}
+      <View ref={shareCardRef} collapsable={false} pointerEvents="none" style={styles.shareCardHost}>
+        <GroceryShareCard
+          title={t('grocery.shareTitle')}
+          subtitle={t('grocery.itemsToPickup', { n: consolidated.length })}
+          footer={t('grocery.shareBrand')}
+          sections={shareSections}
+        />
+      </View>
+
+      <ScrollView
+        ref={scrollRef}
+        style={styles.container}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}
+      >
 
       {/* Header */}
       <View style={styles.headerRow}>
@@ -325,6 +383,18 @@ export function GroceryScreen() {
                 <Text style={styles.clearAll}>{t('grocery.clear')}</Text>
               </Pressable>
             )}
+            {active.length > 0 && (
+              <Pressable style={styles.shareBtn} onPress={shareList} hitSlop={10} disabled={shareBusy}>
+                {shareBusy ? (
+                  <ActivityIndicator size="small" color={c.accent} />
+                ) : (
+                  <>
+                    <Icon name="share" size={15} color={c.accent} />
+                    <Text style={styles.shareBtnText}>{t('grocery.share')}</Text>
+                  </>
+                )}
+              </Pressable>
+            )}
           </Pressable>
 
           {/* Groups */}
@@ -373,7 +443,8 @@ export function GroceryScreen() {
               <Text style={styles.calcBtnHint}>{t('grocery.calcHint' as TKey)}</Text>
               <Pressable style={styles.calcBtn} onPress={handleCalculate}>
                 <View style={styles.calcBtnInner}>
-                  <Text style={styles.calcLabel}>🧮  Calculate</Text>
+                  <Icon name="calculator" size={19} color="#fff" />
+                  <Text style={styles.calcLabel}>Calculate</Text>
                   <Animated.Text style={[styles.calcArrow, { transform: [{ translateY: arrowAnim }] }]}>
                     ↓
                   </Animated.Text>
@@ -465,7 +536,8 @@ export function GroceryScreen() {
           </Pressable>
         </>
       )}
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 }
 
@@ -522,6 +594,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   selectRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 8, marginBottom: 12 },
   selectText: { flex: 1, fontSize: 13, fontWeight: '700', color: c.ink },
   clearAll: { fontSize: 12.5, fontWeight: '700', color: c.accent },
+  shareBtn: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  shareBtnText: { fontSize: 12.5, fontWeight: '700', color: c.accent },
+  shareCardHost: { position: 'absolute', left: 0, top: 0, zIndex: -1 },
 
   /* Groups */
   group: { marginBottom: 18 },

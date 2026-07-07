@@ -48,6 +48,7 @@ interface AppContextValue extends AppState {
   assignMeal: (day: DayKey, slot: MealSlot, entry: MealEntry) => void;
   removeMeal: (day: DayKey, slot: MealSlot) => void;
   toggleMade: (recipeId: string) => void;
+  logCooked: (recipeId: string) => void;
   toggleIngredient: (recipeId: string, index: number) => void;
   setHasOnboarded: (value: boolean) => void;
   setCookbookCover: (tag: string, cover: CookbookCover | null) => void;
@@ -309,18 +310,39 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     });
   }, []);
 
+  const wasCooked = useCallback(
+    (recipeId: string) => !!state.made[recipeId] || (state.madeHistory?.[recipeId]?.length ?? 0) > 0,
+    [state.made, state.madeHistory],
+  );
+
+  // Append a cook event (used when finishing Cooking Mode) — always logs a new
+  // timestamp, so the history reflects every time the recipe was actually made.
+  const logCooked = useCallback((recipeId: string) => {
+    setState((s) => {
+      const madeHistory = { ...s.madeHistory, [recipeId]: [...(s.madeHistory[recipeId] ?? []), Date.now()] };
+      return { ...s, made: { ...s.made, [recipeId]: true }, madeHistory };
+    });
+  }, []);
+
   const toggleMade = useCallback(
     (recipeId: string) => {
+      const was = wasCooked(recipeId);
       setState((s) => {
         const made = { ...s.made };
-        const was = !!made[recipeId];
-        made[recipeId] = !was;
-        return { ...s, made };
+        const madeHistory = { ...s.madeHistory };
+        if (was) {
+          // Un-mark: clear the flag and the whole history.
+          made[recipeId] = false;
+          delete madeHistory[recipeId];
+        } else {
+          made[recipeId] = true;
+          madeHistory[recipeId] = [...(madeHistory[recipeId] ?? []), Date.now()];
+        }
+        return { ...s, made, madeHistory };
       });
-      const was = !!state.made[recipeId];
       showToast(was ? 'Removed from made' : 'Marked as made');
     },
-    [state.made, showToast],
+    [wasCooked, showToast],
   );
 
   const toggleIngredient = useCallback((recipeId: string, index: number) => {
@@ -442,6 +464,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       assignMeal,
       removeMeal,
       toggleMade,
+      logCooked,
       toggleIngredient,
       setHasOnboarded,
       setCookbookCover,
@@ -482,6 +505,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       assignMeal,
       removeMeal,
       toggleMade,
+      logCooked,
       toggleIngredient,
       setHasOnboarded,
       setCookbookCover,

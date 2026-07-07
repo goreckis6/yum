@@ -204,6 +204,14 @@ export function MealPlanScreen() {
       dayKcal += entry.kcal; dayP += entry.p; dayC += entry.c; dayF += entry.f;
     }
   }
+  // Calorie contribution of each macro (4/4/9 kcal per gram) → the split bar.
+  const pCal = dayP * 4, cCal = dayC * 4, fCal = dayF * 9;
+  const macroCal = pCal + cCal + fCal;
+  const macroLegend = [
+    { color: c.sage, label: t('recipe.protein'), val: dayP },
+    { color: c.gold, label: t('recipe.carbs'), val: dayC },
+    { color: c.accent, label: t('recipe.fat'), val: dayF },
+  ];
 
   return (
     <>
@@ -241,6 +249,43 @@ export function MealPlanScreen() {
           })}
         </ScrollView>
 
+        {/* Daily nutrition dashboard */}
+        <View style={styles.dayCard}>
+          <View style={styles.dayCardTop}>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={styles.dayCardLabel}>{t('mealplan.dayNutrition')}</Text>
+              <Text style={styles.dayCardDay}>
+                {t(`day.${selectedDay}` as TKey)} {DAYS.find((d) => d.day === selectedDay)?.date ?? ''}
+              </Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={styles.dayCardKcal}>{dayKcal.toLocaleString()}</Text>
+              <Text style={styles.dayCardKcalUnit}>kcal</Text>
+            </View>
+          </View>
+
+          {macroCal > 0 ? (
+            <>
+              <View style={styles.splitBar}>
+                <View style={{ flex: pCal, backgroundColor: c.sage }} />
+                <View style={{ flex: cCal, backgroundColor: c.gold }} />
+                <View style={{ flex: fCal, backgroundColor: c.accent }} />
+              </View>
+              <View style={styles.legendRow}>
+                {macroLegend.map((m, i) => (
+                  <View key={i} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: m.color }]} />
+                    <Text style={styles.legendVal}>{m.val}g</Text>
+                    <Text style={styles.legendLabel}>{m.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <Text style={styles.dayCardEmpty}>{t('mealplan.noMeals')}</Text>
+          )}
+        </View>
+
         {/* Slots */}
         {SLOTS.map((slot) => {
           const entry = dayPlan[slot];
@@ -272,18 +317,6 @@ export function MealPlanScreen() {
             </View>
           );
         })}
-
-        {/* Daily totals */}
-        <View style={styles.totals}>
-          <Text style={styles.totalsLabel}>
-            {t('mealplan.dayTotal', {
-              day: t(`day.${selectedDay}` as TKey),
-              date: DAYS.find((d) => d.day === selectedDay)?.date ?? '',
-            })}
-          </Text>
-          <Text style={styles.totalsKcal}>{dayKcal.toLocaleString()} kcal</Text>
-          <Text style={styles.macros}>P {dayP}g · C {dayC}g · F {dayF}g</Text>
-        </View>
 
         <Pressable style={styles.weekBtn} onPress={addWeekToGrocery}>
           <Text style={styles.weekBtnText}>{t('mealplan.addWeek')}</Text>
@@ -372,13 +405,26 @@ const makeStyles = (c: ThemeColors) =>
     },
     addText: { fontSize: 14, fontWeight: '700', color: c.gray },
 
-    totals: {
+    dayCard: {
       backgroundColor: c.surface, borderRadius: 18,
-      padding: 16, marginTop: 6, marginBottom: 14,
+      borderWidth: 1, borderColor: c.border,
+      padding: 16, marginBottom: 22,
     },
-    totalsLabel: { fontSize: 13, fontWeight: '600', color: c.grayMid },
-    totalsKcal: { fontFamily: fonts.display, fontSize: 24, fontWeight: '700', color: c.ink, marginTop: 2 },
-    macros: { fontSize: 13, fontWeight: '600', color: c.grayMid, marginTop: 6 },
+    dayCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
+    dayCardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase' },
+    dayCardDay: { fontFamily: fonts.display, fontSize: 18, color: c.ink, marginTop: 3 },
+    dayCardKcal: { fontFamily: fonts.display, fontSize: 30, fontWeight: '700', color: c.ink },
+    dayCardKcalUnit: { fontSize: 12, fontWeight: '700', color: c.grayMid, marginTop: -2 },
+    splitBar: {
+      flexDirection: 'row', height: 10, borderRadius: 6, overflow: 'hidden',
+      backgroundColor: c.surfaceAlt, marginTop: 16, gap: 2,
+    },
+    legendRow: { flexDirection: 'row', marginTop: 12, gap: 8 },
+    legendItem: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 5 },
+    legendDot: { width: 8, height: 8, borderRadius: 4 },
+    legendVal: { fontSize: 14, fontWeight: '700', color: c.ink },
+    legendLabel: { fontSize: 12, fontWeight: '600', color: c.grayMid },
+    dayCardEmpty: { fontSize: 13, fontWeight: '600', color: c.grayMid, marginTop: 14 },
 
     weekBtn: { backgroundColor: c.surfaceAlt, borderRadius: 16, paddingVertical: 15, alignItems: 'center' },
     weekBtnText: { fontSize: 15, fontWeight: '700', color: c.grayLight },

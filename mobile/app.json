@@ -57,7 +57,8 @@
             "NSExtensionActivationSupportsText": true
           }
         }
-      ]
+      ],
+      "expo-audio"
     ]
   }
 }

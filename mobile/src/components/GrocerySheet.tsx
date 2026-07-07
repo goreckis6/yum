@@ -212,7 +212,7 @@ const makeStyles = (c: ThemeColors) =>
       borderBottomWidth: 1,
       borderBottomColor: c.border,
     },
-    amt: { flex: 1, fontFamily: fonts.bodyBold, fontSize: 16, color: c.ink },
+    amt: { flex: 1, minWidth: 0, fontFamily: fonts.bodyBold, fontSize: 16, color: c.ink },
     name: { fontFamily: fonts.body, color: c.ink },
     checkbox: {
       width: 26,
@@ -223,6 +223,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: 12,
+      flexShrink: 0,
     },
     checkboxOn: { backgroundColor: c.accent, borderColor: c.accent },
     checkmark: { color: '#fff', fontSize: 15, fontWeight: '900', marginTop: -1 },

@@ -33,6 +33,8 @@ export interface Recipe {
   ingredients: Ingredient[];
   steps: string[];
   sourceUrl?: string;
+  userRating?: number; // the cook's own 1–5 rating (distinct from the source rating)
+  notes?: string; // personal notes, e.g. "2× garlic next time"
 }
 
 export const RECEIPT_CATEGORIES = ['Meals', 'Groceries', 'Fuel', 'Travel', 'Office', 'Other'] as const;
@@ -111,6 +113,7 @@ export interface AppState {
   grocery: GroceryItem[];
   mealPlan: MealPlan;
   made: Record<string, boolean>;
+  madeHistory: Record<string, number[]>; // cook timestamps per recipe id
   ingChecked: Record<string, boolean>;
   favorites: Record<string, boolean>;
   hasOnboarded: boolean;

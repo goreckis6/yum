@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Image,
   Linking,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
+import { ShareCard } from '../components/ShareCard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
 import { MealPickerSheet } from '../components/MealPickerSheet';
@@ -19,6 +24,7 @@ import { fonts } from '../theme/fonts';
 import { DayKey, MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { cleanStep, isToTaste, scaleAmount } from '../utils/scale';
+import { timeAgo } from '../utils/relativeTime';
 import { convertAmount } from '../utils/amounts';
 import { UnitSystem } from '../types';
 import { useI18n } from '../i18n/I18nContext';
@@ -43,7 +49,7 @@ function TrashIcon({ color = '#DC2626' }: { color?: string }) {
 
 export function RecipeDetailScreen({ navigation, route }: Props) {
   const c = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const styles = makeStyles(c);
   const {
     getRecipe,
@@ -52,8 +58,10 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
     favorites,
     toggleIngredient,
     toggleMade,
+    madeHistory,
     toggleFavorite,
     updateRecipeTags,
+    updateRecipe,
     addRecipeToGrocery,
     assignMeal,
     showToast,
@@ -90,6 +98,59 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
   const [addOpen, setAddOpen] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [grocerySheetOpen, setGrocerySheetOpen] = useState(false);
+  const [notes, setNotes] = useState(recipe?.notes ?? '');
+  React.useEffect(() => { setNotes(recipe?.notes ?? ''); }, [recipe?.id]);
+
+  const saveNotes = () => {
+    if (!recipe || notes === (recipe.notes ?? '')) return;
+    updateRecipe({ ...recipe, notes: notes.trim() });
+  };
+
+  // ── Share as image ────────────────────────────────────────────
+  const shareCardRef = useRef<View>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  // Gate the capture until the (remote) cover image has finished loading, so
+  // the exported PNG is never blank. No image → ready immediately.
+  const imgReadyRef = useRef(!recipe?.imageUrl);
+  const imgWaiters = useRef<Array<() => void>>([]);
+  const onCardImgLoad = useCallback(() => {
+    imgReadyRef.current = true;
+    imgWaiters.current.forEach((f) => f());
+    imgWaiters.current = [];
+  }, []);
+  const waitForImg = () =>
+    new Promise<void>((resolve) => {
+      if (imgReadyRef.current) return resolve();
+      const to = setTimeout(resolve, 3000); // safety net
+      imgWaiters.current.push(() => { clearTimeout(to); resolve(); });
+    });
+
+  const onShare = async () => {
+    if (shareBusy || !recipe) return;
+    try {
+      setShareBusy(true);
+      await waitForImg();
+      await new Promise((r) => setTimeout(r, 80)); // let layout settle
+      const uri = await captureRef(shareCardRef, {
+        format: 'png',
+        quality: 1,
+        result: 'tmpfile',
+      });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: recipe.title,
+          UTI: 'public.png',
+        });
+      } else {
+        showToast(t('recipe.shareFailed'));
+      }
+    } catch {
+      showToast(t('recipe.shareFailed'));
+    } finally {
+      setShareBusy(false);
+    }
+  };
 
   const handleDelete = () => {
     removeRecipe(route.params.id);
@@ -106,6 +167,8 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
 
   const isMade = !!made[recipe.id];
   const isFav = !!favorites[recipe.id];
+  const cookHistory = madeHistory[recipe.id] ?? [];
+  const lastCooked = cookHistory.length ? Math.max(...cookHistory) : 0;
   const factor = servings / (recipe.servings || servings || 1);
   const orderedIngredients = recipe.ingredients
     .map((ing, i) => ({ ing, i }))
@@ -133,7 +196,20 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
 
   return (
     <>
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Capture target for "share as image". A plain View at its full
+          intrinsic height, kept on-screen but underneath the opaque ScrollView
+          below (zIndex -1) so it renders fully yet stays invisible. */}
+      <View ref={shareCardRef} collapsable={false} style={styles.shareCardHost} pointerEvents="none">
+        <ShareCard recipe={recipe} onImageLoad={onCardImgLoad} />
+      </View>
+
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets
+      >
         <View style={[styles.hero, { backgroundColor: recipe.tint }]}>
           {recipe.imageUrl ? (
             <Image source={{ uri: recipe.imageUrl }} style={styles.heroPhoto} resizeMode="cover" />
@@ -143,12 +219,21 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
             <Text style={styles.backIcon}>‹</Text>
           </Pressable>
-          <Pressable
-            style={styles.editBtn}
-            onPress={() => navigation.navigate('EditRecipe', { id: recipe.id })}
-          >
-            <Text style={styles.editText}>{t('recipe.edit')}</Text>
-          </Pressable>
+          <View style={styles.heroActions}>
+            <Pressable style={styles.heroCircle} onPress={onShare} disabled={shareBusy} hitSlop={8}>
+              {shareBusy ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Icon name="share" size={18} color="#fff" />
+              )}
+            </Pressable>
+            <Pressable
+              style={styles.editBtn}
+              onPress={() => navigation.navigate('EditRecipe', { id: recipe.id })}
+            >
+              <Text style={styles.editText}>{t('recipe.edit')}</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.sheet}>
@@ -209,6 +294,15 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
               );
             })}
           </View>
+
+          {cookHistory.length > 0 && (
+            <View style={styles.cookedRow}>
+              <Icon name="flame" size={14} color={c.accent} />
+              <Text style={styles.cookedText}>
+                {t('recipe.cookedTimes', { n: cookHistory.length, when: timeAgo(lastCooked, lang) })}
+              </Text>
+            </View>
+          )}
 
           <View style={styles.statRow}>
             <View style={styles.statBox}>
@@ -344,13 +438,32 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
               </View>
             ))}
           </View>
+
+          <View style={styles.reviewCard}>
+            <Text style={styles.reviewTitle}>{t('recipe.notes')}</Text>
+            <TextInput
+              style={styles.notesInput}
+              value={notes}
+              onChangeText={setNotes}
+              onBlur={saveNotes}
+              placeholder={t('recipe.notesPlaceholder')}
+              placeholderTextColor={c.gray}
+              multiline
+            />
+          </View>
         </View>
       </ScrollView>
 
       <View style={styles.actionBar}>
-        <Pressable style={styles.actionPrimary} onPress={() => setPickerOpen(true)}>
-          <Icon name="calendar" size={17} color="#fff" />
-          <Text style={styles.actionPrimaryText}>{t('recipe.mealPlan')}</Text>
+        <Pressable
+          style={styles.actionPrimary}
+          onPress={() => navigation.navigate('CookingMode', { id: recipe.id })}
+        >
+          <Icon name="flame" size={17} color="#fff" />
+          <Text style={styles.actionPrimaryText}>{t('recipe.startCooking')}</Text>
+        </Pressable>
+        <Pressable style={styles.actionIcon} onPress={() => setPickerOpen(true)}>
+          <Icon name="calendar" size={17} color={c.ink} />
         </Pressable>
         <Pressable style={styles.actionIcon} onPress={() => setAddOpen(true)}>
           <Icon name="grid" size={17} color={c.ink} />
@@ -417,6 +530,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { paddingBottom: 120 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  shareCardHost: { position: 'absolute', left: 0, top: 0, zIndex: -1 },
   hero: { height: 300, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 34, overflow: 'hidden' },
   heroPhoto: { ...StyleSheet.absoluteFillObject },
   backBtn: {
@@ -431,10 +545,23 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     justifyContent: 'center',
   },
   backIcon: { fontSize: 28, color: '#fff', marginTop: -4 },
-  editBtn: {
+  heroActions: {
     position: 'absolute',
     top: 58,
     right: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  heroCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: c.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  editBtn: {
     height: 40,
     paddingHorizontal: 16,
     borderRadius: 20,
@@ -495,6 +622,18 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   favBtnOn: { backgroundColor: c.dangerBg },
   tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginBottom: 18 },
+  cookedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    backgroundColor: c.accentSoft,
+    alignSelf: 'flex-start',
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+    borderRadius: 999,
+    marginBottom: 18,
+  },
+  cookedText: { fontSize: 12.5, fontWeight: '700', color: c.accent },
   tagChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
@@ -608,6 +747,26 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     marginBottom: 4,
   },
   methodList: { marginTop: 4 },
+  reviewCard: {
+    backgroundColor: c.surface,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 24,
+    marginBottom: 8,
+  },
+  reviewTitle: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 10 },
+  notesInput: {
+    backgroundColor: c.surfaceAlt,
+    borderRadius: 12,
+    padding: 13,
+    fontSize: 15,
+    fontWeight: '500',
+    color: c.ink,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
   ingRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -624,11 +783,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderColor: c.gray,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   checkboxOn: { backgroundColor: c.accent, borderColor: c.accent },
   checkMark: { color: '#fff', fontSize: 12, fontWeight: '700' },
-  ingAmt: { fontSize: 14.5, fontWeight: '700', color: c.ink, flexShrink: 0, textAlign: 'right', paddingLeft: 8 },
-  ingName: { fontSize: 14.5, fontWeight: '500', color: c.ink, flex: 1, flexShrink: 1 },
+  ingAmt: { fontSize: 14.5, fontWeight: '700', color: c.ink, flexShrink: 0, maxWidth: '38%', textAlign: 'right', paddingLeft: 8 },
+  // minWidth:0 lets a long name shrink past its intrinsic width and wrap to
+  // multiple lines instead of overflowing off-screen (e.g. "chicken breast (…)").
+  ingName: { fontSize: 14.5, fontWeight: '500', color: c.ink, flex: 1, flexShrink: 1, minWidth: 0 },
   ingChecked: { color: c.grayMid, textDecorationLine: 'line-through' },
   stepRow: { flexDirection: 'row', gap: 14, marginBottom: 16 },
   stepNum: {

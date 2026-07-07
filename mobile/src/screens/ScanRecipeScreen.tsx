@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import {
+  Alert,
   Image,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -32,34 +34,46 @@ export function ScanRecipeScreen({ navigation }: Props) {
   const [photo, setPhoto] = useState<PhotoDraft | null>(null);
 
   const pickImage = async (fromCamera: boolean) => {
-    // Camera needs permission; the photo library uses the system picker which
-    // works without one, so we only gate the camera.
-    if (fromCamera) {
-      const perm = await ImagePicker.requestCameraPermissionsAsync();
-      if (!perm.granted) return;
+    try {
+      // Camera needs permission; the photo library uses the system picker which
+      // works without one, so we only gate the camera.
+      if (fromCamera) {
+        const current = await ImagePicker.getCameraPermissionsAsync();
+        let granted = current.granted;
+        if (!granted && current.canAskAgain) {
+          granted = (await ImagePicker.requestCameraPermissionsAsync()).granted;
+        }
+        // Previously denied → the system won't re-prompt, so send the user to
+        // Settings instead of silently doing nothing (the "dead button" bug).
+        if (!granted) {
+          Alert.alert(t('scanRecipe.camDeniedTitle'), t('scanRecipe.camDeniedBody'), [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('scanRecipe.openSettings'), onPress: () => Linking.openSettings() },
+          ]);
+          return;
+        }
+      }
+
+      const result = fromCamera
+        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 0.85, base64: true })
+        : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85, base64: true });
+
+      if (result.canceled || !result.assets?.[0]) return;
+      const asset = result.assets[0];
+      if (!asset.base64) {
+        Alert.alert(t('scanRecipe.pickFailed'));
+        return;
+      }
+
+      setPhoto({
+        uri: asset.uri,
+        base64: asset.base64,
+        mimeType: asset.mimeType ?? 'image/jpeg',
+      });
+    } catch {
+      // e.g. camera unavailable on a simulator, or a transient picker error.
+      Alert.alert(t('scanRecipe.pickFailed'));
     }
-
-    const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({
-          mediaTypes: ['images'],
-          quality: 0.85,
-          base64: true,
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ['images'],
-          quality: 0.85,
-          base64: true,
-        });
-
-    if (result.canceled || !result.assets[0]) return;
-    const asset = result.assets[0];
-    if (!asset.base64) return;
-
-    setPhoto({
-      uri: asset.uri,
-      base64: asset.base64,
-      mimeType: asset.mimeType ?? 'image/jpeg',
-    });
   };
 
   const submit = () => {
