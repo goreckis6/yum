@@ -121,10 +121,14 @@ export function CookingModeScreen({ navigation, route }: Props) {
 
   const startTimer = useCallback((seconds: number, label: string) => {
     Haptics.selectionAsync().catch(() => {});
-    setTimers((prev) => [
-      ...prev,
-      { id: `${Date.now()}-${seconds}`, label, total: seconds, remaining: seconds, done: false },
-    ]);
+    setTimers((prev) => {
+      // Ignore repeat taps — don't stack an identical timer that's still running.
+      if (prev.some((tm) => !tm.done && tm.total === seconds)) return prev;
+      return [
+        ...prev,
+        { id: `${Date.now()}-${seconds}`, label, total: seconds, remaining: seconds, done: false },
+      ];
+    });
   }, []);
 
   const dismissTimer = useCallback((id: string) => {
