@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -19,6 +19,13 @@ import { RootStackParamList } from '../navigation/types';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { clearCache } from '../storage/persist';
 import { getApiBaseUrl } from '../config/api';
+import { ensureNotificationPermission } from '../lib/notifications';
+
+const LEAD_OPTIONS: { value: number; labelKey: TKey }[] = [
+  { value: 30, labelKey: 'reminder.lead30' },
+  { value: 60, labelKey: 'reminder.lead60' },
+  { value: 120, labelKey: 'reminder.lead120' },
+];
 
 const LANG_OPTIONS: { key: Lang; label: string }[] = [
   { key: 'en', label: 'English' },
@@ -43,7 +50,18 @@ export function ProfileScreen() {
   const { t, lang, setLang } = useI18n();
   const styles = makeStyles(c);
   const { mode, setMode } = useThemeCtx();
-  const { recipes, receipts, pantry, unitSystem, setUnitSystem, showToast } = useApp();
+  const { recipes, receipts, pantry, unitSystem, setUnitSystem, showToast, mealReminders, setMealReminders } = useApp();
+
+  const onToggleReminders = async (value: boolean) => {
+    if (value) {
+      const ok = await ensureNotificationPermission();
+      if (!ok) {
+        showToast(t('reminder.denied'));
+        return;
+      }
+    }
+    setMealReminders({ enabled: value });
+  };
   const { user, signOut } = useAuth();
   const { isPremium, managementURL } = usePremium();
   const insets = useSafeAreaInsets();
@@ -188,6 +206,41 @@ export function ProfileScreen() {
         })}
       </View>
 
+      <Text style={styles.section}>{t('profile.reminders')}</Text>
+      <View style={styles.group}>
+        <View style={styles.reminderRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.reminderLabel}>{t('profile.reminders')}</Text>
+            <Text style={styles.reminderSub}>{t('profile.remindersSub')}</Text>
+          </View>
+          <Switch
+            value={mealReminders.enabled}
+            onValueChange={onToggleReminders}
+            trackColor={{ true: c.accent, false: c.border }}
+            thumbColor="#fff"
+          />
+        </View>
+      </View>
+      {mealReminders.enabled && (
+        <>
+          <Text style={styles.section}>{t('profile.reminderLead')}</Text>
+          <View style={styles.segment}>
+            {LEAD_OPTIONS.map((opt) => {
+              const on = mealReminders.lead === opt.value;
+              return (
+                <Pressable
+                  key={opt.value}
+                  style={[styles.segmentBtn, on && styles.segmentBtnOn]}
+                  onPress={() => setMealReminders({ lead: opt.value })}
+                >
+                  <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{t(opt.labelKey)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      )}
+
       <Text style={styles.section}>{t('profile.data')}</Text>
       <View style={styles.group}>
         <Row icon="barcode" labelKey="profile.myPantry" right={String(pantry?.length ?? 0)} onPress={() => navigation.navigate('Pantry')} />
@@ -288,6 +341,9 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     padding: 4,
     marginBottom: 24,
   },
+  reminderRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 12 },
+  reminderLabel: { fontSize: 15, fontWeight: '700', color: c.ink },
+  reminderSub: { fontSize: 12.5, fontWeight: '500', color: c.grayMid, marginTop: 2 },
   segmentBtn: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
   segmentBtnOn: { backgroundColor: c.accent },
   segmentText: { fontSize: 14, fontWeight: '700', color: c.grayMid },

@@ -123,6 +123,12 @@ export interface AppState {
   pantry: PantryItem[];
   unitSystem: UnitSystem;
   credits: number; // free recipe-import credits remaining
+  mealReminders: MealReminderSettings;
+}
+
+export interface MealReminderSettings {
+  enabled: boolean;
+  lead: number; // minutes before the meal's slot time to notify
 }
 
 export interface CookbookCover {

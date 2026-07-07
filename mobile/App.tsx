@@ -34,6 +34,7 @@ import { AIConsentScreen } from './src/screens/AIConsentScreen';
 import { ProcessingScreen } from './src/screens/ProcessingScreen';
 import { RecipeDetailScreen } from './src/screens/RecipeDetailScreen';
 import { CookingModeScreen } from './src/screens/CookingModeScreen';
+import { MealReminderSync } from './src/components/MealReminderSync';
 import { ReviewImportScreen } from './src/screens/ReviewImportScreen';
 import { EditRecipeScreen } from './src/screens/EditRecipeScreen';
 import { ReceiptsScreen } from './src/screens/ReceiptsScreen';
@@ -239,6 +240,7 @@ function Gate() {
 
   return (
     <AppProvider userId={user.id}>
+      <MealReminderSync />
       <NavigationContainer ref={navigationRef}>
         <RootNavigator />
         <ShareIntentHandler />
