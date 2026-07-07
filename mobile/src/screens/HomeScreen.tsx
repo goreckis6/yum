@@ -18,6 +18,8 @@ import { ActionSheet, PromptModal, SheetOption } from '../components/ActionSheet
 import { DAYS } from '../data/seed';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { usePremium } from '../context/PremiumContext';
+import { PREMIUM_UNLIMITED } from '../config/credits';
 import { uploadImageIfLocal } from '../lib/storage';
 import { useTabNav } from '../navigation/TabContext';
 import { ThemeColors } from '../theme/colors';
@@ -74,8 +76,11 @@ export function HomeScreen() {
     customCookbooks,
     createCookbook,
     deleteCookbook,
+    credits,
   } = useApp();
   const { user } = useAuth();
+  const { isPremium } = usePremium();
+  const unlimited = PREMIUM_UNLIMITED && isPremium;
   const userId = user?.id;
   const [homeTab, setHomeTab] = useState<HomeTab>('organize');
   const [search, setSearch] = useState('');
@@ -662,6 +667,16 @@ export function HomeScreen() {
           <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
           <Text style={styles.brandName}>YumiShare</Text>
         </View>
+        <Pressable
+          style={[styles.creditsPill, unlimited && styles.creditsPillPro]}
+          onPress={() => navigation.navigate('Paywall')}
+          hitSlop={8}
+        >
+          <Icon name="flame" size={14} color={unlimited ? c.accent : c.gold} fill />
+          <Text style={[styles.creditsText, unlimited && styles.creditsTextPro]}>
+            {unlimited ? t('credits.pro') : t('credits.left', { n: credits })}
+          </Text>
+        </Pressable>
       </View>
 
       {renderOrganize()}
@@ -717,6 +732,14 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   logo: { width: 44, height: 44 },
   logoIcon: { color: '#fff', fontSize: 16 },
   brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: c.ink, letterSpacing: -0.5 },
+  creditsPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: c.warning, borderRadius: 999,
+    paddingVertical: 7, paddingHorizontal: 13,
+  },
+  creditsPillPro: { backgroundColor: c.accentSoft },
+  creditsText: { fontSize: 13, fontWeight: '800', color: c.warningText },
+  creditsTextPro: { color: c.accent },
   syncBadge: {
     flexDirection: 'row',
     alignItems: 'center',

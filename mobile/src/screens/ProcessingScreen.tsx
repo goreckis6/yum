@@ -10,6 +10,9 @@ import { Recipe } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
 import { COVER_PRESETS } from '../components/CoverArt';
+import { useApp } from '../context/AppContext';
+import { usePremium } from '../context/PremiumContext';
+import { PREMIUM_UNLIMITED } from '../config/credits';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
 
@@ -39,6 +42,9 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isNetErr, setIsNetErr] = useState(false);
+  const { credits, setCredits } = useApp();
+  const { isPremium } = usePremium();
+  const unlimited = PREMIUM_UNLIMITED && isPremium;
 
   const isImageMode = 'imageBase64' in route.params;
   const URL_MESSAGES = [
@@ -52,6 +58,12 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const MESSAGES = isImageMode ? IMAGE_MESSAGES : URL_MESSAGES;
 
   useEffect(() => {
+    // Out of free imports → don't spend an API call, send them to the paywall.
+    if (!unlimited && credits <= 0) {
+      navigation.replace('Paywall');
+      return;
+    }
+
     const interval = setInterval(() => {
       setMsgIndex((i) => (i + 1) % MESSAGES.length);
     }, 700);
@@ -64,8 +76,9 @@ export function ProcessingScreen({ navigation, route }: Props) {
       : extractRecipeFromUrl((route.params as { url: string }).url);
 
     work
-      .then(({ recipe }) => {
+      .then((res) => {
         clearInterval(interval);
+        const recipe = res.recipe;
         // Guard against "not a recipe" results: the extractor (or the AI) can
         // return an empty shell when the link/photo has no real recipe in it —
         // e.g. a photo of a person, a landscape, or an unrelated screenshot.
@@ -77,14 +90,22 @@ export function ProcessingScreen({ navigation, route }: Props) {
           setError('notfound');
           return;
         }
+        // The server already spent the credit for a real recipe — mirror its
+        // authoritative balance (null = premium/unlimited, leave as-is).
+        if (typeof res.credits === 'number') setCredits(res.credits);
         const draft: Recipe = {
           ...recipe,
           id: `imp${Date.now()}`,
         };
         navigation.replace('ReviewImport', { draft });
       })
-      .catch((err: Error) => {
+      .catch((err: Error & { code?: string }) => {
         clearInterval(interval);
+        if (err?.code === 'no_credits') {
+          setCredits(0);
+          navigation.replace('Paywall');
+          return;
+        }
         const m = err?.message || '';
         const net = /reach the server|timed out|network request failed|connection|network/i.test(m);
         setIsNetErr(net);

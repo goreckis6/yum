@@ -122,6 +122,7 @@ export interface AppState {
   receipts: Receipt[];
   pantry: PantryItem[];
   unitSystem: UnitSystem;
+  credits: number; // free recipe-import credits remaining
 }
 
 export interface CookbookCover {

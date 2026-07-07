@@ -22,9 +22,10 @@ const ENTITLEMENT = 'YumiSharev1';
 // is true ONLY inside Expo Go; a dev/standalone build reports null.
 const IS_EXPO_GO = Constants.appOwnership === 'expo';
 
-// Unlock everything locally when we can't talk to RevenueCat — either we're in
-// Expo Go (no native module) or no API key is set yet. The backend has its own
-// PREMIUM_ENFORCEMENT flag that guards the paid endpoints.
+// When we can't talk to RevenueCat — Expo Go (no native module) or no API key —
+// treat the user as a FREE account (not premium). The app is freemium: everyone
+// gets free import credits and the paywall / 3-day trial is the upsell, so
+// there's nothing to "unlock" locally. Backend has its own PREMIUM_ENFORCEMENT.
 const BYPASS = IS_EXPO_GO || !RC_KEY;
 
 interface PurchaseResult {
@@ -49,7 +50,8 @@ let configured = false;
 
 export function PremiumProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [isPremium, setIsPremium] = useState(BYPASS);
+  // Default to FREE (not premium); only a live RevenueCat entitlement flips this.
+  const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(!BYPASS);
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [managementURL, setManagementURL] = useState<string | null>(null);
@@ -61,7 +63,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     if (BYPASS) {
-      setIsPremium(true);
+      setIsPremium(false); // free account in dev / Expo Go
       setIsLoading(false);
       return;
     }

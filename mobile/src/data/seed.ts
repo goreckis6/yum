@@ -1,4 +1,5 @@
 import { ALL_SLOTS, AppState, DayKey } from '../types';
+import { FREE_IMPORT_CREDITS } from '../config/credits';
 export { ALL_SLOTS as SLOTS };
 
 export const DAYS: { day: DayKey; date: number }[] = [
@@ -33,6 +34,7 @@ export const AISLE_DOT: Record<string, string> = {
 export const SEED_STATE: AppState = {
   hasOnboarded: true,
   unitSystem: 'metric',
+  credits: FREE_IMPORT_CREDITS,
   made: {},
   madeHistory: {},
   ingChecked: {},

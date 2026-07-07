@@ -37,7 +37,7 @@ function planMeta(pkg: PurchasesPackage): { label: string; badge?: string; order
   }
 }
 
-export function PaywallScreen() {
+export function PaywallScreen({ onClose }: { onClose?: () => void } = {}) {
   const c = useTheme();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
@@ -89,6 +89,11 @@ export function PaywallScreen() {
       ]}
       showsVerticalScrollIndicator={false}
     >
+      {onClose && (
+        <Pressable style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose} hitSlop={10}>
+          <Text style={styles.closeIcon}>✕</Text>
+        </Pressable>
+      )}
       <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.brand}>YumiShare Premium</Text>
       <View style={styles.trialBadge}>
@@ -173,6 +178,12 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1 },
     inner: { paddingHorizontal: 24, alignItems: 'center' },
+    closeBtn: {
+      position: 'absolute', right: 18, zIndex: 10,
+      width: 34, height: 34, borderRadius: 17,
+      backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center',
+    },
+    closeIcon: { fontSize: 15, color: c.grayLight, fontWeight: '700' },
 
     logo: { width: 64, height: 64, marginBottom: 12 },
     brand: {

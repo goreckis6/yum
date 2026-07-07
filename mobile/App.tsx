@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/lib/supabase';
-import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, useNavigation } from '@react-navigation/native';
 import { useShareIntent } from 'expo-share-intent';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
@@ -79,6 +79,13 @@ function ShareIntentHandler() {
   return null;
 }
 
+// Paywall shown as a dismissable upsell (distinct from the hard subscription
+// gate in Gate) — reached from the credits pill or when free imports run out.
+function PaywallRoute() {
+  const navigation = useNavigation();
+  return <PaywallScreen onClose={() => navigation.goBack()} />;
+}
+
 function RootNavigator() {
   const { ready, toast } = useApp();
   const c = useTheme();
@@ -100,6 +107,7 @@ function RootNavigator() {
         <Stack.Screen name="Main" component={MainNavigator} />
         <Stack.Screen name="RecipeDetail" component={RecipeDetailScreen} />
         <Stack.Screen name="CookingMode" component={CookingModeScreen} />
+        <Stack.Screen name="Paywall" component={PaywallRoute} options={{ presentation: 'modal' }} />
         <Stack.Screen name="ImportUrl" component={ImportUrlScreen} />
         <Stack.Screen name="ScanRecipe" component={ScanRecipeScreen} />
         <Stack.Screen name="Processing" component={ProcessingScreen} />
@@ -179,7 +187,7 @@ const AI_CONSENT_KEY = 'ai_consent_v1';
 
 function Gate() {
   const { session, user, initializing } = useAuth();
-  const { isPremium, isLoading: premiumLoading } = usePremium();
+  const { isLoading: premiumLoading } = usePremium();
   const c = useTheme();
   const [showAuth, setShowAuth] = React.useState(false);
   // null = still loading the stored flag, false = must consent, true = consented.
@@ -225,10 +233,9 @@ function Gate() {
     );
   }
 
-  // Everything is behind the subscription — gate the whole app.
-  if (!isPremium) {
-    return <PaywallScreen />;
-  }
+  // Freemium: everyone gets in and receives free import credits. The paywall
+  // (3-day trial → subscription) is shown as an upsell when credits run out or
+  // from the credits pill — not as a hard wall in front of the whole app.
 
   return (
     <AppProvider userId={user.id}>

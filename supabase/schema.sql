@@ -61,3 +61,70 @@ create table if not exists public.apple_tokens (
 
 alter table public.apple_tokens enable row level security;
 -- No policies → RLS denies all anon/authenticated access; service role bypasses.
+
+-- 4) Freemium import credits — every account starts with FREE_IMPORT_CREDITS
+-- (10) free recipe extractions. Enforced server-side so it can't be bypassed by
+-- a modified client. Only the service role (backend) touches this table.
+create table if not exists public.user_credits (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  credits int not null default 10,
+  updated_at timestamptz not null default now()
+);
+
+alter table public.user_credits enable row level security;
+-- No policies → RLS denies all anon/authenticated access; service role bypasses.
+
+-- Ensure a row exists and return the current balance.
+create or replace function public.get_import_credits(p_user uuid)
+returns int language plpgsql security definer as $$
+declare remaining int;
+begin
+  insert into public.user_credits (user_id) values (p_user)
+    on conflict (user_id) do nothing;
+  select credits into remaining from public.user_credits where user_id = p_user;
+  return coalesce(remaining, 0);
+end $$;
+
+-- Atomically spend one credit (never below 0) and return the new balance.
+-- Atomic so parallel requests can't over-spend a single credit.
+create or replace function public.spend_import_credit(p_user uuid)
+returns int language plpgsql security definer as $$
+declare remaining int;
+begin
+  insert into public.user_credits (user_id) values (p_user)
+    on conflict (user_id) do nothing;
+  update public.user_credits
+    set credits = credits - 1, updated_at = now()
+    where user_id = p_user and credits > 0
+    returning credits into remaining;
+  if remaining is null then
+    select credits into remaining from public.user_credits where user_id = p_user;
+  end if;
+  return coalesce(remaining, 0);
+end $$;
+
+-- 5) Per-user daily API usage — a durable fair-use cap (survives deploys and
+-- works across instances, unlike an in-memory counter). Premium users are
+-- "unlimited" for total imports but still capped per day to stop abuse/scripts.
+create table if not exists public.api_usage (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day date not null,
+  count int not null default 0,
+  primary key (user_id, day)
+);
+
+alter table public.api_usage enable row level security;
+-- No policies → only the service role (backend) can read/write.
+
+-- Atomically record one more call for today and return the new daily count.
+create or replace function public.bump_api_usage(p_user uuid)
+returns int language plpgsql security definer as $$
+declare c int;
+begin
+  insert into public.api_usage (user_id, day, count)
+    values (p_user, current_date, 1)
+    on conflict (user_id, day)
+    do update set count = public.api_usage.count + 1
+    returning count into c;
+  return c;
+end $$;

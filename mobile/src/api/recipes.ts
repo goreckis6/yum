@@ -33,15 +33,32 @@ async function postJson(path: string, body: unknown, timeoutMs = 60000) {
   }
 }
 
-export async function extractRecipeFromUrl(url: string): Promise<{ recipe: ExtractedRecipe; demo: boolean }> {
+// Extraction responses also carry the caller's remaining import credits (null
+// when premium/unlimited) so the client can keep its counter in sync.
+interface ExtractResult {
+  recipe: ExtractedRecipe;
+  demo: boolean;
+  credits?: number | null;
+  premium?: boolean;
+}
+
+export async function extractRecipeFromUrl(url: string): Promise<ExtractResult> {
   return postJson('/api/extract-recipe', { url });
 }
 
 export async function extractRecipeFromImage(
   imageBase64: string,
   mimeType: string,
-): Promise<{ recipe: ExtractedRecipe; demo: boolean }> {
+): Promise<ExtractResult> {
   return postJson('/api/extract-recipe-image', { imageBase64, mimeType });
+}
+
+// Current import-credit balance (credits null when premium/unlimited).
+export async function fetchCredits(): Promise<{ credits: number | null; premium: boolean }> {
+  const base = getApiBaseUrl();
+  const res = await fetch(`${base}/api/credits`, { headers: { ...(await authHeader()) } });
+  if (!res.ok) throw new Error('Could not load credits');
+  return res.json();
 }
 
 export async function enrichRecipe(recipe: ExtractedRecipe): Promise<{ recipe: ExtractedRecipe }> {

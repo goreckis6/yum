@@ -2,6 +2,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { sumAmounts } from '../utils/amounts';
 import { SEED_STATE } from '../data/seed';
 import { loadState, saveState } from '../storage/persist';
+import { fetchCredits } from '../api/recipes';
 import {
   Aisle,
   AppState,
@@ -64,6 +65,9 @@ interface AppContextValue extends AppState {
   removePantryItem: (id: string) => void;
   getPantryItem: (id: string) => PantryItem | undefined;
   setUnitSystem: (u: UnitSystem) => void;
+  spendCredit: () => void;
+  grantCredits: (n: number) => void;
+  setCredits: (n: number) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -93,6 +97,19 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     const t = setTimeout(() => saveState(userId, state), 600);
     return () => clearTimeout(t);
   }, [state, ready, userId]);
+
+  // Sync import credits from the server (source of truth). null = premium.
+  useEffect(() => {
+    let active = true;
+    fetchCredits()
+      .then(({ credits }) => {
+        if (active && typeof credits === 'number') setState((s) => ({ ...s, credits }));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [userId]);
 
   const showToast = useCallback((message: string) => {
     setToast({ visible: true, message });
@@ -425,6 +442,22 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, unitSystem: u }));
   }, []);
 
+  // Spend one import credit (floored at 0). Called only on a SUCCESSFUL recipe
+  // extraction — a "no recipe found" fallback must not call this.
+  const spendCredit = useCallback(() => {
+    setState((s) => ({ ...s, credits: Math.max(0, (s.credits ?? 0) - 1) }));
+  }, []);
+
+  const grantCredits = useCallback((n: number) => {
+    setState((s) => ({ ...s, credits: Math.max(0, (s.credits ?? 0) + n) }));
+  }, []);
+
+  // Set the balance to the server's authoritative value (credits are enforced
+  // server-side; the client just mirrors what the backend returns).
+  const setCredits = useCallback((n: number) => {
+    setState((s) => ({ ...s, credits: Math.max(0, n) }));
+  }, []);
+
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -480,6 +513,9 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       removePantryItem,
       getPantryItem,
       setUnitSystem,
+      spendCredit,
+      grantCredits,
+      setCredits,
     }),
     [
       state,
@@ -521,6 +557,9 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       removePantryItem,
       getPantryItem,
       setUnitSystem,
+      spendCredit,
+      grantCredits,
+      setCredits,
     ],
   );
 

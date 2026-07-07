@@ -11,6 +11,11 @@ export async function authHeader(): Promise<Record<string, string>> {
 // Turn the backend's auth/subscription/rate-limit responses into friendly,
 // user-facing errors.
 export function mapApiError(status: number, body: { error?: string; limit?: number }): Error {
+  if (status === 402 || body?.error === 'no_credits') {
+    const e = new Error('no_credits');
+    (e as Error & { code?: string }).code = 'no_credits';
+    return e;
+  }
   if (status === 401) return new Error('Please sign in again.');
   if (status === 403 && body?.error === 'premium_required') {
     return new Error('Your subscription is no longer active. Subscribe to use AI features.');

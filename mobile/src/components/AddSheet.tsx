@@ -20,6 +20,9 @@ import { Icon } from './Icon';
 import { useI18n } from '../i18n/I18nContext';
 import { extractRecipeFromUrl } from '../api/recipes';
 import { Recipe } from '../types';
+import { useApp } from '../context/AppContext';
+import { usePremium } from '../context/PremiumContext';
+import { PREMIUM_UNLIMITED } from '../config/credits';
 
 type Step = 'menu' | 'link' | 'loading';
 
@@ -31,12 +34,16 @@ interface Props {
   onScanReceipt: () => void;
   onRecipeReady: (draft: Recipe) => void;
   onManualRecipe: () => void;
+  onOutOfCredits: () => void;
 }
 
-export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceipt, onRecipeReady, onManualRecipe }: Props) {
+export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceipt, onRecipeReady, onManualRecipe, onOutOfCredits }: Props) {
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
+  const { credits, setCredits } = useApp();
+  const { isPremium } = usePremium();
+  const unlimited = PREMIUM_UNLIMITED && isPremium;
 
   const loadingMsgs = [
     t('processing.url1'), t('processing.url2'), t('processing.url3'),
@@ -91,10 +98,17 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const submit = async (finalUrl?: string) => {
     const u = (finalUrl ?? url).trim() || clipUrl || '';
     if (!u) return;
+    // Out of free imports → close and show the paywall upsell.
+    if (!unlimited && credits <= 0) {
+      onClose();
+      onOutOfCredits();
+      return;
+    }
     Keyboard.dismiss();
     crossFade(() => { setStep('loading'); setError(null); });
     try {
-      const { recipe } = await extractRecipeFromUrl(u);
+      const res = await extractRecipeFromUrl(u);
+      const recipe = res.recipe;
       // Guard against "not a recipe" links (random videos, unrelated pages):
       // the extractor returns an empty shell — show a helpful hint instead of a
       // blank draft.
@@ -105,10 +119,18 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
         crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); });
         return;
       }
+      // Server already spent the credit for a real recipe — mirror its balance.
+      if (typeof res.credits === 'number') setCredits(res.credits);
       const draft: Recipe = { ...recipe, id: `imp${Date.now()}` };
       onClose();
       onRecipeReady(draft);
     } catch (err: any) {
+      if (err?.code === 'no_credits') {
+        setCredits(0);
+        onClose();
+        onOutOfCredits();
+        return;
+      }
       crossFade(() => { setStep('link'); setError(err?.message ?? t('addSheet.linkError')); });
     }
   };

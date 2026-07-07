@@ -126,6 +126,9 @@ const RC_SECRET_KEY = process.env.RC_SECRET_KEY;
 // Store / Play products exist. Set to 'on' once subscriptions go live.
 const PREMIUM_ENFORCEMENT = process.env.PREMIUM_ENFORCEMENT || 'off';
 const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 30;
+// Fair-use daily cap for premium ("unlimited") users so nobody can script the
+// API. A heavy real user won't reach it; a scraper will.
+const PREMIUM_DAILY_LIMIT = Number(process.env.PREMIUM_DAILY_LIMIT) || 60;
 // Must match the entitlement identifier in RevenueCat (and the mobile app)
 // EXACTLY, including capitalisation and spaces.
 const RC_ENTITLEMENT = process.env.RC_ENTITLEMENT || 'YumiSharev1';
@@ -197,6 +200,98 @@ function rateLimit(req, res, next) {
 
 // Convenience: the full guard chain for AI endpoints.
 const aiGuard = [requireAuth, requirePremium, rateLimit];
+
+// ── Freemium import credits ────────────────────────────────────────────────
+// Enforced here (server-side) so a modified client can't mint free extractions.
+// Premium subscribers are unlimited; everyone else spends one credit per
+// successful extraction. A "not a recipe" fallback never costs a credit.
+
+// Is this user an active RevenueCat subscriber? Reuses the premium cache. When
+// RC isn't configured we can't verify, so we treat them as a free account
+// (they still get their free credits).
+async function isPremiumUser(userId) {
+  if (!RC_SECRET_KEY) return false;
+  const cached = premiumCache.get(userId);
+  if (cached && cached.expires > Date.now()) return cached.active;
+  try {
+    const r = await fetch(`https://api.revenuecat.com/v1/subscribers/${userId}`, {
+      headers: { Authorization: `Bearer ${RC_SECRET_KEY}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await r.json();
+    const ent = data?.subscriber?.entitlements?.[RC_ENTITLEMENT];
+    const active = !!ent && (!ent.expires_date || new Date(ent.expires_date) > new Date());
+    premiumCache.set(userId, { active, expires: Date.now() + PREMIUM_TTL_MS });
+    return active;
+  } catch (err) {
+    console.error('isPremiumUser error:', err);
+    return false;
+  }
+}
+
+// Returns the current balance (creating a 10-credit row on first use), or null
+// if the DB / credits function isn't available — in which case we don't enforce.
+async function getUserCredits(userId) {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.rpc('get_import_credits', { p_user: userId });
+  if (error) {
+    console.error('getUserCredits error:', error.message);
+    return null;
+  }
+  return data == null ? null : Number(data);
+}
+
+// Atomically spend one credit; returns the new balance (or null if unavailable).
+async function spendUserCredit(userId) {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.rpc('spend_import_credit', { p_user: userId });
+  if (error) {
+    console.error('spendUserCredit error:', error.message);
+    return null;
+  }
+  return data == null ? null : Number(data);
+}
+
+// Record one more call today and return the new daily count (null if the DB /
+// function isn't available, in which case we don't enforce the daily cap).
+async function bumpDailyUsage(userId) {
+  if (!supabaseAdmin) return null;
+  const { data, error } = await supabaseAdmin.rpc('bump_api_usage', { p_user: userId });
+  if (error) {
+    console.error('bumpDailyUsage error:', error.message);
+    return null;
+  }
+  return data == null ? null : Number(data);
+}
+
+// A "not a recipe" result — must not cost a credit.
+function isEmptyRecipe(r) {
+  const noTitle = !r?.title || !String(r.title).trim();
+  const noContent = (r?.ingredients?.length ?? 0) === 0 && (r?.steps?.length ?? 0) === 0;
+  return noTitle || noContent;
+}
+
+// Guard used at the START of an extraction: 402 when a free user is out of
+// credits. Returns { premium, credits } to thread through to the spend step.
+async function checkImportCredits(req, res) {
+  const userId = req.user.id;
+  const premium = await isPremiumUser(userId);
+  if (premium) {
+    // "Unlimited" total, but a durable daily fair-use cap blocks abuse/scripts.
+    const usedToday = await bumpDailyUsage(userId);
+    if (usedToday !== null && usedToday > PREMIUM_DAILY_LIMIT) {
+      res.status(429).json({ error: 'rate_limited', limit: PREMIUM_DAILY_LIMIT });
+      return { ok: false };
+    }
+    return { ok: true, premium: true, credits: null, userId };
+  }
+  const credits = await getUserCredits(userId);
+  if (credits !== null && credits <= 0) {
+    res.status(402).json({ error: 'no_credits', credits: 0, premium: false });
+    return { ok: false };
+  }
+  return { ok: true, premium: false, credits, userId };
+}
 
 const RECIPE_SCHEMA = `{
   "title": "string",
@@ -640,6 +735,14 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Current import-credit balance for the signed-in user (the app shows this in
+// the header pill). premium === true means unlimited (credits is null).
+app.get('/api/credits', requireAuth, async (req, res) => {
+  const premium = await isPremiumUser(req.user.id);
+  const credits = premium ? null : await getUserCredits(req.user.id);
+  res.json({ credits, premium });
+});
+
 app.post('/api/extract-recipe', ...aiGuard, async (req, res) => {
   try {
     const { url } = req.body;
@@ -663,6 +766,10 @@ app.post('/api/extract-recipe', ...aiGuard, async (req, res) => {
       return res.json({ recipe: buildMockRecipe(url), demo: true });
     }
 
+    // Freemium gate: block (402) if a free user is out of credits.
+    const gate = await checkImportCredits(req, res);
+    if (!gate.ok) return;
+
     let pageContent;
     try {
       pageContent = await fetchPageText(url);
@@ -675,7 +782,12 @@ app.post('/api/extract-recipe', ...aiGuard, async (req, res) => {
     }
 
     const recipe = await extractWithOpenAI(url, pageContent);
-    res.json({ recipe, demo: false });
+    // Spend a credit only for a real recipe (a "not a recipe" result is free).
+    let credits = gate.credits;
+    if (!gate.premium && gate.credits !== null && !isEmptyRecipe(recipe)) {
+      credits = await spendUserCredit(gate.userId);
+    }
+    res.json({ recipe, demo: false, credits, premium: gate.premium });
   } catch (err) {
     console.error('extract-recipe error:', err);
     res.status(500).json({
@@ -695,6 +807,10 @@ app.post('/api/extract-recipe-image', ...aiGuard, async (req, res) => {
       await new Promise((r) => setTimeout(r, 1200));
       return res.json({ recipe: buildMockRecipe('scan://photo'), demo: true });
     }
+
+    // Freemium gate: block (402) if a free user is out of credits.
+    const gate = await checkImportCredits(req, res);
+    if (!gate.ok) return;
 
     const completion = await aiChat({
       model: 'gpt-5.4-mini',
@@ -728,16 +844,19 @@ app.post('/api/extract-recipe-image', ...aiGuard, async (req, res) => {
     if (!raw) throw new Error('Empty response from OpenAI');
 
     const parsed = JSON.parse(raw);
-    res.json({
-      recipe: {
-        ...parsed,
-        tint: '#E5E5E3',
-        sourceTint: '#161616',
-        app: parsed.app || 'Photo',
-        handle: parsed.handle || '@scan',
-      },
-      demo: false,
-    });
+    const recipe = {
+      ...parsed,
+      tint: '#E5E5E3',
+      sourceTint: '#161616',
+      app: parsed.app || 'Photo',
+      handle: parsed.handle || '@scan',
+    };
+    // Spend a credit only for a real recipe (a "not a recipe" result is free).
+    let credits = gate.credits;
+    if (!gate.premium && gate.credits !== null && !isEmptyRecipe(recipe)) {
+      credits = await spendUserCredit(gate.userId);
+    }
+    res.json({ recipe, demo: false, credits, premium: gate.premium });
   } catch (err) {
     console.error('extract-recipe-image error:', err);
     res.status(500).json({ error: err.message || 'Failed to extract recipe from image' });
