@@ -123,7 +123,7 @@ export function PromptModal({ visible, title, placeholder, confirmLabel = 'Creat
           />
           <Pressable
             style={[styles.confirm, !value.trim() && styles.confirmDisabled]}
-            onPress={submit}
+            onPressIn={submit}
           >
             <Text style={styles.confirmText}>{confirmLabel}</Text>
           </Pressable>
