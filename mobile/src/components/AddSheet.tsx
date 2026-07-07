@@ -7,7 +7,6 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -166,7 +165,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
 function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode, onScanReceipt }: any) {
   return (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.menuScroll}>
+    <>
       <Text style={styles.title}>{t('addSheet.title')}</Text>
       <Text style={styles.sectionLabel}>{t('addSheet.sectionRecipes')}</Text>
 
@@ -221,7 +220,7 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
         </View>
         <Text style={styles.chevronDark}>›</Text>
       </Pressable>
-    </ScrollView>
+    </>
   );
 }
 
@@ -312,8 +311,9 @@ const makeStyles = (c: ThemeColors) =>
       width: 42, height: 5, borderRadius: 3,
       backgroundColor: c.border, alignSelf: 'center', marginBottom: 16,
     },
-    content: { flex: 1 },
-    menuScroll: { paddingBottom: 8 },
+    // No flex here: the sheet grows to fit the current view's content (capped by
+    // the sheet's maxHeight), instead of being pinned to minHeight and clipping.
+    content: {},
     title: { fontFamily: fonts.display, fontSize: 22, color: c.ink, marginBottom: 14 },
     sectionLabel: {
       fontSize: 11, fontWeight: '700', color: c.grayMid,
@@ -397,7 +397,7 @@ const makeStyles = (c: ThemeColors) =>
     submitText: { color: '#fff', fontWeight: '700', fontSize: 15.5 },
 
     /* Loading step */
-    loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 36 },
+    loadingWrap: { minHeight: 280, alignItems: 'center', justifyContent: 'center', paddingVertical: 36 },
     loadingMsg: { fontFamily: fonts.display, fontSize: 19, color: c.ink, textAlign: 'center', marginBottom: 6 },
     loadingHint: { fontSize: 13, fontWeight: '500', color: c.grayMid },
   });
