@@ -1,52 +1,49 @@
 import * as Location from 'expo-location';
 
-// A general baseline (~2 L); nudged up in the heat. We don't have body weight,
-// so this is a friendly guideline, not medical advice.
+// Baseline when we don't know the user's weight (~2 L guideline).
 const BASE_ML = 2000;
 
-export interface WaterRecommendation {
-  recommendedMl: number;
+export interface CurrentTemp {
   tempC?: number;
   source: 'weather' | 'default';
 }
 
-function recommend(tempC?: number): number {
-  let ml = BASE_ML;
+// Suggested daily water intake. Personalised by body weight when known
+// (~33 ml/kg), otherwise a flat baseline; nudged up in the heat. This is a
+// friendly guideline, not medical advice.
+export function waterGoalMl(tempC?: number, weightKg?: number): number {
+  let ml = weightKg && weightKg > 0 ? weightKg * 33 : BASE_ML;
   if (typeof tempC === 'number' && tempC > 22) {
     ml += Math.min(tempC - 22, 20) * 40; // up to +800 ml in extreme heat
   }
   return Math.round(ml / 100) * 100;
 }
 
-// Cache the result for a while so we don't hit location/weather on every screen
-// mount (temperature barely moves within half an hour).
-let cache: { at: number; value: WaterRecommendation } | null = null;
+// Cache the weather read for a while (temperature barely moves within 30 min).
+let cache: { at: number; value: CurrentTemp } | null = null;
 const CACHE_TTL = 30 * 60 * 1000;
 
-// Uses the device location + Open-Meteo (free, no API key) to get the current
-// temperature and turn it into a suggested daily water intake. Falls back to a
-// plain baseline if location/weather is unavailable.
-export async function getWaterRecommendation(): Promise<WaterRecommendation> {
+// Device location + Open-Meteo (free, no API key) → current temperature.
+export async function getCurrentTemp(): Promise<CurrentTemp> {
   if (cache && Date.now() - cache.at < CACHE_TTL) return cache.value;
-  const result = await computeRecommendation();
-  // Only cache a real weather reading; keep retrying while we're on the fallback.
-  if (result.source === 'weather') cache = { at: Date.now(), value: result };
-  return result;
+  const value = await readTemp();
+  if (value.source === 'weather') cache = { at: Date.now(), value };
+  return value;
 }
 
-async function computeRecommendation(): Promise<WaterRecommendation> {
+async function readTemp(): Promise<CurrentTemp> {
   try {
     const perm = await Location.getForegroundPermissionsAsync();
     let granted = perm.granted;
     if (!granted && perm.canAskAgain) {
       granted = (await Location.requestForegroundPermissionsAsync()).granted;
     }
-    if (!granted) return { recommendedMl: recommend(), source: 'default' };
+    if (!granted) return { source: 'default' };
 
     const loc =
       (await Location.getLastKnownPositionAsync()) ??
       (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Low }));
-    if (!loc) return { recommendedMl: recommend(), source: 'default' };
+    if (!loc) return { source: 'default' };
 
     const { latitude, longitude } = loc.coords;
     const res = await fetch(
@@ -54,10 +51,9 @@ async function computeRecommendation(): Promise<WaterRecommendation> {
     );
     const data = await res.json();
     const tempC = data?.current?.temperature_2m;
-    if (typeof tempC !== 'number') return { recommendedMl: recommend(), source: 'default' };
-
-    return { recommendedMl: recommend(tempC), tempC, source: 'weather' };
+    if (typeof tempC !== 'number') return { source: 'default' };
+    return { tempC, source: 'weather' };
   } catch {
-    return { recommendedMl: recommend(), source: 'default' };
+    return { source: 'default' };
   }
 }

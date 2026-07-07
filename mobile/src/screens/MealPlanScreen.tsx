@@ -155,7 +155,7 @@ export function MealPlanScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
-    addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater,
+    addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater, weightKg, setWeight,
   } = useApp();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [addOpen, setAddOpen] = useState(false);
@@ -332,8 +332,13 @@ export function MealPlanScreen() {
           )}
         </View>
 
-        {/* Water tracker (weather-aware goal) */}
-        <WaterCard intakeMl={water?.[selectedDate] ?? 0} onAdd={(ml) => addWater(selectedDate, ml)} />
+        {/* Water tracker (weather- and weight-aware goal) */}
+        <WaterCard
+          intakeMl={water?.[selectedDate] ?? 0}
+          weightKg={weightKg ?? 0}
+          onAdd={(ml) => addWater(selectedDate, ml)}
+          onSetWeight={setWeight}
+        />
 
         {/* Slots */}
         {SLOTS.map((slot) => {

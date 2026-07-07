@@ -448,6 +448,9 @@ export const en = {
   'water.cup': 'Cup',
   'water.rec': "Today it's ~{temp}° — aim for {ml} ml",
   'water.recDefault': 'Aim for about {ml} ml today',
+  'water.setWeight': 'Set your weight for a personal goal',
+  'water.weightSet': 'Body weight: {kg} kg',
+  'water.weightPrompt': 'Your weight (kg)',
   'mealplan.noMeals': 'No meals planned yet — add one below.',
   'mealplan.addWeek': 'Add week to grocery list',
 
@@ -967,6 +970,9 @@ export const pl: Record<TKey, string> = {
   'water.cup': 'Kubek',
   'water.rec': 'Dziś jest ~{temp}° — zalecane {ml} ml',
   'water.recDefault': 'Dziś zalecane ok. {ml} ml',
+  'water.setWeight': 'Podaj wagę dla spersonalizowanego celu',
+  'water.weightSet': 'Masa ciała: {kg} kg',
+  'water.weightPrompt': 'Twoja waga (kg)',
   'mealplan.noMeals': 'Brak zaplanowanych posiłków — dodaj poniżej.',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
 

@@ -6,36 +6,40 @@ import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { Icon } from './Icon';
-import { getWaterRecommendation, WaterRecommendation } from '../lib/weather';
+import { PromptModal } from './ActionSheet';
+import { getCurrentTemp, waterGoalMl, CurrentTemp } from '../lib/weather';
 
 const CUP_ML = 200;
 
-// Daily water tracker: tap cups (200 ml each), with a weather-aware suggested
-// goal ("today it's 24° — aim for 2400 ml"). Intake is kept per date.
+// Daily water tracker: tap cups (200 ml each) toward a suggested goal that's
+// personalised by body weight (~33 ml/kg) and nudged up by the local weather.
 export function WaterCard({
   intakeMl,
+  weightKg,
   onAdd,
+  onSetWeight,
 }: {
   intakeMl: number;
+  weightKg: number;
   onAdd: (deltaMl: number) => void;
+  onSetWeight: (kg: number) => void;
 }) {
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
 
-  const [rec, setRec] = useState<WaterRecommendation | null>(null);
+  const [temp, setTemp] = useState<CurrentTemp | null>(null);
+  const [weightOpen, setWeightOpen] = useState(false);
   useEffect(() => {
     let active = true;
-    getWaterRecommendation().then((r) => { if (active) setRec(r); });
+    getCurrentTemp().then((r) => { if (active) setTemp(r); });
     return () => { active = false; };
   }, []);
 
-  const goal = rec?.recommendedMl ?? 2000;
+  const goal = waterGoalMl(temp?.tempC, weightKg);
   const goalCups = Math.max(6, Math.round(goal / CUP_ML));
   const cups = Math.round(intakeMl / CUP_ML);
   const pct = Math.min(100, Math.round((intakeMl / goal) * 100));
-
-  // Tap the Nth cup → set the count to N (tap the current last cup to undo it).
   const setCups = (n: number) => onAdd(n * CUP_ML - intakeMl);
 
   return (
@@ -71,14 +75,36 @@ export function WaterCard({
 
       <View style={styles.footer}>
         <Text style={styles.recText}>
-          {rec?.source === 'weather' && typeof rec.tempC === 'number'
-            ? t('water.rec' as TKey, { temp: Math.round(rec.tempC), ml: goal })
+          {temp?.source === 'weather' && typeof temp.tempC === 'number'
+            ? t('water.rec' as TKey, { temp: Math.round(temp.tempC), ml: goal })
             : t('water.recDefault' as TKey, { ml: goal })}
         </Text>
         <Pressable style={styles.addBtn} onPress={() => onAdd(CUP_ML)}>
           <Text style={styles.addText}>+ {t('water.cup' as TKey)}</Text>
         </Pressable>
       </View>
+
+      <Pressable style={styles.weightRow} onPress={() => setWeightOpen(true)} hitSlop={6}>
+        <Text style={styles.weightText}>
+          {weightKg > 0 ? t('water.weightSet' as TKey, { kg: weightKg }) : t('water.setWeight' as TKey)}
+        </Text>
+        <Text style={styles.weightEdit}>{t('common.change' as TKey)}</Text>
+      </Pressable>
+
+      <PromptModal
+        visible={weightOpen}
+        title={t('water.weightPrompt' as TKey)}
+        placeholder="kg"
+        confirmLabel={t('common.save' as TKey)}
+        keyboardType="number-pad"
+        initialValue={weightKg > 0 ? String(weightKg) : ''}
+        onCancel={() => setWeightOpen(false)}
+        onConfirm={(v) => {
+          const kg = parseInt(v.replace(',', '.'), 10);
+          if (!isNaN(kg)) onSetWeight(kg);
+          setWeightOpen(false);
+        }}
+      />
     </View>
   );
 }
@@ -101,4 +127,10 @@ const makeStyles = (c: ThemeColors) =>
     recText: { flex: 1, fontSize: 12.5, fontWeight: '600', color: c.grayLight, lineHeight: 17 },
     addBtn: { backgroundColor: c.accentSoft, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
     addText: { fontFamily: fonts.bodyBold, fontSize: 13, color: c.accent },
+    weightRow: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      borderTopWidth: 1, borderTopColor: c.border, marginTop: 14, paddingTop: 12,
+    },
+    weightText: { fontSize: 13, fontWeight: '600', color: c.grayMid },
+    weightEdit: { fontSize: 12.5, fontWeight: '700', color: c.accent },
   });

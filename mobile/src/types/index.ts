@@ -128,6 +128,7 @@ export interface AppState {
   credits: number; // free recipe-import credits remaining
   mealReminders: MealReminderSettings;
   water: Record<string, number>; // ml drunk, keyed by ISO date
+  weightKg: number; // body weight for a personal water goal (0 = not set)
 }
 
 export interface MealReminderSettings {

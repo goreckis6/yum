@@ -27,6 +27,7 @@ export const SEED_STATE: AppState = {
   credits: FREE_IMPORT_CREDITS,
   mealReminders: { enabled: false, lead: 60 },
   water: {},
+  weightKg: 0,
   made: {},
   madeHistory: {},
   ingChecked: {},

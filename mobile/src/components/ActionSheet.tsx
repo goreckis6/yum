@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -80,15 +80,18 @@ interface PromptModalProps {
   title: string;
   placeholder?: string;
   confirmLabel?: string;
+  keyboardType?: 'default' | 'number-pad' | 'decimal-pad';
+  initialValue?: string;
   onCancel: () => void;
   onConfirm: (value: string) => void;
 }
 
 // Text-input modal (replacement for the iOS-only Alert.prompt).
-export function PromptModal({ visible, title, placeholder, confirmLabel = 'Create', onCancel, onConfirm }: PromptModalProps) {
+export function PromptModal({ visible, title, placeholder, confirmLabel = 'Create', keyboardType, initialValue, onCancel, onConfirm }: PromptModalProps) {
   const c = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(initialValue ?? '');
+  useEffect(() => { if (visible) setValue(initialValue ?? ''); }, [visible, initialValue]);
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView
@@ -104,6 +107,7 @@ export function PromptModal({ visible, title, placeholder, confirmLabel = 'Creat
             placeholderTextColor={c.gray}
             value={value}
             onChangeText={setValue}
+            keyboardType={keyboardType}
             autoFocus
           />
           <Pressable
