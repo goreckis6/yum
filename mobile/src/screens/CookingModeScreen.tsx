@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
-  InteractionManager,
   Modal,
   Pressable,
   ScrollView,
@@ -37,6 +36,49 @@ interface RunningTimer {
   done: boolean;
 }
 
+// Owns the alarm audio. Mounted only once a timer is actually running, so
+// entering Cooking Mode stays instant (no audio decode on the screen's mount),
+// and the sound is preloaded well before the timer ends. Rings loudly (even on
+// silent mode) + pulses haptics while `active`, with a 60s safety cap.
+function AlarmController({ active }: { active: boolean }) {
+  const player = useAudioPlayer(require('../../assets/beep.wav'));
+
+  useEffect(() => {
+    setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    const ring = () => {
+      try {
+        player.loop = true;
+        player.volume = 1;
+        player.seekTo(0);
+        player.play();
+      } catch {}
+    };
+    ring();
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    // Retry shortly in case the asset wasn't loaded yet on the first play().
+    const kick = setTimeout(ring, 400);
+    const hap = setInterval(() => {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
+    }, 1400);
+    const stop = setTimeout(() => {
+      clearInterval(hap);
+      try { player.pause(); } catch {}
+    }, 60000);
+    return () => {
+      clearTimeout(kick);
+      clearInterval(hap);
+      clearTimeout(stop);
+      try { player.pause(); player.loop = false; } catch {}
+    };
+  }, [active, player]);
+
+  return null;
+}
+
 export function CookingModeScreen({ navigation, route }: Props) {
   useKeepAwake(); // screen never dims while cooking
   const c = useTheme();
@@ -59,17 +101,6 @@ export function CookingModeScreen({ navigation, route }: Props) {
   const [ingOpen, setIngOpen] = useState(false);
   const [timers, setTimers] = useState<RunningTimer[]>([]);
 
-  // Alarm sound — plays even while the phone is on silent (cooking alarm).
-  const player = useAudioPlayer(require('../../assets/beep.wav'));
-  // Defer audio-session setup until the open transition has finished so it
-  // doesn't compete with the navigation animation for the first frames.
-  useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setAudioModeAsync({ playsInSilentMode: true }).catch(() => {});
-    });
-    return () => task.cancel();
-  }, []);
-
   // Single 1s tick drives every running timer, marking each done as it hits 0.
   useEffect(() => {
     if (!timers.some((tm) => !tm.done)) return;
@@ -85,32 +116,8 @@ export function CookingModeScreen({ navigation, route }: Props) {
     return () => clearInterval(iv);
   }, [timers]);
 
-  // Alarm: while any timer is finished, ring like an alarm clock — loop the
-  // sound and pulse haptics until the user taps the timer to dismiss it (or a
-  // 60s safety cap). Stops automatically when the last done timer is dismissed.
+  // Any finished timer → the alarm (mounted below) rings until dismissed.
   const anyDone = timers.some((tm) => tm.done);
-  useEffect(() => {
-    if (!anyDone) return;
-    try {
-      player.loop = true;
-      player.volume = 1;
-      player.seekTo(0);
-      player.play();
-    } catch {}
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    const hap = setInterval(() => {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {});
-    }, 1500);
-    const stop = setTimeout(() => {
-      clearInterval(hap);
-      try { player.pause(); player.loop = false; } catch {}
-    }, 60000);
-    return () => {
-      clearInterval(hap);
-      clearTimeout(stop);
-      try { player.pause(); player.loop = false; } catch {}
-    };
-  }, [anyDone, player]);
 
   const startTimer = useCallback((seconds: number, label: string) => {
     Haptics.selectionAsync().catch(() => {});
@@ -175,6 +182,9 @@ export function CookingModeScreen({ navigation, route }: Props) {
       <View style={styles.progressTrack}>
         <View style={[styles.progressFill, { width: `${((index + 1) / steps.length) * 100}%` }]} />
       </View>
+
+      {/* Alarm audio — only exists while a timer is running (keeps entry fast). */}
+      {timers.length > 0 && <AlarmController active={anyDone} />}
 
       {/* Running timers banner (persists across step swipes) */}
       {timers.length > 0 && (
