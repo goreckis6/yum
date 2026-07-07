@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -92,6 +92,15 @@ export function PromptModal({ visible, title, placeholder, confirmLabel = 'Creat
   const styles = useMemo(() => makeStyles(c), [c]);
   const [value, setValue] = useState(initialValue ?? '');
   useEffect(() => { if (visible) setValue(initialValue ?? ''); }, [visible, initialValue]);
+
+  const submit = () => {
+    const v = value.trim();
+    if (!v) return;
+    Keyboard.dismiss();
+    setValue('');
+    onConfirm(v);
+  };
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <KeyboardAvoidingView
@@ -108,16 +117,13 @@ export function PromptModal({ visible, title, placeholder, confirmLabel = 'Creat
             value={value}
             onChangeText={setValue}
             keyboardType={keyboardType}
+            returnKeyType="done"
+            onSubmitEditing={submit}
             autoFocus
           />
           <Pressable
             style={[styles.confirm, !value.trim() && styles.confirmDisabled]}
-            onPress={() => {
-              const v = value.trim();
-              if (!v) return;
-              setValue('');
-              onConfirm(v);
-            }}
+            onPress={submit}
           >
             <Text style={styles.confirmText}>{confirmLabel}</Text>
           </Pressable>
