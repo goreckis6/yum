@@ -7,6 +7,7 @@ import {
   Modal,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -95,6 +96,16 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
     crossFade(() => { setStep('loading'); setError(null); });
     try {
       const { recipe } = await extractRecipeFromUrl(u);
+      // Guard against "not a recipe" links (random videos, unrelated pages):
+      // the extractor returns an empty shell — show a helpful hint instead of a
+      // blank draft.
+      const noTitle = !recipe?.title?.trim();
+      const noContent =
+        (recipe?.ingredients?.length ?? 0) === 0 && (recipe?.steps?.length ?? 0) === 0;
+      if (noTitle || noContent) {
+        crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); });
+        return;
+      }
       const draft: Recipe = { ...recipe, id: `imp${Date.now()}` };
       onClose();
       onRecipeReady(draft);
@@ -155,7 +166,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
 
 function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode, onScanReceipt }: any) {
   return (
-    <>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.menuScroll}>
       <Text style={styles.title}>{t('addSheet.title')}</Text>
       <Text style={styles.sectionLabel}>{t('addSheet.sectionRecipes')}</Text>
 
@@ -210,7 +221,7 @@ function MenuView({ styles, c, t, onLink, onScan, onManualRecipe, onScanBarcode,
         </View>
         <Text style={styles.chevronDark}>›</Text>
       </Pressable>
-    </>
+    </ScrollView>
   );
 }
 
@@ -302,6 +313,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.border, alignSelf: 'center', marginBottom: 16,
     },
     content: { flex: 1 },
+    menuScroll: { paddingBottom: 8 },
     title: { fontFamily: fonts.display, fontSize: 22, color: c.ink, marginBottom: 14 },
     sectionLabel: {
       fontSize: 11, fontWeight: '700', color: c.grayMid,
