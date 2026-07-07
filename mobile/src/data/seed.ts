@@ -28,6 +28,7 @@ export const SEED_STATE: AppState = {
   mealReminders: { enabled: false, lead: 60 },
   water: {},
   weightKg: 0,
+  mealPlanWidgetOrder: ['nutrition', 'water'],
   made: {},
   madeHistory: {},
   ingChecked: {},

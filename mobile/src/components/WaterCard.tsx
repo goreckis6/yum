@@ -46,7 +46,7 @@ export function WaterCard({
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleRow}>
-          <Icon name="droplet" size={18} color={c.accent} fill />
+          <Icon name="droplet" size={18} color={c.water} fill />
           <Text style={styles.title}>{t('water.title' as TKey)}</Text>
         </View>
         <Text style={styles.amount}>
@@ -67,7 +67,7 @@ export function WaterCard({
               hitSlop={4}
               onPress={() => setCups(filled && i === cups - 1 ? i : i + 1)}
             >
-              <Icon name="droplet" size={24} color={filled ? c.accent : c.border} fill={filled} />
+              <Icon name="droplet" size={24} color={filled ? c.water : c.border} fill={filled} />
             </Pressable>
           );
         })}
@@ -88,7 +88,7 @@ export function WaterCard({
         <Text style={styles.weightText}>
           {weightKg > 0 ? t('water.weightSet' as TKey, { kg: weightKg }) : t('water.setWeight' as TKey)}
         </Text>
-        <Text style={styles.weightEdit}>{t('common.change' as TKey)}</Text>
+        <Text style={[styles.weightEdit, { color: c.water }]}>{t('common.change' as TKey)}</Text>
       </Pressable>
 
       <PromptModal
@@ -118,15 +118,15 @@ const makeStyles = (c: ThemeColors) =>
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     title: { fontFamily: fonts.display, fontSize: 17, color: c.ink },
-    amount: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.accent },
+    amount: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.water },
     amountGoal: { fontFamily: fonts.body, fontSize: 13, color: c.grayMid, fontWeight: '600' },
     track: { height: 8, borderRadius: 5, backgroundColor: c.surfaceAlt, overflow: 'hidden' },
-    fill: { height: '100%', borderRadius: 5, backgroundColor: c.accent },
+    fill: { height: '100%', borderRadius: 5, backgroundColor: c.water },
     cupsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
     footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginTop: 14 },
     recText: { flex: 1, fontSize: 12.5, fontWeight: '600', color: c.grayLight, lineHeight: 17 },
-    addBtn: { backgroundColor: c.accentSoft, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
-    addText: { fontFamily: fonts.bodyBold, fontSize: 13, color: c.accent },
+    addBtn: { backgroundColor: c.waterSoft, borderRadius: 999, paddingVertical: 9, paddingHorizontal: 16 },
+    addText: { fontFamily: fonts.bodyBold, fontSize: 13, color: c.water },
     weightRow: {
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       borderTopWidth: 1, borderTopColor: c.border, marginTop: 14, paddingTop: 12,

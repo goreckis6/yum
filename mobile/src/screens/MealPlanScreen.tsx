@@ -8,6 +8,7 @@ import { useApp } from '../context/AppContext';
 import { MealAddSheet } from '../components/MealAddSheet';
 import { CalendarSheet } from '../components/CalendarSheet';
 import { WaterCard } from '../components/WaterCard';
+import { ReorderableSection } from '../components/ReorderableSection';
 import { addDaysISO, dayOfMonth, isTodayISO, rangeISO, todayISO, weekdayKey } from '../utils/dates';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -156,6 +157,7 @@ export function MealPlanScreen() {
   const {
     mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
     addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater, weightKg, setWeight,
+    mealPlanWidgetOrder, setMealPlanWidgetOrder,
   } = useApp();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [addOpen, setAddOpen] = useState(false);
@@ -245,6 +247,75 @@ export function MealPlanScreen() {
     { color: c.accent, label: t('recipe.fat'), val: dayF },
   ];
 
+  // Fall back to the default pair if the persisted order is missing/stale
+  // (e.g. it was saved before a widget existed).
+  const DEFAULT_WIDGETS = ['nutrition', 'water'];
+  const widgetOrder = mealPlanWidgetOrder?.length
+    ? DEFAULT_WIDGETS.filter((w) => mealPlanWidgetOrder.includes(w)).length === DEFAULT_WIDGETS.length
+      ? mealPlanWidgetOrder
+      : [...mealPlanWidgetOrder, ...DEFAULT_WIDGETS.filter((w) => !mealPlanWidgetOrder.includes(w))]
+    : DEFAULT_WIDGETS;
+
+  const moveWidget = (key: string, dir: -1 | 1) => {
+    const i = widgetOrder.indexOf(key);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= widgetOrder.length) return;
+    const next = [...widgetOrder];
+    [next[i], next[j]] = [next[j], next[i]];
+    setMealPlanWidgetOrder(next);
+  };
+
+  const renderWidget = (key: string) => {
+    if (key === 'nutrition') {
+      return (
+        <View style={styles.dayCard}>
+          <View style={styles.dayCardTop}>
+            <View style={{ flexShrink: 1 }}>
+              <Text style={styles.dayCardLabel}>{t('mealplan.dayNutrition')}</Text>
+              <Text style={styles.dayCardDay}>{dayLabel}</Text>
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={styles.dayCardKcal}>{dayKcal.toLocaleString()}</Text>
+              <Text style={styles.dayCardKcalUnit}>kcal</Text>
+            </View>
+          </View>
+
+          {macroCal > 0 ? (
+            <>
+              <View style={styles.splitBar}>
+                <View style={{ flex: pCal, backgroundColor: c.sage }} />
+                <View style={{ flex: cCal, backgroundColor: c.gold }} />
+                <View style={{ flex: fCal, backgroundColor: c.accent }} />
+              </View>
+              <View style={styles.legendRow}>
+                {macroLegend.map((m, i) => (
+                  <View key={i} style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: m.color }]} />
+                    <Text style={styles.legendVal}>{m.val}g</Text>
+                    <Text style={styles.legendLabel}>{m.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <Text style={styles.dayCardEmpty}>{t('mealplan.noMeals')}</Text>
+          )}
+        </View>
+      );
+    }
+    if (key === 'water') {
+      return (
+        <WaterCard
+          intakeMl={water?.[selectedDate] ?? 0}
+          weightKg={weightKg ?? 0}
+          onAdd={(ml) => addWater(selectedDate, ml)}
+          onSetWeight={setWeight}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <>
       <ScrollView
@@ -297,48 +368,19 @@ export function MealPlanScreen() {
           }}
         />
 
-        {/* Daily nutrition dashboard */}
-        <View style={styles.dayCard}>
-          <View style={styles.dayCardTop}>
-            <View style={{ flexShrink: 1 }}>
-              <Text style={styles.dayCardLabel}>{t('mealplan.dayNutrition')}</Text>
-              <Text style={styles.dayCardDay}>{dayLabel}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.dayCardKcal}>{dayKcal.toLocaleString()}</Text>
-              <Text style={styles.dayCardKcalUnit}>kcal</Text>
-            </View>
-          </View>
-
-          {macroCal > 0 ? (
-            <>
-              <View style={styles.splitBar}>
-                <View style={{ flex: pCal, backgroundColor: c.sage }} />
-                <View style={{ flex: cCal, backgroundColor: c.gold }} />
-                <View style={{ flex: fCal, backgroundColor: c.accent }} />
-              </View>
-              <View style={styles.legendRow}>
-                {macroLegend.map((m, i) => (
-                  <View key={i} style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: m.color }]} />
-                    <Text style={styles.legendVal}>{m.val}g</Text>
-                    <Text style={styles.legendLabel}>{m.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          ) : (
-            <Text style={styles.dayCardEmpty}>{t('mealplan.noMeals')}</Text>
-          )}
-        </View>
-
-        {/* Water tracker (weather- and weight-aware goal) */}
-        <WaterCard
-          intakeMl={water?.[selectedDate] ?? 0}
-          weightKg={weightKg ?? 0}
-          onAdd={(ml) => addWater(selectedDate, ml)}
-          onSetWeight={setWeight}
-        />
+        {/* Reorderable widgets: nutrition dashboard + water tracker, in whatever
+            order the user has picked (like rearranging home-screen widgets). */}
+        {widgetOrder.map((key, i) => (
+          <ReorderableSection
+            key={key}
+            isFirst={i === 0}
+            isLast={i === widgetOrder.length - 1}
+            onMoveUp={() => moveWidget(key, -1)}
+            onMoveDown={() => moveWidget(key, 1)}
+          >
+            {renderWidget(key)}
+          </ReorderableSection>
+        ))}
 
         {/* Slots */}
         {SLOTS.map((slot) => {

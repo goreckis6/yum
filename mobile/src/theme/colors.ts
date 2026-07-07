@@ -10,6 +10,8 @@ export interface ThemeColors {
   sage: string;
   sageSoft: string;
   gold: string;
+  water: string;
+  waterSoft: string;
   gray: string;
   grayMid: string;
   grayLight: string;
@@ -38,6 +40,8 @@ export const lightColors: ThemeColors = {
   sage: '#5E7150',
   sageSoft: '#E9EEE2',
   gold: '#D6982F',
+  water: '#2F86D6',
+  waterSoft: '#E2EFFB',
   gray: '#B6A993',
   grayMid: '#9C8F7C',
   grayLight: '#6F6356',
@@ -64,6 +68,8 @@ export const darkColors: ThemeColors = {
   sage: '#9DB488',
   sageSoft: '#20291B',
   gold: '#D6982F',
+  water: '#5CA8EA',
+  waterSoft: '#20303F',
   gray: '#A89C8A',
   grayMid: '#B0A491',
   grayLight: '#C6BCAD',

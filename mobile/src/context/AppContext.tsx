@@ -71,6 +71,7 @@ interface AppContextValue extends AppState {
   setMealReminders: (patch: Partial<AppState['mealReminders']>) => void;
   addWater: (date: string, deltaMl: number) => void;
   setWeight: (kg: number) => void;
+  setMealPlanWidgetOrder: (order: string[]) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -476,6 +477,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, weightKg: Math.max(0, Math.min(400, Math.round(kg))) }));
   }, []);
 
+  const setMealPlanWidgetOrder = useCallback((order: string[]) => {
+    setState((s) => ({ ...s, mealPlanWidgetOrder: order }));
+  }, []);
+
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -537,6 +542,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       setMealReminders,
       addWater,
       setWeight,
+      setMealPlanWidgetOrder,
     }),
     [
       state,
@@ -584,6 +590,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       setMealReminders,
       addWater,
       setWeight,
+      setMealPlanWidgetOrder,
     ],
   );
 

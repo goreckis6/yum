@@ -129,6 +129,7 @@ export interface AppState {
   mealReminders: MealReminderSettings;
   water: Record<string, number>; // ml drunk, keyed by ISO date
   weightKg: number; // body weight for a personal water goal (0 = not set)
+  mealPlanWidgetOrder: string[]; // order of reorderable widgets on the Meal Planner screen
 }
 
 export interface MealReminderSettings {

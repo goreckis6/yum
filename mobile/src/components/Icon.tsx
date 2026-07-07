@@ -18,6 +18,7 @@ export type IconName =
   | 'receipt'
   | 'chevron-left'
   | 'chevron-down'
+  | 'chevron-up'
   | 'mail'
   | 'document'
   | 'shield'
@@ -216,6 +217,8 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
       return <Polyline points="15 5 8 12 15 19" {...s} />;
     case 'chevron-down':
       return <Polyline points="6 9 12 15 18 9" {...s} />;
+    case 'chevron-up':
+      return <Polyline points="6 15 12 9 18 15" {...s} />;
     case 'mail':
       return (
         <>
