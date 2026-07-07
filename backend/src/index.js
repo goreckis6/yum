@@ -624,9 +624,14 @@ async function extractWithOpenAI(url, pageContent) {
   };
 }
 
+// Bump this whenever backend behaviour changes so a deploy can be verified live
+// via GET /health (tells old vs new code apart without guessing).
+const BUILD_MARKER = 'non-recipe-guard-1';
+
 app.get('/health', (_req, res) => {
   res.json({
     ok: true,
+    build: BUILD_MARKER,
     openai: !!openai,
     accountDeletion: !!supabaseAdmin,
     supabaseUrl: !!SUPABASE_URL,
