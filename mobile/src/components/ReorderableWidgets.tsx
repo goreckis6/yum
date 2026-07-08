@@ -37,10 +37,13 @@ export function ReorderableWidgets({
   const anims = useRef<Record<string, Animated.Value>>({}).current;
   const orderRef = useRef(order);
   orderRef.current = order;
-  // The Y the dragged item started at, captured fresh at touch-down — reading
-  // this back from the Animated.Value itself would be unreliable, since
-  // useNativeDriver springs update the value natively and can leave the JS
-  // side stale.
+  // Mirror measured heights in a ref: the per-item PanResponders are created
+  // once (memoized), so any `heights` they close over would otherwise stay
+  // frozen at the first render's value (empty). Reading the ref keeps their
+  // position maths correct — without it, touch-down computed the start Y from
+  // zero heights and the card snapped to the top.
+  const heightsRef = useRef<Record<string, number>>({});
+  // The Y the dragged item started at, captured fresh at touch-down.
   const dragStartY = useRef(0);
 
   const ensureAnim = (key: string) => {
@@ -48,10 +51,16 @@ export function ReorderableWidgets({
     return anims[key];
   };
 
+  const setHeight = (key: string, h: number) => {
+    if (heightsRef.current[key] === h) return;
+    heightsRef.current = { ...heightsRef.current, [key]: h };
+    setHeights(heightsRef.current);
+  };
+
   const targetY = (key: string, ord: string[]) => {
     const idx = ord.indexOf(key);
     let y = 0;
-    for (let i = 0; i < idx; i++) y += (heights[ord[i]] ?? 0) + gap;
+    for (let i = 0; i < idx; i++) y += (heightsRef.current[ord[i]] ?? 0) + gap;
     return y;
   };
 
@@ -89,13 +98,13 @@ export function ReorderableWidgets({
         const liveY = dragStartY.current + gesture.dy;
         anim.setValue(liveY);
 
-        const center = liveY + (heights[key] ?? 0) / 2;
+        const center = liveY + (heightsRef.current[key] ?? 0) / 2;
 
         const others = orderRef.current.filter((k) => k !== key);
         let acc = 0;
         let newIndex = others.length;
         for (let i = 0; i < others.length; i++) {
-          const h = heights[others[i]] ?? 0;
+          const h = heightsRef.current[others[i]] ?? 0;
           if (center < acc + h / 2 + gap / 2) {
             newIndex = i;
             break;
@@ -141,10 +150,7 @@ export function ReorderableWidgets({
         return (
           <Animated.View
             key={key}
-            onLayout={(e) => {
-              const h = e.nativeEvent.layout.height;
-              setHeights((s) => (s[key] === h ? s : { ...s, [key]: h }));
-            }}
+            onLayout={(e) => setHeight(key, e.nativeEvent.layout.height)}
             style={[
               styles.item,
               { transform: [{ translateY: anim }], zIndex: isDragging ? 10 : 1 },

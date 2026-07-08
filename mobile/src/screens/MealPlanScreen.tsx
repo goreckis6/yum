@@ -188,10 +188,18 @@ export function MealPlanScreen() {
   const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Drag a meal entry from one slot to another (within the meals list only).
+  // The per-slot PanResponders are memoized (stable across re-renders) so the
+  // grip's touch handlers never change mid-gesture — otherwise a re-render
+  // during the drag would swap the responder and the ScrollView could reclaim
+  // the touch, which read as a jump. Because they're memoized, everything they
+  // read at gesture time comes from refs, not the render-time closure.
   const [dragSlot, setDragSlot] = useState<MealSlot | null>(null);
   const [hoverSlot, setHoverSlot] = useState<MealSlot | null>(null);
+  const dragSlotRef = useRef<MealSlot | null>(null);
+  const hoverSlotRef = useRef<MealSlot | null>(null);
   const slotLayout = useRef<Partial<Record<MealSlot, { pageY: number; height: number }>>>({}).current;
   const slotRowRefs = useRef<Partial<Record<MealSlot, View | null>>>({}).current;
+  const slotPanRef = useRef<Partial<Record<MealSlot, ReturnType<typeof PanResponder.create>>>>({}).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const [widgetsDragging, setWidgetsDragging] = useState(false);
   const insets = useSafeAreaInsets();
@@ -231,6 +239,11 @@ export function MealPlanScreen() {
   };
 
   const dayPlan = mealPlan[selectedDate] || {};
+  // Mirrored for the memoized slot PanResponders to read the current day/plan.
+  const dayPlanRef = useRef(dayPlan);
+  dayPlanRef.current = dayPlan;
+  const selectedDateRef = useRef(selectedDate);
+  selectedDateRef.current = selectedDate;
   const dayHasMeals = (iso: string) => {
     const p = mealPlan[iso];
     return !!p && SLOTS.some((s) => p[s]);
@@ -269,24 +282,37 @@ export function MealPlanScreen() {
     );
   };
 
-  // Move (or swap, if the target already has something) a meal entry from
-  // one slot to another on the same day.
+  const setDrag = (s: MealSlot | null) => { dragSlotRef.current = s; setDragSlot(s); };
+  const setHover = (s: MealSlot | null) => { hoverSlotRef.current = s; setHoverSlot(s); };
+
+  // Move (or swap, if the target already has something) a meal entry from one
+  // slot to another on the same day. Reads the plan/date from refs so it stays
+  // correct inside the memoized responders.
   const onMoveEntry = (from: MealSlot, to: MealSlot) => {
-    const fromEntry = dayPlan[from];
+    const plan = dayPlanRef.current;
+    const date = selectedDateRef.current;
+    const fromEntry = plan[from];
     if (!fromEntry) return;
-    const toEntry = dayPlan[to];
-    assignMeal(selectedDate, to, fromEntry);
-    if (toEntry) assignMeal(selectedDate, from, toEntry);
-    else removeMeal(selectedDate, from);
+    const toEntry = plan[to];
+    assignMeal(date, to, fromEntry);
+    if (toEntry) assignMeal(date, from, toEntry);
+    else removeMeal(date, from);
   };
 
-  const makeSlotPan = (slot: MealSlot) =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
+  // Created once per slot and cached — never rebuilt across renders, so the
+  // grip's touch handlers are stable for the whole gesture.
+  const getSlotPan = (slot: MealSlot) => {
+    if (slotPanRef[slot]) return slotPanRef[slot]!;
+    const pan = PanResponder.create({
+      // Only claim the gesture once the finger has actually moved a little, so
+      // a plain tap on the grip doesn't start a drag — and nothing shifts on
+      // touch-down.
+      onStartShouldSetPanResponder: () => false,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4 || Math.abs(g.dx) > 4,
       onPanResponderGrant: () => {
         dragY.setValue(0);
-        setDragSlot(slot);
-        setHoverSlot(slot);
+        setDrag(slot);
+        setHover(slot);
       },
       onPanResponderMove: (_, gesture) => {
         dragY.setValue(gesture.dy);
@@ -296,20 +322,25 @@ export function MealPlanScreen() {
           const r = slotLayout[s];
           if (r && y >= r.pageY && y <= r.pageY + r.height) { found = s; break; }
         }
-        if (found && found !== hoverSlot) setHoverSlot(found);
+        if (found && found !== hoverSlotRef.current) setHover(found);
       },
       onPanResponderRelease: () => {
-        if (dragSlot && hoverSlot && hoverSlot !== dragSlot) onMoveEntry(dragSlot, hoverSlot);
-        setDragSlot(null);
-        setHoverSlot(null);
+        const from = dragSlotRef.current;
+        const to = hoverSlotRef.current;
+        if (from && to && to !== from) onMoveEntry(from, to);
+        setDrag(null);
+        setHover(null);
         dragY.setValue(0);
       },
       onPanResponderTerminate: () => {
-        setDragSlot(null);
-        setHoverSlot(null);
+        setDrag(null);
+        setHover(null);
         dragY.setValue(0);
       },
     });
+    slotPanRef[slot] = pan;
+    return pan;
+  };
 
   let dayKcal = 0, dayP = 0, dayC = 0, dayF = 0;
   for (const slot of SLOTS) {
@@ -437,7 +468,7 @@ export function MealPlanScreen() {
                   onAddMissing={handleAddMissing}
                   onEditReminder={() => setReminderSlot(slot)}
                   hasReminderOverride={!!mealReminderOverrides?.[`${selectedDate}|${slot}`]}
-                  dragHandlers={makeSlotPan(slot).panHandlers}
+                  dragHandlers={getSlotPan(slot).panHandlers}
                 />
               </Animated.View>
             ) : (
@@ -459,7 +490,7 @@ export function MealPlanScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
-        scrollEnabled={!widgetsDragging}
+        scrollEnabled={!widgetsDragging && !dragSlot}
       >
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
