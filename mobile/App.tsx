@@ -3,7 +3,7 @@ import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/lib/supabase';
-import { NavigationContainer, createNavigationContainerRef, useNavigation } from '@react-navigation/native';
+import { NavigationContainer, createNavigationContainerRef, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useShareIntent } from 'expo-share-intent';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
@@ -45,6 +45,8 @@ import { PantryScreen } from './src/screens/PantryScreen';
 import { ScanReceiptScreen } from './src/screens/ScanReceiptScreen';
 import { ReviewReceiptScreen } from './src/screens/ReviewReceiptScreen';
 import { Toast } from './src/components/Toast';
+import { initAnalytics } from './src/lib/analyticsProviders';
+import { track } from './src/lib/analytics';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -85,7 +87,8 @@ function ShareIntentHandler() {
 // gate in Gate) — reached from the credits pill or when free imports run out.
 function PaywallRoute() {
   const navigation = useNavigation();
-  return <PaywallScreen onClose={() => navigation.goBack()} />;
+  const route = useRoute<RouteProp<RootStackParamList, 'Paywall'>>();
+  return <PaywallScreen reason={route.params?.reason} onClose={() => navigation.goBack()} />;
 }
 
 function RootNavigator() {
@@ -128,6 +131,13 @@ function RootNavigator() {
 }
 
 export default function App() {
+  // Turn on any configured analytics/crash providers (no-op until keys are set)
+  // and record the session start.
+  useEffect(() => {
+    initAnalytics();
+    track('app_opened');
+  }, []);
+
   // Handle OAuth deep link callback (exp://IP:PORT/--/auth/callback?code=...)
   useEffect(() => {
     const handleUrl = async (url: string) => {
@@ -234,7 +244,7 @@ function Gate() {
 
   if (!session || !user) {
     if (!showAuth) {
-      return <OnboardingScreen onDone={() => setShowAuth(true)} />;
+      return <OnboardingScreen onDone={() => { track('onboarding_completed'); setShowAuth(true); }} />;
     }
     return <AuthScreen onBack={() => setShowAuth(false)} />;
   }

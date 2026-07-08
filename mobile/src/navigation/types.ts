@@ -4,7 +4,9 @@ export type RootStackParamList = {
   Home: undefined;
   RecipeDetail: { id: string };
   CookingMode: { id: string };
-  Paywall: undefined;
+  // `reason` drives the paywall headline: hitting the free-import wall reads
+  // very differently from tapping the credits pill to explore Premium.
+  Paywall: { reason?: 'out_of_credits' | 'upsell' } | undefined;
   ImportUrl: undefined;
   ScanRecipe: undefined;
   Processing: { url: string } | { imageBase64: string; mimeType: string };

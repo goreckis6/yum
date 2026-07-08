@@ -678,7 +678,7 @@ export function HomeScreen() {
         </View>
         <Pressable
           style={[styles.creditsPill, unlimited && styles.creditsPillPro]}
-          onPress={() => navigation.navigate('Paywall')}
+          onPress={() => navigation.navigate('Paywall', { reason: 'upsell' })}
           hitSlop={8}
         >
           <Icon name="flame" size={14} color={unlimited ? c.accent : c.gold} fill />

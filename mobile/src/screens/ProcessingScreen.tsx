@@ -13,6 +13,7 @@ import { COVER_PRESETS } from '../components/CoverArt';
 import { useApp } from '../context/AppContext';
 import { usePremium } from '../context/PremiumContext';
 import { PREMIUM_UNLIMITED } from '../config/credits';
+import { track } from '../lib/analytics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
 
@@ -57,12 +58,16 @@ export function ProcessingScreen({ navigation, route }: Props) {
   ];
   const MESSAGES = isImageMode ? IMAGE_MESSAGES : URL_MESSAGES;
 
+  const importSource = isImageMode ? 'photo' : 'link';
+
   useEffect(() => {
     // Out of free imports → don't spend an API call, send them to the paywall.
     if (!unlimited && credits <= 0) {
-      navigation.replace('Paywall');
+      navigation.replace('Paywall', { reason: 'out_of_credits' });
       return;
     }
+
+    track('import_started', { source: importSource });
 
     const interval = setInterval(() => {
       setMsgIndex((i) => (i + 1) % MESSAGES.length);
@@ -86,6 +91,7 @@ export function ProcessingScreen({ navigation, route }: Props) {
         const noContent =
           (recipe?.ingredients?.length ?? 0) === 0 && (recipe?.steps?.length ?? 0) === 0;
         if (noTitle || noContent) {
+          track('import_failed', { source: importSource, reason: 'notfound' });
           setIsNetErr(false);
           setError('notfound');
           return;
@@ -93,6 +99,10 @@ export function ProcessingScreen({ navigation, route }: Props) {
         // The server already spent the credit for a real recipe — mirror its
         // authoritative balance (null = premium/unlimited, leave as-is).
         if (typeof res.credits === 'number') setCredits(res.credits);
+        track('import_succeeded', {
+          source: importSource,
+          creditsLeft: typeof res.credits === 'number' ? res.credits : null,
+        });
         const draft: Recipe = {
           ...recipe,
           id: `imp${Date.now()}`,
@@ -102,12 +112,14 @@ export function ProcessingScreen({ navigation, route }: Props) {
       .catch((err: Error & { code?: string }) => {
         clearInterval(interval);
         if (err?.code === 'no_credits') {
+          track('import_failed', { source: importSource, reason: 'no_credits' });
           setCredits(0);
-          navigation.replace('Paywall');
+          navigation.replace('Paywall', { reason: 'out_of_credits' });
           return;
         }
         const m = err?.message || '';
         const net = /reach the server|timed out|network request failed|connection|network/i.test(m);
+        track('import_failed', { source: importSource, reason: net ? 'network' : 'error' });
         setIsNetErr(net);
         setError(m || 'error');
       });

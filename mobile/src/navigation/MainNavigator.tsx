@@ -54,7 +54,7 @@ export function MainNavigator() {
       <AddSheet
         visible={addOpen}
         onClose={() => setAddOpen(false)}
-        onOutOfCredits={() => navigation.navigate('Paywall')}
+        onOutOfCredits={() => navigation.navigate('Paywall', { reason: 'out_of_credits' })}
         onScan={() => { setAddOpen(false); navigation.navigate('ScanRecipe'); }}
         onScanBarcode={() => { setAddOpen(false); navigation.navigate('ScanBarcode'); }}
         onScanReceipt={() => { setAddOpen(false); navigation.navigate('ScanReceipt'); }}

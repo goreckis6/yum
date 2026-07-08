@@ -3,6 +3,7 @@ import { sumAmounts } from '../utils/amounts';
 import { SEED_STATE } from '../data/seed';
 import { loadState, saveState } from '../storage/persist';
 import { fetchCredits } from '../api/recipes';
+import { identify, track } from '../lib/analytics';
 import {
   Aisle,
   AppState,
@@ -103,6 +104,14 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     const t = setTimeout(() => saveState(userId, state), 600);
     return () => clearTimeout(t);
   }, [state, ready, userId]);
+
+  // Tie analytics events to this signed-in user (once per userId).
+  useEffect(() => {
+    if (userId) {
+      identify(userId);
+      track('signed_in');
+    }
+  }, [userId]);
 
   // Sync import credits from the server (source of truth). null = premium.
   useEffect(() => {
@@ -318,6 +327,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
   }, []);
 
   const assignMeal = useCallback((date: string, slot: MealSlot, entry: MealEntry) => {
+    track('meal_planned', { slot, entryType: entry.type });
     setState((s) => {
       const mp = { ...s.mealPlan };
       mp[date] = { ...mp[date], [slot]: entry };
@@ -344,6 +354,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
   // Append a cook event (used when finishing Cooking Mode) — always logs a new
   // timestamp, so the history reflects every time the recipe was actually made.
   const logCooked = useCallback((recipeId: string) => {
+    track('recipe_cooked');
     setState((s) => {
       const madeHistory = { ...s.madeHistory, [recipeId]: [...(s.madeHistory[recipeId] ?? []), Date.now()] };
       return { ...s, made: { ...s.made, [recipeId]: true }, madeHistory };
@@ -454,7 +465,11 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
   // Spend one import credit (floored at 0). Called only on a SUCCESSFUL recipe
   // extraction — a "no recipe found" fallback must not call this.
   const spendCredit = useCallback(() => {
-    setState((s) => ({ ...s, credits: Math.max(0, (s.credits ?? 0) - 1) }));
+    setState((s) => {
+      const creditsLeft = Math.max(0, (s.credits ?? 0) - 1);
+      track('import_credit_spent', { creditsLeft });
+      return { ...s, credits: creditsLeft };
+    });
   }, []);
 
   const grantCredits = useCallback((n: number) => {
