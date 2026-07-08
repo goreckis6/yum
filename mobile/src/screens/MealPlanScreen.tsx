@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, FlatList, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -78,7 +78,7 @@ function MatchBadge({
 /* ─── SlotEntryCard ──────────────────────────────────────────── */
 
 function SlotEntryCard({
-  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing, onEditReminder, hasReminderOverride, c, dragHandlers,
+  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing, onEditReminder, hasReminderOverride, c,
 }: {
   entry: MealEntry;
   match?: MatchResult;
@@ -92,15 +92,9 @@ function SlotEntryCard({
   onEditReminder: () => void;
   hasReminderOverride: boolean;
   c: ThemeColors;
-  dragHandlers?: object;
 }) {
   const actions = (
     <View style={styles.entryActions}>
-      {dragHandlers && (
-        <View {...dragHandlers} style={styles.reminderBtn} hitSlop={6}>
-          <Icon name="grip" size={15} color={c.grayMid} />
-        </View>
-      )}
       <Pressable style={styles.reminderBtn} onPress={onEditReminder} hitSlop={6}>
         <Icon name="clock" size={15} color={hasReminderOverride ? c.accent : c.grayMid} />
       </Pressable>
@@ -179,6 +173,7 @@ export function MealPlanScreen() {
     mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
     addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater, weightKg, setWeight,
     mealPlanWidgetOrder, setMealPlanWidgetOrder,
+    mealSlotOrder, setMealSlotOrder,
     mealReminderOverrides, setMealReminderOverride,
   } = useApp();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
@@ -186,14 +181,8 @@ export function MealPlanScreen() {
   const [reminderSlot, setReminderSlot] = useState<MealSlot | null>(null);
   const [addSlot, setAddSlot] = useState<MealSlot>('Dinner');
   const [calendarOpen, setCalendarOpen] = useState(false);
-
-  // Drag a meal entry from one slot to another (within the meals list only).
-  const [dragSlot, setDragSlot] = useState<MealSlot | null>(null);
-  const [hoverSlot, setHoverSlot] = useState<MealSlot | null>(null);
-  const slotLayout = useRef<Partial<Record<MealSlot, { pageY: number; height: number }>>>({}).current;
-  const slotRowRefs = useRef<Partial<Record<MealSlot, View | null>>>({}).current;
-  const dragY = useRef(new Animated.Value(0)).current;
   const [widgetsDragging, setWidgetsDragging] = useState(false);
+  const [slotsDragging, setSlotsDragging] = useState(false);
   const insets = useSafeAreaInsets();
 
   const stripRef = useRef<FlatList<string>>(null);
@@ -269,48 +258,6 @@ export function MealPlanScreen() {
     );
   };
 
-  // Move (or swap, if the target already has something) a meal entry from
-  // one slot to another on the same day.
-  const onMoveEntry = (from: MealSlot, to: MealSlot) => {
-    const fromEntry = dayPlan[from];
-    if (!fromEntry) return;
-    const toEntry = dayPlan[to];
-    assignMeal(selectedDate, to, fromEntry);
-    if (toEntry) assignMeal(selectedDate, from, toEntry);
-    else removeMeal(selectedDate, from);
-  };
-
-  const makeSlotPan = (slot: MealSlot) =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderGrant: () => {
-        dragY.setValue(0);
-        setDragSlot(slot);
-        setHoverSlot(slot);
-      },
-      onPanResponderMove: (_, gesture) => {
-        dragY.setValue(gesture.dy);
-        const y = gesture.moveY;
-        let found: MealSlot | null = null;
-        for (const s of SLOTS) {
-          const r = slotLayout[s];
-          if (r && y >= r.pageY && y <= r.pageY + r.height) { found = s; break; }
-        }
-        if (found && found !== hoverSlot) setHoverSlot(found);
-      },
-      onPanResponderRelease: () => {
-        if (dragSlot && hoverSlot && hoverSlot !== dragSlot) onMoveEntry(dragSlot, hoverSlot);
-        setDragSlot(null);
-        setHoverSlot(null);
-        dragY.setValue(0);
-      },
-      onPanResponderTerminate: () => {
-        setDragSlot(null);
-        setHoverSlot(null);
-        dragY.setValue(0);
-      },
-    });
-
   let dayKcal = 0, dayP = 0, dayC = 0, dayF = 0;
   for (const slot of SLOTS) {
     const entry = dayPlan[slot];
@@ -333,12 +280,19 @@ export function MealPlanScreen() {
 
   // Fall back to the default set if the persisted order is missing/stale
   // (e.g. it was saved before a widget existed).
-  const DEFAULT_WIDGETS = ['nutrition', 'water', 'slots'];
+  const DEFAULT_WIDGETS = ['nutrition', 'water'];
   const widgetOrder = mealPlanWidgetOrder?.length
     ? DEFAULT_WIDGETS.filter((w) => mealPlanWidgetOrder.includes(w)).length === DEFAULT_WIDGETS.length
       ? mealPlanWidgetOrder
       : [...mealPlanWidgetOrder, ...DEFAULT_WIDGETS.filter((w) => !mealPlanWidgetOrder.includes(w))]
     : DEFAULT_WIDGETS;
+
+  // Same fallback pattern for the meal-category order (Breakfast, Lunch, …).
+  const slotOrder = mealSlotOrder?.length
+    ? SLOTS.filter((s) => mealSlotOrder.includes(s)).length === SLOTS.length
+      ? mealSlotOrder
+      : [...mealSlotOrder, ...SLOTS.filter((s) => !mealSlotOrder.includes(s))]
+    : SLOTS;
 
   const renderWidget = (key: string, dragHandle: React.ReactNode) => {
     if (key === 'nutrition') {
@@ -392,66 +346,47 @@ export function MealPlanScreen() {
         />
       );
     }
-    if (key === 'slots') {
-      return (
-        <View>
-          <View style={styles.slotsHeader}>
-            <Text style={styles.slotsHeaderLabel}>{t('mealplan.mealsLabel' as TKey)}</Text>
-            {dragHandle}
-          </View>
-          {SLOTS.map((slot) => {
-            const entry = dayPlan[slot];
-            const match = matches[slot];
-            const isDragging = dragSlot === slot;
-            const isHoverTarget = hoverSlot === slot && dragSlot !== null && dragSlot !== slot;
-
-            return (
-              <View
-                key={slot}
-                ref={(r) => { slotRowRefs[slot] = r; }}
-                style={[styles.slotBlock, isHoverTarget && styles.slotBlockHover]}
-                onLayout={() => {
-                  slotRowRefs[slot]?.measure((_x, _y, _w, height, _pageX, pageY) => {
-                    slotLayout[slot] = { pageY, height };
-                  });
-                }}
-              >
-                <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
-                {entry ? (
-                  <Animated.View
-                    style={isDragging ? { transform: [{ translateY: dragY }], zIndex: 10, elevation: 6 } : undefined}
-                  >
-                    <SlotEntryCard
-                      entry={entry}
-                      match={match}
-                      getRecipe={getRecipe}
-                      getPantryItem={getPantryItem}
-                      styles={styles}
-                      t={t}
-                      c={c}
-                      onRemove={() => removeMeal(selectedDate, slot)}
-                      onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
-                      onAddMissing={handleAddMissing}
-                      onEditReminder={() => setReminderSlot(slot)}
-                      hasReminderOverride={!!mealReminderOverrides?.[`${selectedDate}|${slot}`]}
-                      dragHandlers={makeSlotPan(slot).panHandlers}
-                    />
-                  </Animated.View>
-                ) : (
-                  <Pressable
-                    style={styles.addSlot}
-                    onPress={() => { setAddSlot(slot); setAddOpen(true); }}
-                  >
-                    <Text style={styles.addText}>{t(ADD_SLOT[slot])}</Text>
-                  </Pressable>
-                )}
-              </View>
-            );
-          })}
-        </View>
-      );
-    }
     return null;
+  };
+
+  // Each meal category (Breakfast, Lunch, …) is its own draggable row within
+  // the meals list — separate from the nutrition/water widget stack above,
+  // so rearranging one never touches the other.
+  const renderSlotRow = (slotKey: string, dragHandle: React.ReactNode) => {
+    const slot = slotKey as MealSlot;
+    const entry = dayPlan[slot];
+    const match = matches[slot];
+    return (
+      <View>
+        <View style={styles.slotRowHeader}>
+          <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
+          {dragHandle}
+        </View>
+        {entry ? (
+          <SlotEntryCard
+            entry={entry}
+            match={match}
+            getRecipe={getRecipe}
+            getPantryItem={getPantryItem}
+            styles={styles}
+            t={t}
+            c={c}
+            onRemove={() => removeMeal(selectedDate, slot)}
+            onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
+            onAddMissing={handleAddMissing}
+            onEditReminder={() => setReminderSlot(slot)}
+            hasReminderOverride={!!mealReminderOverrides?.[`${selectedDate}|${slot}`]}
+          />
+        ) : (
+          <Pressable
+            style={styles.addSlot}
+            onPress={() => { setAddSlot(slot); setAddOpen(true); }}
+          >
+            <Text style={styles.addText}>{t(ADD_SLOT[slot])}</Text>
+          </Pressable>
+        )}
+      </View>
+    );
   };
 
   return (
@@ -459,7 +394,7 @@ export function MealPlanScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
-        scrollEnabled={!widgetsDragging}
+        scrollEnabled={!widgetsDragging && !slotsDragging}
       >
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
@@ -518,6 +453,20 @@ export function MealPlanScreen() {
             onReorder={setMealPlanWidgetOrder}
             renderItem={renderWidget}
             onDragStateChange={setWidgetsDragging}
+          />
+        </View>
+
+        {/* Meal categories — a fixed section (not part of the widget stack
+            above), but each category (Breakfast, Lunch, …) can be dragged
+            up/down to reorder relative to the others. */}
+        <Text style={styles.slotsHeaderLabel}>{t('mealplan.mealsLabel' as TKey)}</Text>
+        <View style={styles.widgetsBlock}>
+          <ReorderableWidgets
+            order={slotOrder}
+            onReorder={(order) => setMealSlotOrder(order as MealSlot[])}
+            renderItem={renderSlotRow}
+            onDragStateChange={setSlotsDragging}
+            gap={14}
           />
         </View>
 
@@ -591,11 +540,9 @@ const makeStyles = (c: ThemeColors) =>
     dayDateOn: { color: '#fff' },
     dot: { width: 5, height: 5, borderRadius: 3, marginTop: 6 },
 
-    slotsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-    slotsHeaderLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase' },
-    slotBlock: { marginBottom: 14, borderRadius: 18 },
-    slotBlockHover: { backgroundColor: c.accentSoft },
-    slotLabel: { fontSize: 13, fontWeight: '700', color: c.grayLight, marginBottom: 9 },
+    slotsHeaderLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase', marginBottom: 12 },
+    slotRowHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 },
+    slotLabel: { fontSize: 13, fontWeight: '700', color: c.grayLight },
 
     slotCard: {
       flexDirection: 'row', alignItems: 'flex-start', gap: 13,
