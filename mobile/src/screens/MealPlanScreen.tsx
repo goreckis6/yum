@@ -248,9 +248,9 @@ export function MealPlanScreen() {
     { color: c.accent, label: t('recipe.fat'), val: dayF },
   ];
 
-  // Fall back to the default pair if the persisted order is missing/stale
+  // Fall back to the default set if the persisted order is missing/stale
   // (e.g. it was saved before a widget existed).
-  const DEFAULT_WIDGETS = ['nutrition', 'water'];
+  const DEFAULT_WIDGETS = ['nutrition', 'water', 'slots'];
   const widgetOrder = mealPlanWidgetOrder?.length
     ? DEFAULT_WIDGETS.filter((w) => mealPlanWidgetOrder.includes(w)).length === DEFAULT_WIDGETS.length
       ? mealPlanWidgetOrder
@@ -307,6 +307,46 @@ export function MealPlanScreen() {
           onSetWeight={setWeight}
           dragHandle={dragHandle}
         />
+      );
+    }
+    if (key === 'slots') {
+      return (
+        <View>
+          <View style={styles.slotsHeader}>
+            <Text style={styles.slotsHeaderLabel}>{t('mealplan.mealsLabel' as TKey)}</Text>
+            {dragHandle}
+          </View>
+          {SLOTS.map((slot) => {
+            const entry = dayPlan[slot];
+            const match = matches[slot];
+
+            return (
+              <View key={slot} style={styles.slotBlock}>
+                <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
+                {entry ? (
+                  <SlotEntryCard
+                    entry={entry}
+                    match={match}
+                    getRecipe={getRecipe}
+                    getPantryItem={getPantryItem}
+                    styles={styles}
+                    t={t}
+                    onRemove={() => removeMeal(selectedDate, slot)}
+                    onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
+                    onAddMissing={handleAddMissing}
+                  />
+                ) : (
+                  <Pressable
+                    style={styles.addSlot}
+                    onPress={() => { setAddSlot(slot); setAddOpen(true); }}
+                  >
+                    <Text style={styles.addText}>{t(ADD_SLOT[slot])}</Text>
+                  </Pressable>
+                )}
+              </View>
+            );
+          })}
+        </View>
       );
     }
     return null;
@@ -376,38 +416,6 @@ export function MealPlanScreen() {
           />
         </View>
 
-        {/* Slots */}
-        {SLOTS.map((slot) => {
-          const entry = dayPlan[slot];
-          const match = matches[slot];
-
-          return (
-            <View key={slot} style={styles.slotBlock}>
-              <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
-              {entry ? (
-                <SlotEntryCard
-                  entry={entry}
-                  match={match}
-                  getRecipe={getRecipe}
-                  getPantryItem={getPantryItem}
-                  styles={styles}
-                  t={t}
-                  onRemove={() => removeMeal(selectedDate, slot)}
-                  onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
-                  onAddMissing={handleAddMissing}
-                />
-              ) : (
-                <Pressable
-                  style={styles.addSlot}
-                  onPress={() => { setAddSlot(slot); setAddOpen(true); }}
-                >
-                  <Text style={styles.addText}>{t(ADD_SLOT[slot])}</Text>
-                </Pressable>
-              )}
-            </View>
-          );
-        })}
-
         <Pressable style={styles.weekBtn} onPress={addWeekToGrocery}>
           <Text style={styles.weekBtnText}>{t('mealplan.addWeek')}</Text>
         </Pressable>
@@ -463,6 +471,8 @@ const makeStyles = (c: ThemeColors) =>
     dayDateOn: { color: '#fff' },
     dot: { width: 5, height: 5, borderRadius: 3, marginTop: 6 },
 
+    slotsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    slotsHeaderLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase' },
     slotBlock: { marginBottom: 14 },
     slotLabel: { fontSize: 13, fontWeight: '700', color: c.grayLight, marginBottom: 9 },
 
