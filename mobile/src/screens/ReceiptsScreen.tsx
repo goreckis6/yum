@@ -27,7 +27,6 @@ import { RECEIPT_CATEGORIES, Receipt } from '../types';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { formatDateNum, toISO } from '../utils/dates';
-import type { DateFormat } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Receipts'>;
 type DateRange = 'all' | 'month' | '30d' | 'year';
@@ -50,10 +49,10 @@ function fmtMoney(n: number) {
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function fmtDate(iso: string, fmt: DateFormat) {
+function fmtDate(iso: string) {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return iso;
-  return formatDateNum(toISO(d), fmt);
+  return formatDateNum(toISO(d), 'eu');
 }
 
 function fmtDayHeader(iso: string) {
@@ -81,7 +80,7 @@ export function ReceiptsScreen({ navigation }: Props) {
   const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
-  const { receipts, removeReceipt, showToast, dateFormat } = useApp();
+  const { receipts, removeReceipt, showToast } = useApp();
   const [search, setSearch] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
   const [filter, setFilter] = useState<string>('All');
@@ -335,7 +334,7 @@ export function ReceiptsScreen({ navigation }: Props) {
                       {(!r.total || !r.merchant) && <View style={styles.reviewDot} />}
                     </View>
                     <Text style={styles.rowMeta} numberOfLines={1}>
-                      {fmtDate(r.date, dateFormat)} · {r.category}
+                      {fmtDate(r.date)} · {r.category}
                       {r.tags?.length ? `  ${r.tags.map((t) => `#${t}`).join(' ')}` : ''}
                     </Text>
                   </View>
@@ -436,7 +435,7 @@ export function ReceiptsScreen({ navigation }: Props) {
                 {filtered.slice(0, 4).map((r) => (
                   <View key={r.id} style={styles.previewRow}>
                     <Text style={[styles.previewMerchant, styles.previewVal]} numberOfLines={1}>{r.merchant}</Text>
-                    <Text style={[styles.previewDate, styles.previewMeta]}>{fmtDate(r.date, dateFormat)}</Text>
+                    <Text style={[styles.previewDate, styles.previewMeta]}>{fmtDate(r.date)}</Text>
                     <Text style={[styles.previewTotal, styles.previewVal]}>{r.currency} {fmtMoney(r.total)}</Text>
                   </View>
                 ))}

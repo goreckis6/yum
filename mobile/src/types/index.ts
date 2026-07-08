@@ -110,7 +110,6 @@ export type MealEntry =
 export type MealPlan = Partial<Record<string, Partial<Record<MealSlot, MealEntry | null>>>>;
 
 export type UnitSystem = 'metric' | 'imperial';
-export type DateFormat = 'eu' | 'us'; // eu: DD.MM.YYYY, us: MM/DD/YYYY
 
 export interface AppState {
   recipes: Recipe[];
@@ -126,7 +125,6 @@ export interface AppState {
   receipts: Receipt[];
   pantry: PantryItem[];
   unitSystem: UnitSystem;
-  dateFormat: DateFormat;
   credits: number; // free recipe-import credits remaining
   mealReminders: MealReminderSettings;
   water: Record<string, number>; // ml drunk, keyed by ISO date

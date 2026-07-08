@@ -24,7 +24,6 @@ export const AISLE_DOT: Record<string, string> = {
 export const SEED_STATE: AppState = {
   hasOnboarded: true,
   unitSystem: 'metric',
-  dateFormat: 'eu',
   credits: FREE_IMPORT_CREDITS,
   mealReminders: { enabled: false, lead: 60 },
   water: {},
