@@ -113,7 +113,7 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: {
       backgroundColor: c.surface, borderRadius: 18,
-      borderWidth: 1, borderColor: c.border, padding: 16, marginBottom: 22,
+      borderWidth: 1, borderColor: c.border, padding: 16,
     },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },

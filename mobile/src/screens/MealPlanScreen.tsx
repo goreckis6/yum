@@ -8,7 +8,7 @@ import { useApp } from '../context/AppContext';
 import { MealAddSheet } from '../components/MealAddSheet';
 import { CalendarSheet } from '../components/CalendarSheet';
 import { WaterCard } from '../components/WaterCard';
-import { ReorderableSection } from '../components/ReorderableSection';
+import { ReorderableWidgets } from '../components/ReorderableWidgets';
 import { addDaysISO, dayOfMonth, isTodayISO, rangeISO, todayISO, weekdayKey } from '../utils/dates';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
@@ -163,6 +163,7 @@ export function MealPlanScreen() {
   const [addOpen, setAddOpen] = useState(false);
   const [addSlot, setAddSlot] = useState<MealSlot>('Dinner');
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [widgetsDragging, setWidgetsDragging] = useState(false);
   const insets = useSafeAreaInsets();
 
   const stripRef = useRef<FlatList<string>>(null);
@@ -256,20 +257,6 @@ export function MealPlanScreen() {
       : [...mealPlanWidgetOrder, ...DEFAULT_WIDGETS.filter((w) => !mealPlanWidgetOrder.includes(w))]
     : DEFAULT_WIDGETS;
 
-  const moveWidget = (key: string, dir: -1 | 1) => {
-    const i = widgetOrder.indexOf(key);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= widgetOrder.length) return;
-    const next = [...widgetOrder];
-    [next[i], next[j]] = [next[j], next[i]];
-    setMealPlanWidgetOrder(next);
-  };
-
-  const moveWidgetToEdge = (key: string, edge: 'top' | 'bottom') => {
-    const rest = widgetOrder.filter((w) => w !== key);
-    setMealPlanWidgetOrder(edge === 'top' ? [key, ...rest] : [...rest, key]);
-  };
-
   const renderWidget = (key: string) => {
     if (key === 'nutrition') {
       return (
@@ -326,6 +313,7 @@ export function MealPlanScreen() {
       <ScrollView
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
+        scrollEnabled={!widgetsDragging}
       >
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
@@ -373,21 +361,16 @@ export function MealPlanScreen() {
           }}
         />
 
-        {/* Reorderable widgets: nutrition dashboard + water tracker, in whatever
-            order the user has picked (like rearranging home-screen widgets). */}
-        {widgetOrder.map((key, i) => (
-          <ReorderableSection
-            key={key}
-            isFirst={i === 0}
-            isLast={i === widgetOrder.length - 1}
-            onMoveUp={() => moveWidget(key, -1)}
-            onMoveDown={() => moveWidget(key, 1)}
-            onMoveTop={() => moveWidgetToEdge(key, 'top')}
-            onMoveBottom={() => moveWidgetToEdge(key, 'bottom')}
-          >
-            {renderWidget(key)}
-          </ReorderableSection>
-        ))}
+        {/* Reorderable widgets: nutrition dashboard + water tracker — drag by
+            the grip handle to rearrange, like home-screen widgets. */}
+        <View style={styles.widgetsBlock}>
+          <ReorderableWidgets
+            order={widgetOrder}
+            onReorder={setMealPlanWidgetOrder}
+            renderItem={renderWidget}
+            onDragStateChange={setWidgetsDragging}
+          />
+        </View>
 
         {/* Slots */}
         {SLOTS.map((slot) => {
@@ -462,7 +445,7 @@ const makeStyles = (c: ThemeColors) =>
       width: 44, height: 44, borderRadius: 22,
       backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center', marginTop: 4,
     },
-    weekRow: { marginBottom: 22, marginHorizontal: -20 },
+    weekRow: { marginBottom: 8, marginHorizontal: -20 },
     weekRowContent: { paddingHorizontal: 20 },
     dayPill: {
       width: 50, borderRadius: 16, paddingVertical: 12,
@@ -526,8 +509,9 @@ const makeStyles = (c: ThemeColors) =>
     dayCard: {
       backgroundColor: c.surface, borderRadius: 18,
       borderWidth: 1, borderColor: c.border,
-      padding: 16, marginBottom: 22,
+      padding: 16,
     },
+    widgetsBlock: { marginBottom: 22 },
     dayCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
     dayCardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase' },
     dayCardDay: { fontFamily: fonts.display, fontSize: 18, color: c.ink, marginTop: 3 },

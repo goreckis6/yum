@@ -33,6 +33,7 @@ export type IconName =
   | 'share'
   | 'calculator'
   | 'droplet'
+  | 'grip'
   | 'apple';
 
 interface Props {
@@ -68,6 +69,17 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
           fill={color}
           stroke="none"
         />
+      );
+    case 'grip':
+      return (
+        <>
+          <Circle cx={9} cy={6} r={1.4} fill={color} stroke="none" />
+          <Circle cx={9} cy={12} r={1.4} fill={color} stroke="none" />
+          <Circle cx={9} cy={18} r={1.4} fill={color} stroke="none" />
+          <Circle cx={15} cy={6} r={1.4} fill={color} stroke="none" />
+          <Circle cx={15} cy={12} r={1.4} fill={color} stroke="none" />
+          <Circle cx={15} cy={18} r={1.4} fill={color} stroke="none" />
+        </>
       );
     case 'droplet':
       return (
