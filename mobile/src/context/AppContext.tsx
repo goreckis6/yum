@@ -74,7 +74,6 @@ interface AppContextValue extends AppState {
   addWater: (date: string, deltaMl: number) => void;
   setWeight: (kg: number) => void;
   setMealPlanWidgetOrder: (order: string[]) => void;
-  setMealSlotOrder: (order: MealSlot[]) => void;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -501,10 +500,6 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, mealPlanWidgetOrder: order }));
   }, []);
 
-  const setMealSlotOrder = useCallback((order: MealSlot[]) => {
-    setState((s) => ({ ...s, mealSlotOrder: order }));
-  }, []);
-
   const toggleRecipeInCookbook = useCallback((cookbookId: string, recipeId: string) => {
     setState((s) => ({
       ...s,
@@ -568,7 +563,6 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       addWater,
       setWeight,
       setMealPlanWidgetOrder,
-      setMealSlotOrder,
     }),
     [
       state,
@@ -618,7 +612,6 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       addWater,
       setWeight,
       setMealPlanWidgetOrder,
-      setMealSlotOrder,
     ],
   );
 

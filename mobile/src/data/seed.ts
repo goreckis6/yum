@@ -30,7 +30,6 @@ export const SEED_STATE: AppState = {
   water: {},
   weightKg: 0,
   mealPlanWidgetOrder: ['nutrition', 'water'],
-  mealSlotOrder: [...ALL_SLOTS],
   made: {},
   madeHistory: {},
   ingChecked: {},
