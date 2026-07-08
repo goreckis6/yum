@@ -127,6 +127,7 @@ export interface AppState {
   unitSystem: UnitSystem;
   credits: number; // free recipe-import credits remaining
   mealReminders: MealReminderSettings;
+  mealReminderOverrides: Record<string, MealReminderOverride>; // keyed by "date|slot"
   water: Record<string, number>; // ml drunk, keyed by ISO date
   weightKg: number; // body weight for a personal water goal (0 = not set)
   mealPlanWidgetOrder: string[]; // order of reorderable widgets on the Meal Planner screen
@@ -135,6 +136,13 @@ export interface AppState {
 export interface MealReminderSettings {
   enabled: boolean;
   lead: number; // minutes before the meal's slot time to notify
+}
+
+// Per-meal override of the default reminder — set from the meal entry itself
+// (works the same whether it was added from Pantry, My recipes or Food DB).
+export interface MealReminderOverride {
+  enabled: boolean; // false = never remind for this specific meal
+  time?: string; // "HH:MM" 24h custom time; unset = use the slot's default time
 }
 
 export interface CookbookCover {

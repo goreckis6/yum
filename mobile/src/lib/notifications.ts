@@ -1,5 +1,5 @@
 import * as Notifications from 'expo-notifications';
-import { MealPlan, MealSlot } from '../types';
+import { MealPlan, MealReminderOverride, MealSlot } from '../types';
 import { fromISO } from '../utils/dates';
 
 // Show meal reminders (with sound) even while the app is foregrounded.
@@ -25,6 +25,22 @@ const SLOT_TIME: Record<MealSlot, { h: number; m: number }> = {
 const KIND = 'meal-reminder';
 const MAX_SCHEDULED = 60; // stay under the iOS 64 pending-notification limit
 
+const pad2 = (n: number) => String(n).padStart(2, '0');
+
+// A slot's built-in default time as "HH:MM" — exposed for UI that lets the
+// user see/override it per meal.
+export function defaultSlotTime(slot: MealSlot): string {
+  const t = SLOT_TIME[slot];
+  return `${pad2(t.h)}:${pad2(t.m)}`;
+}
+
+// Parses a "HH:MM" 24h string; returns null if it isn't a valid time.
+export function parseTimeStr(v: string): { h: number; m: number } | null {
+  const m = /^([0-1]?\d|2[0-3]):([0-5]\d)$/.exec(v.trim());
+  if (!m) return null;
+  return { h: Number(m[1]), m: Number(m[2]) };
+}
+
 export async function ensureNotificationPermission(): Promise<boolean> {
   const current = await Notifications.getPermissionsAsync();
   if (current.granted) return true;
@@ -49,6 +65,7 @@ export async function cancelMealReminders(): Promise<void> {
 export async function scheduleMealReminders(
   plan: MealPlan,
   leadMinutes: number,
+  overrides: Record<string, MealReminderOverride>,
   content: (date: string, slot: MealSlot) => { title: string; body: string } | null,
 ): Promise<void> {
   await cancelMealReminders();
@@ -61,7 +78,11 @@ export async function scheduleMealReminders(
     if (!slots) continue;
     for (const slot of Object.keys(slots) as MealSlot[]) {
       if (!slots[slot]) continue;
-      const t = SLOT_TIME[slot];
+
+      const override = overrides[`${date}|${slot}`];
+      if (override?.enabled === false) continue; // muted for this specific meal
+
+      const t = (override?.time && parseTimeStr(override.time)) || SLOT_TIME[slot];
       const when = fromISO(date);
       when.setHours(t.h, t.m, 0, 0);
       when.setMinutes(when.getMinutes() - leadMinutes);

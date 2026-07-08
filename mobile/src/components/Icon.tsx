@@ -34,6 +34,7 @@ export type IconName =
   | 'calculator'
   | 'droplet'
   | 'grip'
+  | 'clock'
   | 'apple';
 
 interface Props {
@@ -69,6 +70,13 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
           fill={color}
           stroke="none"
         />
+      );
+    case 'clock':
+      return (
+        <>
+          <Circle cx={12} cy={12} r={9} {...s} />
+          <Polyline points="12 7 12 12 15.5 14" {...s} />
+        </>
       );
     case 'grip':
       return (

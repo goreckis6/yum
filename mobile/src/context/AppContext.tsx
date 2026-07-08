@@ -11,6 +11,7 @@ import {
   GroceryItem,
   MealEntry,
   MealPlan,
+  MealReminderOverride,
   MealSlot,
   PantryItem,
   Receipt,
@@ -69,6 +70,7 @@ interface AppContextValue extends AppState {
   grantCredits: (n: number) => void;
   setCredits: (n: number) => void;
   setMealReminders: (patch: Partial<AppState['mealReminders']>) => void;
+  setMealReminderOverride: (date: string, slot: MealSlot, override: MealReminderOverride | null) => void;
   addWater: (date: string, deltaMl: number) => void;
   setWeight: (kg: number) => void;
   setMealPlanWidgetOrder: (order: string[]) => void;
@@ -327,7 +329,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => {
       const mp = { ...s.mealPlan };
       if (mp[date]) mp[date] = { ...mp[date], [slot]: null };
-      return { ...s, mealPlan: mp };
+      // Drop any per-meal reminder override along with the meal itself.
+      const overrides = { ...(s.mealReminderOverrides ?? {}) };
+      delete overrides[`${date}|${slot}`];
+      return { ...s, mealPlan: mp, mealReminderOverrides: overrides };
     });
   }, []);
 
@@ -466,6 +471,20 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, mealReminders: { ...s.mealReminders, ...patch } }));
   }, []);
 
+  // Per-meal reminder override — pass `null` to reset back to the default.
+  const setMealReminderOverride = useCallback(
+    (date: string, slot: MealSlot, override: MealReminderOverride | null) => {
+      setState((s) => {
+        const overrides = { ...(s.mealReminderOverrides ?? {}) };
+        const key = `${date}|${slot}`;
+        if (override) overrides[key] = override;
+        else delete overrides[key];
+        return { ...s, mealReminderOverrides: overrides };
+      });
+    },
+    [],
+  );
+
   const addWater = useCallback((date: string, deltaMl: number) => {
     setState((s) => {
       const next = Math.max(0, (s.water?.[date] ?? 0) + deltaMl);
@@ -540,6 +559,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       grantCredits,
       setCredits,
       setMealReminders,
+      setMealReminderOverride,
       addWater,
       setWeight,
       setMealPlanWidgetOrder,
@@ -588,6 +608,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       grantCredits,
       setCredits,
       setMealReminders,
+      setMealReminderOverride,
       addWater,
       setWeight,
       setMealPlanWidgetOrder,

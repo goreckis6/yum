@@ -11,7 +11,7 @@ import {
 // Keeps the OS-scheduled meal reminders in sync with the meal plan + settings.
 // Renders nothing; lives inside AppProvider so it can read the plan and i18n.
 export function MealReminderSync() {
-  const { ready, mealPlan, mealReminders, getRecipe } = useApp();
+  const { ready, mealPlan, mealReminders, mealReminderOverrides, getRecipe } = useApp();
   const { t } = useI18n();
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export function MealReminderSync() {
       const ok = await ensureNotificationPermission();
       if (!ok || cancelled) return;
 
-      await scheduleMealReminders(mealPlan, mealReminders.lead, (date, slot) => {
+      await scheduleMealReminders(mealPlan, mealReminders.lead, mealReminderOverrides ?? {}, (date, slot) => {
         const entry = mealPlan[date]?.[slot];
         if (!entry) return null;
         const name = entry.type === 'recipe' ? getRecipe(entry.recipeId)?.title : entry.name;
@@ -44,7 +44,7 @@ export function MealReminderSync() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [ready, mealReminders.enabled, mealReminders.lead, mealPlan, getRecipe, t]);
+  }, [ready, mealReminders.enabled, mealReminders.lead, mealPlan, mealReminderOverrides, getRecipe, t]);
 
   return null;
 }

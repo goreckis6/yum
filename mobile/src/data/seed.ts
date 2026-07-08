@@ -26,6 +26,7 @@ export const SEED_STATE: AppState = {
   unitSystem: 'metric',
   credits: FREE_IMPORT_CREDITS,
   mealReminders: { enabled: false, lead: 60 },
+  mealReminderOverrides: {},
   water: {},
   weightKg: 0,
   mealPlanWidgetOrder: ['nutrition', 'water', 'slots'],

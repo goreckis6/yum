@@ -19,6 +19,8 @@ import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { matchIngredients, MatchResult } from '../lib/ingredientMatch';
 import { Icon } from '../components/Icon';
+import { MealReminderSheet } from '../components/MealReminderSheet';
+import { defaultSlotTime } from '../lib/notifications';
 
 const ADD_SLOT: Record<MealSlot, TKey> = {
   Breakfast: 'slot.addBreakfast',
@@ -76,7 +78,7 @@ function MatchBadge({
 /* ─── SlotEntryCard ──────────────────────────────────────────── */
 
 function SlotEntryCard({
-  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing,
+  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing, onEditReminder, hasReminderOverride, c,
 }: {
   entry: MealEntry;
   match?: MatchResult;
@@ -87,7 +89,19 @@ function SlotEntryCard({
   onRemove: () => void;
   onPressRecipe: (id: string) => void;
   onAddMissing: (missing: string[], recipe: Recipe) => void;
+  onEditReminder: () => void;
+  hasReminderOverride: boolean;
+  c: ThemeColors;
 }) {
+  const actions = (
+    <View style={styles.entryActions}>
+      <Pressable style={styles.reminderBtn} onPress={onEditReminder} hitSlop={6}>
+        <Icon name="clock" size={15} color={hasReminderOverride ? c.accent : c.grayMid} />
+      </Pressable>
+      <Pressable style={styles.remove} onPress={onRemove}><Text>✕</Text></Pressable>
+    </View>
+  );
+
   if (entry.type === 'recipe') {
     const rec = getRecipe(entry.recipeId);
     if (!rec) return null;
@@ -114,7 +128,7 @@ function SlotEntryCard({
             <MatchBadge match={match} recipe={rec} styles={styles} t={t} onAddMissing={onAddMissing} />
           )}
         </View>
-        <Pressable style={styles.remove} onPress={onRemove}><Text>✕</Text></Pressable>
+        {actions}
       </Pressable>
     );
   }
@@ -142,7 +156,7 @@ function SlotEntryCard({
           {t('mealplan.entry.grams' as TKey, { g: entry.grams, kcal: entry.kcal })}
         </Text>
       </View>
-      <Pressable style={styles.remove} onPress={onRemove}><Text>✕</Text></Pressable>
+      {actions}
     </View>
   );
 }
@@ -158,9 +172,11 @@ export function MealPlanScreen() {
     mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
     addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater, weightKg, setWeight,
     mealPlanWidgetOrder, setMealPlanWidgetOrder,
+    mealReminderOverrides, setMealReminderOverride,
   } = useApp();
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const [addOpen, setAddOpen] = useState(false);
+  const [reminderSlot, setReminderSlot] = useState<MealSlot | null>(null);
   const [addSlot, setAddSlot] = useState<MealSlot>('Dinner');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [widgetsDragging, setWidgetsDragging] = useState(false);
@@ -342,9 +358,12 @@ export function MealPlanScreen() {
                     getPantryItem={getPantryItem}
                     styles={styles}
                     t={t}
+                    c={c}
                     onRemove={() => removeMeal(selectedDate, slot)}
                     onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
                     onAddMissing={handleAddMissing}
+                    onEditReminder={() => setReminderSlot(slot)}
+                    hasReminderOverride={!!mealReminderOverrides?.[`${selectedDate}|${slot}`]}
                   />
                 ) : (
                   <Pressable
@@ -454,6 +473,20 @@ export function MealPlanScreen() {
         onSelect={setSelectedDate}
         onClose={() => setCalendarOpen(false)}
       />
+
+      {reminderSlot && (
+        <MealReminderSheet
+          visible={!!reminderSlot}
+          defaultTime={defaultSlotTime(reminderSlot)}
+          initialEnabled={mealReminderOverrides?.[`${selectedDate}|${reminderSlot}`]?.enabled ?? true}
+          initialTime={mealReminderOverrides?.[`${selectedDate}|${reminderSlot}`]?.time}
+          onClose={() => setReminderSlot(null)}
+          onSave={(enabled, time) => {
+            const isDefault = enabled && !time;
+            setMealReminderOverride(selectedDate, reminderSlot, isDefault ? null : { enabled, time });
+          }}
+        />
+      )}
     </>
   );
 }
@@ -523,6 +556,8 @@ const makeStyles = (c: ThemeColors) =>
     badgeTextPartial: { color: c.warningText },
     badgeArrow: { fontSize: 14, color: c.warningText, lineHeight: 16 },
 
+    entryActions: { alignItems: 'center', gap: 6, flexShrink: 0 },
+    reminderBtn: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
     remove: {
       width: 30, height: 30, borderRadius: 15,
       backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center',
