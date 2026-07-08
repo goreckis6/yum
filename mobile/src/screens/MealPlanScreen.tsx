@@ -197,8 +197,10 @@ export function MealPlanScreen() {
   const [hoverSlot, setHoverSlot] = useState<MealSlot | null>(null);
   const dragSlotRef = useRef<MealSlot | null>(null);
   const hoverSlotRef = useRef<MealSlot | null>(null);
-  const slotLayout = useRef<Partial<Record<MealSlot, { pageY: number; height: number }>>>({}).current;
-  const slotRowRefs = useRef<Partial<Record<MealSlot, View | null>>>({}).current;
+  // Row heights (label + card), measured via onLayout. Heights are stable
+  // regardless of scroll — unlike absolute screen coords — so the target-slot
+  // maths below never drifts when the planner is scrolled.
+  const slotHeights = useRef<Partial<Record<MealSlot, number>>>({}).current;
   const slotPanRef = useRef<Partial<Record<MealSlot, ReturnType<typeof PanResponder.create>>>>({}).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const [widgetsDragging, setWidgetsDragging] = useState(false);
@@ -299,16 +301,28 @@ export function MealPlanScreen() {
     else removeMeal(date, from);
   };
 
+  // Which slot the finger is currently over, derived purely from how far the
+  // card has been dragged (dy) and the measured row heights — no absolute
+  // screen coords, so scrolling never throws it off.
+  const targetSlotFor = (dragSlot: MealSlot, dy: number): MealSlot => {
+    const tops: number[] = [];
+    let top = 0;
+    for (const s of SLOTS) { tops.push(top); top += slotHeights[s] ?? 0; }
+    const di = SLOTS.indexOf(dragSlot);
+    const center = tops[di] + (slotHeights[dragSlot] ?? 0) / 2 + dy;
+    for (let i = 0; i < SLOTS.length; i++) {
+      if (center < tops[i] + (slotHeights[SLOTS[i]] ?? 0)) return SLOTS[i];
+    }
+    return SLOTS[SLOTS.length - 1];
+  };
+
   // Created once per slot and cached — never rebuilt across renders, so the
   // grip's touch handlers are stable for the whole gesture.
   const getSlotPan = (slot: MealSlot) => {
     if (slotPanRef[slot]) return slotPanRef[slot]!;
     const pan = PanResponder.create({
-      // Only claim the gesture once the finger has actually moved a little, so
-      // a plain tap on the grip doesn't start a drag — and nothing shifts on
-      // touch-down.
-      onStartShouldSetPanResponder: () => false,
-      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 4 || Math.abs(g.dx) > 4,
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
       onPanResponderGrant: () => {
         dragY.setValue(0);
         setDrag(slot);
@@ -316,13 +330,8 @@ export function MealPlanScreen() {
       },
       onPanResponderMove: (_, gesture) => {
         dragY.setValue(gesture.dy);
-        const y = gesture.moveY;
-        let found: MealSlot | null = null;
-        for (const s of SLOTS) {
-          const r = slotLayout[s];
-          if (r && y >= r.pageY && y <= r.pageY + r.height) { found = s; break; }
-        }
-        if (found && found !== hoverSlotRef.current) setHover(found);
+        const target = targetSlotFor(slot, gesture.dy);
+        if (target !== hoverSlotRef.current) setHover(target);
       },
       onPanResponderRelease: () => {
         const from = dragSlotRef.current;
@@ -442,13 +451,8 @@ export function MealPlanScreen() {
         return (
           <View
             key={slot}
-            ref={(r) => { slotRowRefs[slot] = r; }}
             style={[styles.slotBlock, isHoverTarget && styles.slotBlockHover]}
-            onLayout={() => {
-              slotRowRefs[slot]?.measure((_x, _y, _w, height, _pageX, pageY) => {
-                slotLayout[slot] = { pageY, height };
-              });
-            }}
+            onLayout={(e) => { slotHeights[slot] = e.nativeEvent.layout.height; }}
           >
             <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
             {entry ? (
