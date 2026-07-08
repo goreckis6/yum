@@ -112,30 +112,31 @@ function SlotEntryCard({
     const rec = getRecipe(entry.recipeId);
     if (!rec) return null;
     return (
-      <Pressable
+      <View
         style={[
           styles.slotCard,
           match && match.missing.length === 0 && styles.slotCardFull,
           match && match.missing.length > 0 && styles.slotCardPartial,
         ]}
-        onPress={() => onPressRecipe(rec.id)}
       >
-        {rec.imageUrl ? (
-          <Image source={{ uri: rec.imageUrl }} style={styles.thumb} resizeMode="cover" />
-        ) : (
-          <View style={[styles.thumb, { backgroundColor: rec.tint }]}>
-            <Text style={styles.thumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
-          </View>
-        )}
-        <View style={styles.cardBody}>
-          <Text style={styles.slotTitle}>{rec.title}</Text>
-          <Text style={styles.slotMeta}>{rec.time} min · {rec.kcal} kcal</Text>
-          {match && (
-            <MatchBadge match={match} recipe={rec} styles={styles} t={t} onAddMissing={onAddMissing} />
+        <Pressable style={styles.slotCardTouchable} onPress={() => onPressRecipe(rec.id)}>
+          {rec.imageUrl ? (
+            <Image source={{ uri: rec.imageUrl }} style={styles.thumb} resizeMode="cover" />
+          ) : (
+            <View style={[styles.thumb, { backgroundColor: rec.tint }]}>
+              <Text style={styles.thumbIcon}>{TAG_ICON[rec.tags?.[0] ?? ''] ?? '🍽️'}</Text>
+            </View>
           )}
-        </View>
+          <View style={styles.cardBody}>
+            <Text style={styles.slotTitle}>{rec.title}</Text>
+            <Text style={styles.slotMeta}>{rec.time} min · {rec.kcal} kcal</Text>
+            {match && (
+              <MatchBadge match={match} recipe={rec} styles={styles} t={t} onAddMissing={onAddMissing} />
+            )}
+          </View>
+        </Pressable>
         {actions}
-      </Pressable>
+      </View>
     );
   }
 
@@ -601,6 +602,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.surface, borderRadius: 18, padding: 11,
       borderWidth: 1.5, borderColor: 'transparent',
     },
+    slotCardTouchable: { flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 13 },
     slotCardFull: { borderColor: c.successBorder, backgroundColor: c.successBg },
     slotCardPartial: { borderColor: c.gold, backgroundColor: c.warning },
 
