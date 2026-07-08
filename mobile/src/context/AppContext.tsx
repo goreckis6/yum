@@ -7,6 +7,7 @@ import {
   Aisle,
   AppState,
   CookbookCover,
+  DateFormat,
   DayKey,
   GroceryItem,
   MealEntry,
@@ -65,6 +66,7 @@ interface AppContextValue extends AppState {
   removePantryItem: (id: string) => void;
   getPantryItem: (id: string) => PantryItem | undefined;
   setUnitSystem: (u: UnitSystem) => void;
+  setDateFormat: (f: DateFormat) => void;
   spendCredit: () => void;
   grantCredits: (n: number) => void;
   setCredits: (n: number) => void;
@@ -446,6 +448,10 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     setState((s) => ({ ...s, unitSystem: u }));
   }, []);
 
+  const setDateFormat = useCallback((f: DateFormat) => {
+    setState((s) => ({ ...s, dateFormat: f }));
+  }, []);
+
   // Spend one import credit (floored at 0). Called only on a SUCCESSFUL recipe
   // extraction — a "no recipe found" fallback must not call this.
   const spendCredit = useCallback(() => {
@@ -536,6 +542,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       removePantryItem,
       getPantryItem,
       setUnitSystem,
+      setDateFormat,
       spendCredit,
       grantCredits,
       setCredits,
@@ -584,6 +591,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       removePantryItem,
       getPantryItem,
       setUnitSystem,
+      setDateFormat,
       spendCredit,
       grantCredits,
       setCredits,

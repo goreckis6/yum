@@ -9,7 +9,7 @@ import { MealAddSheet } from '../components/MealAddSheet';
 import { CalendarSheet } from '../components/CalendarSheet';
 import { WaterCard } from '../components/WaterCard';
 import { ReorderableWidgets } from '../components/ReorderableWidgets';
-import { addDaysISO, dayOfMonth, isTodayISO, rangeISO, todayISO, weekdayKey } from '../utils/dates';
+import { addDaysISO, dayOfMonth, isTodayISO, monthLabelForISO, rangeISO, todayISO, weekdayKey } from '../utils/dates';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
@@ -151,7 +151,7 @@ function SlotEntryCard({
 
 export function MealPlanScreen() {
   const c = useTheme();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
@@ -168,6 +168,7 @@ export function MealPlanScreen() {
 
   const stripRef = useRef<FlatList<string>>(null);
   const PILL_W = 58; // pill width (50) + marginRight (8)
+  const [stripMonthIso, setStripMonthIso] = useState(selectedDate);
 
   // A wide, continuous strip (≈2 months back, a year ahead) so you can scroll
   // freely in both directions; it extends further if a more distant day is
@@ -187,7 +188,17 @@ export function MealPlanScreen() {
     requestAnimationFrame(() => {
       try { stripRef.current?.scrollToIndex({ index: i, viewPosition: 0.5, animated: true }); } catch {}
     });
+    setStripMonthIso(selectedDate);
   }, [selectedDate, days]);
+
+  // The month label above the strip tracks whatever's leading the visible
+  // window as you scroll, not just the selected day — otherwise it goes
+  // stale the moment you swipe away from the selection.
+  const onStripScroll = (x: number) => {
+    const i = Math.round(x / PILL_W);
+    const iso = days[Math.max(0, Math.min(days.length - 1, i))];
+    if (iso) setStripMonthIso(iso);
+  };
 
   const dayPlan = mealPlan[selectedDate] || {};
   const dayHasMeals = (iso: string) => {
@@ -370,11 +381,14 @@ export function MealPlanScreen() {
         </View>
 
         {/* Day strip — continuous from today's window through the selected day */}
+        <Text style={styles.stripMonth}>{monthLabelForISO(stripMonthIso, lang)}</Text>
         <FlatList
           ref={stripRef}
           data={days}
           horizontal
           showsHorizontalScrollIndicator={false}
+          onScroll={(e) => onStripScroll(e.nativeEvent.contentOffset.x)}
+          scrollEventThrottle={32}
           style={styles.weekRow}
           contentContainerStyle={styles.weekRowContent}
           keyExtractor={(iso) => iso}
@@ -457,6 +471,7 @@ const makeStyles = (c: ThemeColors) =>
       width: 44, height: 44, borderRadius: 22,
       backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center', marginTop: 4,
     },
+    stripMonth: { fontSize: 12.5, fontWeight: '700', color: c.grayMid, marginBottom: 8 },
     weekRow: { marginBottom: 22, marginHorizontal: -20 },
     weekRowContent: { paddingHorizontal: 20 },
     dayPill: {

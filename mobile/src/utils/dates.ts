@@ -85,3 +85,23 @@ export function monthLabel(year: number, month0: number, lang: string): string {
   const cap = name.charAt(0).toUpperCase() + name.slice(1);
   return `${cap} ${year}`;
 }
+
+// Month name for an ISO date, with the year only when it differs from the
+// current one — used for a lightweight "what month am I looking at" label
+// (e.g. above a scrolling day strip).
+export function monthLabelForISO(iso: ISODate, lang: string): string {
+  const d = fromISO(iso);
+  const y = d.getFullYear();
+  const name = (lang === 'pl' ? MONTHS_PL : MONTHS_EN)[d.getMonth()];
+  const cap = name.charAt(0).toUpperCase() + name.slice(1);
+  return y === new Date().getFullYear() ? cap : `${cap} ${y}`;
+}
+
+export type DateFormat = 'eu' | 'us';
+
+// Explicit numeric date, independent of device locale — EU: DD.MM.YYYY,
+// US: MM/DD/YYYY.
+export function formatDateNum(iso: ISODate, fmt: DateFormat): string {
+  const [y, m, d] = iso.split('-');
+  return fmt === 'us' ? `${m}/${d}/${y}` : `${d}.${m}.${y}`;
+}

@@ -32,6 +32,11 @@ const LANG_OPTIONS: { key: Lang; label: string }[] = [
   { key: 'pl', label: 'Polski' },
 ];
 
+const DATE_FORMAT_OPTIONS: { key: 'eu' | 'us'; labelKey: TKey }[] = [
+  { key: 'eu', labelKey: 'profile.dateFormatEU' },
+  { key: 'us', labelKey: 'profile.dateFormatUS' },
+];
+
 const SUPPORT_EMAIL = '3dstudiopoland@gmail.com';
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
@@ -50,7 +55,7 @@ export function ProfileScreen() {
   const { t, lang, setLang } = useI18n();
   const styles = makeStyles(c);
   const { mode, setMode } = useThemeCtx();
-  const { recipes, receipts, pantry, unitSystem, setUnitSystem, showToast, mealReminders, setMealReminders } = useApp();
+  const { recipes, receipts, pantry, unitSystem, setUnitSystem, dateFormat, setDateFormat, showToast, mealReminders, setMealReminders } = useApp();
 
   const onToggleReminders = async (value: boolean) => {
     if (value) {
@@ -201,6 +206,18 @@ export function ProfileScreen() {
           return (
             <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setLang(opt.key)}>
               <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text style={styles.section}>{t('profile.dateFormat')}</Text>
+      <View style={styles.segment}>
+        {DATE_FORMAT_OPTIONS.map((opt) => {
+          const on = dateFormat === opt.key;
+          return (
+            <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setDateFormat(opt.key)}>
+              <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{t(opt.labelKey)}</Text>
             </Pressable>
           );
         })}
