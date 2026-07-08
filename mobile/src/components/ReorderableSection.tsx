@@ -7,19 +7,23 @@ import { Icon } from './Icon';
 // Wraps a "widget" section (e.g. the nutrition dashboard, the water tracker)
 // with small up/down handles so the user can reorder it like a home-screen
 // widget. Kept dependency-free (no gesture/reanimated lib) so it doesn't
-// require a native rebuild.
+// require a native rebuild. A long-press jumps straight to the top/bottom.
 export function ReorderableSection({
   children,
   isFirst,
   isLast,
   onMoveUp,
   onMoveDown,
+  onMoveTop,
+  onMoveBottom,
 }: {
   children: React.ReactNode;
   isFirst: boolean;
   isLast: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
+  onMoveTop: () => void;
+  onMoveBottom: () => void;
 }) {
   const c = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
@@ -31,18 +35,20 @@ export function ReorderableSection({
         <Pressable
           style={[styles.handle, isFirst && styles.handleDisabled]}
           onPress={onMoveUp}
+          onLongPress={onMoveTop}
           disabled={isFirst}
-          hitSlop={6}
+          hitSlop={8}
         >
-          <Icon name="chevron-up" size={12} color={isFirst ? c.border : c.grayMuted} />
+          <Icon name="chevron-up" size={11} color={c.grayMuted} />
         </Pressable>
         <Pressable
           style={[styles.handle, isLast && styles.handleDisabled]}
           onPress={onMoveDown}
+          onLongPress={onMoveBottom}
           disabled={isLast}
-          hitSlop={6}
+          hitSlop={8}
         >
-          <Icon name="chevron-down" size={12} color={isLast ? c.border : c.grayMuted} />
+          <Icon name="chevron-down" size={11} color={c.grayMuted} />
         </Pressable>
       </View>
     </View>
@@ -51,14 +57,11 @@ export function ReorderableSection({
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    wrap: { position: 'relative', paddingTop: 12 },
+    wrap: { position: 'relative', paddingTop: 10 },
     handles: {
-      position: 'absolute', top: 0, right: 14, zIndex: 1,
-      flexDirection: 'row', gap: 1,
-      backgroundColor: c.surfaceAlt, borderRadius: 999,
-      paddingHorizontal: 4, paddingVertical: 2,
-      borderWidth: 1, borderColor: c.border,
+      position: 'absolute', top: 0, right: 16, zIndex: 1,
+      flexDirection: 'row', gap: 3,
     },
-    handle: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-    handleDisabled: { opacity: 0.35 },
+    handle: { width: 16, height: 16, alignItems: 'center', justifyContent: 'center', opacity: 0.55 },
+    handleDisabled: { opacity: 0.2 },
   });

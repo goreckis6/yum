@@ -265,6 +265,11 @@ export function MealPlanScreen() {
     setMealPlanWidgetOrder(next);
   };
 
+  const moveWidgetToEdge = (key: string, edge: 'top' | 'bottom') => {
+    const rest = widgetOrder.filter((w) => w !== key);
+    setMealPlanWidgetOrder(edge === 'top' ? [key, ...rest] : [...rest, key]);
+  };
+
   const renderWidget = (key: string) => {
     if (key === 'nutrition') {
       return (
@@ -377,6 +382,8 @@ export function MealPlanScreen() {
             isLast={i === widgetOrder.length - 1}
             onMoveUp={() => moveWidget(key, -1)}
             onMoveDown={() => moveWidget(key, 1)}
+            onMoveTop={() => moveWidgetToEdge(key, 'top')}
+            onMoveBottom={() => moveWidgetToEdge(key, 'bottom')}
           >
             {renderWidget(key)}
           </ReorderableSection>
