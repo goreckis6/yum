@@ -18,11 +18,13 @@ export function WaterCard({
   weightKg,
   onAdd,
   onSetWeight,
+  dragHandle,
 }: {
   intakeMl: number;
   weightKg: number;
   onAdd: (deltaMl: number) => void;
   onSetWeight: (kg: number) => void;
+  dragHandle?: React.ReactNode;
 }) {
   const c = useTheme();
   const { t } = useI18n();
@@ -49,9 +51,12 @@ export function WaterCard({
           <Icon name="droplet" size={18} color={c.water} fill />
           <Text style={styles.title}>{t('water.title' as TKey)}</Text>
         </View>
-        <Text style={styles.amount}>
-          {intakeMl}<Text style={styles.amountGoal}> / {goal} ml</Text>
-        </Text>
+        <View style={styles.amountRow}>
+          <Text style={styles.amount}>
+            {intakeMl}<Text style={styles.amountGoal}> / {goal} ml</Text>
+          </Text>
+          {dragHandle}
+        </View>
       </View>
 
       <View style={styles.track}>
@@ -116,6 +121,7 @@ const makeStyles = (c: ThemeColors) =>
       borderWidth: 1, borderColor: c.border, padding: 16,
     },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+    amountRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     title: { fontFamily: fonts.display, fontSize: 17, color: c.ink },
     amount: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.ink },

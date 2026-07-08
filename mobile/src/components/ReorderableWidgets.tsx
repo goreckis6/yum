@@ -4,14 +4,10 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { Icon } from './Icon';
 
-// Space reserved above the stack so each item's floating grip handle has
-// room to sit outside the card, clear of any top-right content (kcal, ml…).
-const TOP_RESERVE = 26;
-
 // A small, dependency-free drag-and-drop list (core Animated + PanResponder —
 // no react-native-gesture-handler/reanimated, so no native rebuild needed).
-// Drag by the grip handle in the corner of each widget; the rest of the card
-// stays fully interactive.
+// The drag handle is handed to `renderItem` so each card can place it inline
+// in its own header, next to its own content, instead of floating on top.
 export function ReorderableWidgets({
   order,
   onReorder,
@@ -21,7 +17,7 @@ export function ReorderableWidgets({
 }: {
   order: string[];
   onReorder: (order: string[]) => void;
-  renderItem: (key: string) => React.ReactNode;
+  renderItem: (key: string, dragHandle: React.ReactNode) => React.ReactNode;
   gap?: number;
   onDragStateChange?: (dragging: boolean) => void;
 }) {
@@ -130,11 +126,16 @@ export function ReorderableWidgets({
   const styles = makeStyles(c);
 
   return (
-    <View style={{ height: (totalHeight || 0) + TOP_RESERVE }}>
+    <View style={{ height: totalHeight || undefined }}>
       {stableKeys.map((key) => {
         const anim = ensureAnim(key);
         const pan = getResponder(key);
         const isDragging = draggingKey === key;
+        const dragHandle = (
+          <View {...pan.panHandlers} style={styles.grip} hitSlop={10}>
+            <Icon name="grip" size={14} color={c.grayMuted} />
+          </View>
+        );
         return (
           <Animated.View
             key={key}
@@ -148,10 +149,7 @@ export function ReorderableWidgets({
               isDragging && styles.itemDragging,
             ]}
           >
-            {renderItem(key)}
-            <View {...pan.panHandlers} style={styles.grip} hitSlop={10}>
-              <Icon name="grip" size={13} color={c.grayMuted} />
-            </View>
+            {renderItem(key, dragHandle)}
           </Animated.View>
         );
       })}
@@ -161,12 +159,7 @@ export function ReorderableWidgets({
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    item: { position: 'absolute', left: 0, right: 0, top: TOP_RESERVE },
+    item: { position: 'absolute', left: 0, right: 0 },
     itemDragging: { opacity: 0.92 },
-    grip: {
-      position: 'absolute', top: -(TOP_RESERVE - 4), right: 12,
-      width: 26, height: 22, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: c.surfaceAlt, borderRadius: 8,
-      borderWidth: 1, borderColor: c.border,
-    },
+    grip: { width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
   });

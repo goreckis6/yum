@@ -257,7 +257,7 @@ export function MealPlanScreen() {
       : [...mealPlanWidgetOrder, ...DEFAULT_WIDGETS.filter((w) => !mealPlanWidgetOrder.includes(w))]
     : DEFAULT_WIDGETS;
 
-  const renderWidget = (key: string) => {
+  const renderWidget = (key: string, dragHandle: React.ReactNode) => {
     if (key === 'nutrition') {
       return (
         <View style={styles.dayCard}>
@@ -266,9 +266,12 @@ export function MealPlanScreen() {
               <Text style={styles.dayCardLabel}>{t('mealplan.dayNutrition')}</Text>
               <Text style={styles.dayCardDay}>{dayLabel}</Text>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.dayCardKcal}>{dayKcal.toLocaleString()}</Text>
-              <Text style={styles.dayCardKcalUnit}>kcal</Text>
+            <View style={styles.dayCardKcalRow}>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={styles.dayCardKcal}>{dayKcal.toLocaleString()}</Text>
+                <Text style={styles.dayCardKcalUnit}>kcal</Text>
+              </View>
+              {dragHandle}
             </View>
           </View>
 
@@ -302,6 +305,7 @@ export function MealPlanScreen() {
           weightKg={weightKg ?? 0}
           onAdd={(ml) => addWater(selectedDate, ml)}
           onSetWeight={setWeight}
+          dragHandle={dragHandle}
         />
       );
     }
@@ -445,7 +449,7 @@ const makeStyles = (c: ThemeColors) =>
       width: 44, height: 44, borderRadius: 22,
       backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center', marginTop: 4,
     },
-    weekRow: { marginBottom: 8, marginHorizontal: -20 },
+    weekRow: { marginBottom: 22, marginHorizontal: -20 },
     weekRowContent: { paddingHorizontal: 20 },
     dayPill: {
       width: 50, borderRadius: 16, paddingVertical: 12,
@@ -513,6 +517,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     widgetsBlock: { marginBottom: 22 },
     dayCardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
+    dayCardKcalRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
     dayCardLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase' },
     dayCardDay: { fontFamily: fonts.display, fontSize: 18, color: c.ink, marginTop: 3 },
     dayCardKcal: { fontFamily: fonts.display, fontSize: 30, fontWeight: '700', color: c.ink },
