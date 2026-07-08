@@ -37,6 +37,11 @@ export function ReorderableWidgets({
   const anims = useRef<Record<string, Animated.Value>>({}).current;
   const orderRef = useRef(order);
   orderRef.current = order;
+  // The Y the dragged item started at, captured fresh at touch-down — reading
+  // this back from the Animated.Value itself would be unreliable, since
+  // useNativeDriver springs update the value natively and can leave the JS
+  // side stale.
+  const dragStartY = useRef(0);
 
   const ensureAnim = (key: string) => {
     if (!anims[key]) anims[key] = new Animated.Value(0);
@@ -74,25 +79,24 @@ export function ReorderableWidgets({
       onPanResponderGrant: () => {
         const anim = ensureAnim(key);
         anim.stopAnimation();
-        const startY = targetY(key, orderRef.current);
-        anim.setOffset(startY);
-        anim.setValue(0);
+        dragStartY.current = targetY(key, orderRef.current);
+        anim.setValue(dragStartY.current);
         setDraggingKey(key);
         onDragStateChange?.(true);
       },
       onPanResponderMove: (_, gesture) => {
         const anim = ensureAnim(key);
-        anim.setValue(gesture.dy);
+        const liveY = dragStartY.current + gesture.dy;
+        anim.setValue(liveY);
 
-        const base = targetY(key, orderRef.current);
-        const liveY = base + gesture.dy + (heights[key] ?? 0) / 2;
+        const center = liveY + (heights[key] ?? 0) / 2;
 
         const others = orderRef.current.filter((k) => k !== key);
         let acc = 0;
         let newIndex = others.length;
         for (let i = 0; i < others.length; i++) {
           const h = heights[others[i]] ?? 0;
-          if (liveY < acc + h / 2 + gap / 2) {
+          if (center < acc + h / 2 + gap / 2) {
             newIndex = i;
             break;
           }
@@ -106,12 +110,10 @@ export function ReorderableWidgets({
         }
       },
       onPanResponderRelease: () => {
-        ensureAnim(key).flattenOffset();
         setDraggingKey(null);
         onDragStateChange?.(false);
       },
       onPanResponderTerminate: () => {
-        ensureAnim(key).flattenOffset();
         setDraggingKey(null);
         onDragStateChange?.(false);
       },
