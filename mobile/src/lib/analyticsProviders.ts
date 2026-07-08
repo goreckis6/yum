@@ -1,37 +1,43 @@
 // The single place where real analytics/crash providers get turned on.
 //
-// Right now this is a no-op: events go to the dev console via the default sink
-// (see analytics.ts). When you're ready to see real dashboards, follow
-// mobile/docs/ANALYTICS_SETUP.md — create a PostHog and/or Sentry account, add
-// the keys to mobile/.env as EXPO_PUBLIC_* vars, install the packages, and
-// uncomment the blocks below. No screen code changes.
+// PostHog is wired in below. It only actually starts when EXPO_PUBLIC_POSTHOG_KEY
+// is set in mobile/.env — no key means the app keeps using the dev console sink
+// (see analytics.ts), so it still runs fine in Expo Go / without an account.
+// The env-key guard mirrors how RevenueCat is handled (PremiumContext.tsx).
 //
-// The env-key guard mirrors how RevenueCat is handled (src/context/Premium
-// Context.tsx): no key → the feature quietly stays off, so the app runs fine
-// in Expo Go and in development without any accounts.
+// See mobile/docs/ANALYTICS_SETUP.md for the account setup + Sentry steps.
 
-import { setAnalyticsSink } from './analytics';
+import PostHog from 'posthog-react-native';
+import { AnalyticsProps, setAnalyticsSink } from './analytics';
 
 const POSTHOG_KEY = process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '';
 const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://eu.i.posthog.com';
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
 
+let posthog: PostHog | null = null;
+
+// PostHog's property type rejects `undefined` values, so drop any before sending.
+function clean(props?: AnalyticsProps): Record<string, string | number | boolean | null> | undefined {
+  if (!props) return undefined;
+  const out: Record<string, string | number | boolean | null> = {};
+  for (const [k, v] of Object.entries(props)) {
+    if (v !== undefined) out[k] = v;
+  }
+  return out;
+}
+
 // Call once, as early as possible in App startup.
 export function initAnalytics() {
-  if (POSTHOG_KEY) {
-    // ── To enable PostHog ──────────────────────────────────────────────
-    // 1. `npx expo install posthog-react-native expo-file-system expo-application expo-device expo-localization`
-    // 2. Uncomment:
-    //
-    // const { PostHog } = require('posthog-react-native');
-    // const client = new PostHog(POSTHOG_KEY, { host: POSTHOG_HOST });
-    // setAnalyticsSink({
-    //   track: (event, props) => client.capture(event, props),
-    //   identify: (userId, traits) => client.identify(userId, traits),
-    //   reset: () => client.reset(),
-    // });
-    // 3. Rebuild the dev client (adds a native module): `npx expo run:ios`
-    if (__DEV__) console.log('📊 PostHog key present — uncomment the block in analyticsProviders.ts to enable it.');
+  if (POSTHOG_KEY && !posthog) {
+    posthog = new PostHog(POSTHOG_KEY, { host: POSTHOG_HOST });
+    setAnalyticsSink({
+      track: (event, props) => posthog?.capture(event, clean(props)),
+      identify: (userId, traits) => posthog?.identify(userId, clean(traits)),
+      reset: () => posthog?.reset(),
+    });
+    if (__DEV__) console.log('📊 PostHog enabled →', POSTHOG_HOST);
+  } else if (!POSTHOG_KEY && __DEV__) {
+    console.log('📊 No EXPO_PUBLIC_POSTHOG_KEY — analytics stays in the dev console.');
   }
 
   if (SENTRY_DSN) {
@@ -45,8 +51,4 @@ export function initAnalytics() {
     // 4. Rebuild: `npx expo run:ios`
     if (__DEV__) console.log('📊 Sentry DSN present — uncomment the block in analyticsProviders.ts to enable it.');
   }
-
-  // Keep a reference so tree-shakers/linters don't drop the import while the
-  // provider blocks are still commented out.
-  void setAnalyticsSink;
 }
