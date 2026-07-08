@@ -34,7 +34,7 @@ export function ReorderableSection({
           disabled={isFirst}
           hitSlop={6}
         >
-          <Icon name="chevron-up" size={16} color={isFirst ? c.border : c.grayMid} />
+          <Icon name="chevron-up" size={12} color={isFirst ? c.border : c.grayMuted} />
         </Pressable>
         <Pressable
           style={[styles.handle, isLast && styles.handleDisabled]}
@@ -42,7 +42,7 @@ export function ReorderableSection({
           disabled={isLast}
           hitSlop={6}
         >
-          <Icon name="chevron-down" size={16} color={isLast ? c.border : c.grayMid} />
+          <Icon name="chevron-down" size={12} color={isLast ? c.border : c.grayMuted} />
         </Pressable>
       </View>
     </View>
@@ -51,12 +51,14 @@ export function ReorderableSection({
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
-    wrap: { position: 'relative' },
+    wrap: { position: 'relative', paddingTop: 12 },
     handles: {
-      position: 'absolute', top: 14, right: 14,
-      flexDirection: 'row', gap: 2,
-      backgroundColor: c.surfaceAlt, borderRadius: 999, padding: 3,
+      position: 'absolute', top: 0, right: 14, zIndex: 1,
+      flexDirection: 'row', gap: 1,
+      backgroundColor: c.surfaceAlt, borderRadius: 999,
+      paddingHorizontal: 4, paddingVertical: 2,
+      borderWidth: 1, borderColor: c.border,
     },
-    handle: { width: 22, height: 22, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
-    handleDisabled: { opacity: 0.4 },
+    handle: { width: 18, height: 18, alignItems: 'center', justifyContent: 'center', borderRadius: 999 },
+    handleDisabled: { opacity: 0.35 },
   });

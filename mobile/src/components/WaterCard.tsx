@@ -88,7 +88,7 @@ export function WaterCard({
         <Text style={styles.weightText}>
           {weightKg > 0 ? t('water.weightSet' as TKey, { kg: weightKg }) : t('water.setWeight' as TKey)}
         </Text>
-        <Text style={[styles.weightEdit, { color: c.water }]}>{t('common.change' as TKey)}</Text>
+        <Text style={styles.weightEdit}>{t('common.change' as TKey)}</Text>
       </Pressable>
 
       <PromptModal
@@ -118,7 +118,7 @@ const makeStyles = (c: ThemeColors) =>
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
     titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     title: { fontFamily: fonts.display, fontSize: 17, color: c.ink },
-    amount: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.water },
+    amount: { fontFamily: fonts.display, fontSize: 18, fontWeight: '700', color: c.ink },
     amountGoal: { fontFamily: fonts.body, fontSize: 13, color: c.grayMid, fontWeight: '600' },
     track: { height: 8, borderRadius: 5, backgroundColor: c.surfaceAlt, overflow: 'hidden' },
     fill: { height: '100%', borderRadius: 5, backgroundColor: c.water },
