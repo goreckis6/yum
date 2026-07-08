@@ -20,6 +20,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { clearCache } from '../storage/persist';
 import { getApiBaseUrl } from '../config/api';
 import { ensureNotificationPermission } from '../lib/notifications';
+import { formatDateNum, todayISO } from '../utils/dates';
 
 const LEAD_OPTIONS: { value: number; labelKey: TKey }[] = [
   { value: 30, labelKey: 'reminder.lead30' },
@@ -212,12 +213,22 @@ export function ProfileScreen() {
       </View>
 
       <Text style={styles.section}>{t('profile.dateFormat')}</Text>
-      <View style={styles.segment}>
-        {DATE_FORMAT_OPTIONS.map((opt) => {
+      <View style={styles.dateFmtCard}>
+        {DATE_FORMAT_OPTIONS.map((opt, i) => {
           const on = dateFormat === opt.key;
           return (
-            <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setDateFormat(opt.key)}>
-              <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{t(opt.labelKey)}</Text>
+            <Pressable
+              key={opt.key}
+              style={[styles.dateFmtOption, i < DATE_FORMAT_OPTIONS.length - 1 && styles.dateFmtOptionBorder]}
+              onPress={() => setDateFormat(opt.key)}
+            >
+              <View style={[styles.dateFmtRadio, on && styles.dateFmtRadioOn]}>
+                {on && <View style={styles.dateFmtRadioDot} />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.dateFmtLabel}>{t(opt.labelKey)}</Text>
+                <Text style={styles.dateFmtExample}>{formatDateNum(todayISO(), opt.key)}</Text>
+              </View>
             </Pressable>
           );
         })}
@@ -385,6 +396,22 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   unitRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.accent },
   unitLabel: { fontSize: 14, fontWeight: '600', color: c.ink },
   unitLabelOn: { color: c.accent },
+  dateFmtCard: {
+    backgroundColor: c.surface, borderRadius: 16,
+    borderWidth: 1, borderColor: c.border,
+    overflow: 'hidden', marginBottom: 24,
+  },
+  dateFmtOption: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingVertical: 14 },
+  dateFmtOptionBorder: { borderBottomWidth: 1, borderBottomColor: c.border },
+  dateFmtRadio: {
+    width: 20, height: 20, borderRadius: 10,
+    borderWidth: 2, borderColor: c.gray,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  dateFmtRadioOn: { borderColor: c.accent },
+  dateFmtRadioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.accent },
+  dateFmtLabel: { fontSize: 14.5, fontWeight: '700', color: c.ink },
+  dateFmtExample: { fontSize: 12.5, fontWeight: '500', color: c.grayMid, marginTop: 2 },
   section: { fontFamily: fonts.display, fontSize: 17, color: c.ink, marginBottom: 10 },
   group: {
     backgroundColor: c.surface,
