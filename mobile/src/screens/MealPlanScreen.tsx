@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, FlatList, Image, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -78,7 +78,7 @@ function MatchBadge({
 /* ─── SlotEntryCard ──────────────────────────────────────────── */
 
 function SlotEntryCard({
-  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing, onEditReminder, hasReminderOverride, c,
+  entry, match, getRecipe, getPantryItem, styles, t, onRemove, onPressRecipe, onAddMissing, onEditReminder, hasReminderOverride, c, dragHandlers,
 }: {
   entry: MealEntry;
   match?: MatchResult;
@@ -92,9 +92,15 @@ function SlotEntryCard({
   onEditReminder: () => void;
   hasReminderOverride: boolean;
   c: ThemeColors;
+  dragHandlers?: object;
 }) {
   const actions = (
     <View style={styles.entryActions}>
+      {dragHandlers && (
+        <View {...dragHandlers} style={styles.reminderBtn} hitSlop={6}>
+          <Icon name="grip" size={15} color={c.grayMid} />
+        </View>
+      )}
       <Pressable style={styles.reminderBtn} onPress={onEditReminder} hitSlop={6}>
         <Icon name="clock" size={15} color={hasReminderOverride ? c.accent : c.grayMid} />
       </Pressable>
@@ -179,6 +185,13 @@ export function MealPlanScreen() {
   const [reminderSlot, setReminderSlot] = useState<MealSlot | null>(null);
   const [addSlot, setAddSlot] = useState<MealSlot>('Dinner');
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  // Drag a meal entry from one slot to another (within the meals list only).
+  const [dragSlot, setDragSlot] = useState<MealSlot | null>(null);
+  const [hoverSlot, setHoverSlot] = useState<MealSlot | null>(null);
+  const slotLayout = useRef<Partial<Record<MealSlot, { pageY: number; height: number }>>>({}).current;
+  const slotRowRefs = useRef<Partial<Record<MealSlot, View | null>>>({}).current;
+  const dragY = useRef(new Animated.Value(0)).current;
   const [widgetsDragging, setWidgetsDragging] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -254,6 +267,48 @@ export function MealPlanScreen() {
       ],
     );
   };
+
+  // Move (or swap, if the target already has something) a meal entry from
+  // one slot to another on the same day.
+  const onMoveEntry = (from: MealSlot, to: MealSlot) => {
+    const fromEntry = dayPlan[from];
+    if (!fromEntry) return;
+    const toEntry = dayPlan[to];
+    assignMeal(selectedDate, to, fromEntry);
+    if (toEntry) assignMeal(selectedDate, from, toEntry);
+    else removeMeal(selectedDate, from);
+  };
+
+  const makeSlotPan = (slot: MealSlot) =>
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        dragY.setValue(0);
+        setDragSlot(slot);
+        setHoverSlot(slot);
+      },
+      onPanResponderMove: (_, gesture) => {
+        dragY.setValue(gesture.dy);
+        const y = gesture.moveY;
+        let found: MealSlot | null = null;
+        for (const s of SLOTS) {
+          const r = slotLayout[s];
+          if (r && y >= r.pageY && y <= r.pageY + r.height) { found = s; break; }
+        }
+        if (found && found !== hoverSlot) setHoverSlot(found);
+      },
+      onPanResponderRelease: () => {
+        if (dragSlot && hoverSlot && hoverSlot !== dragSlot) onMoveEntry(dragSlot, hoverSlot);
+        setDragSlot(null);
+        setHoverSlot(null);
+        dragY.setValue(0);
+      },
+      onPanResponderTerminate: () => {
+        setDragSlot(null);
+        setHoverSlot(null);
+        dragY.setValue(0);
+      },
+    });
 
   let dayKcal = 0, dayP = 0, dayC = 0, dayF = 0;
   for (const slot of SLOTS) {
@@ -346,25 +401,41 @@ export function MealPlanScreen() {
           {SLOTS.map((slot) => {
             const entry = dayPlan[slot];
             const match = matches[slot];
+            const isDragging = dragSlot === slot;
+            const isHoverTarget = hoverSlot === slot && dragSlot !== null && dragSlot !== slot;
 
             return (
-              <View key={slot} style={styles.slotBlock}>
+              <View
+                key={slot}
+                ref={(r) => { slotRowRefs[slot] = r; }}
+                style={[styles.slotBlock, isHoverTarget && styles.slotBlockHover]}
+                onLayout={() => {
+                  slotRowRefs[slot]?.measure((_x, _y, _w, height, _pageX, pageY) => {
+                    slotLayout[slot] = { pageY, height };
+                  });
+                }}
+              >
                 <Text style={styles.slotLabel}>{t(`slot.${slot}` as TKey)}</Text>
                 {entry ? (
-                  <SlotEntryCard
-                    entry={entry}
-                    match={match}
-                    getRecipe={getRecipe}
-                    getPantryItem={getPantryItem}
-                    styles={styles}
-                    t={t}
-                    c={c}
-                    onRemove={() => removeMeal(selectedDate, slot)}
-                    onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
-                    onAddMissing={handleAddMissing}
-                    onEditReminder={() => setReminderSlot(slot)}
-                    hasReminderOverride={!!mealReminderOverrides?.[`${selectedDate}|${slot}`]}
-                  />
+                  <Animated.View
+                    style={isDragging ? { transform: [{ translateY: dragY }], zIndex: 10, elevation: 6 } : undefined}
+                  >
+                    <SlotEntryCard
+                      entry={entry}
+                      match={match}
+                      getRecipe={getRecipe}
+                      getPantryItem={getPantryItem}
+                      styles={styles}
+                      t={t}
+                      c={c}
+                      onRemove={() => removeMeal(selectedDate, slot)}
+                      onPressRecipe={(id) => navigation.navigate('RecipeDetail', { id })}
+                      onAddMissing={handleAddMissing}
+                      onEditReminder={() => setReminderSlot(slot)}
+                      hasReminderOverride={!!mealReminderOverrides?.[`${selectedDate}|${slot}`]}
+                      dragHandlers={makeSlotPan(slot).panHandlers}
+                    />
+                  </Animated.View>
                 ) : (
                   <Pressable
                     style={styles.addSlot}
@@ -521,7 +592,8 @@ const makeStyles = (c: ThemeColors) =>
 
     slotsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
     slotsHeaderLabel: { fontSize: 12, fontWeight: '700', letterSpacing: 0.5, color: c.accent, textTransform: 'uppercase' },
-    slotBlock: { marginBottom: 14 },
+    slotBlock: { marginBottom: 14, borderRadius: 18 },
+    slotBlockHover: { backgroundColor: c.accentSoft },
     slotLabel: { fontSize: 13, fontWeight: '700', color: c.grayLight, marginBottom: 9 },
 
     slotCard: {
