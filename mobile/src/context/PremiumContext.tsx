@@ -14,8 +14,9 @@ const RC_KEY =
     ? process.env.EXPO_PUBLIC_RC_IOS_KEY ?? ''
     : process.env.EXPO_PUBLIC_RC_ANDROID_KEY ?? '';
 
-// Must match the entitlement identifier in the RevenueCat dashboard exactly.
-const ENTITLEMENT = 'YumiSharev1';
+// Single premium tier: ANY active RevenueCat entitlement unlocks it. We don't
+// hard-code a specific identifier, so a rename or a mismatch between the
+// dashboard's identifier and its display name can't silently break unlocking.
 
 // react-native-purchases is a native module that does NOT exist in Expo Go —
 // calling Purchases.configure() there crashes the app. appOwnership === 'expo'
@@ -57,7 +58,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   const [managementURL, setManagementURL] = useState<string | null>(null);
 
   const applyInfo = useCallback((info: CustomerInfo) => {
-    setIsPremium(!!info.entitlements.active[ENTITLEMENT]);
+    setIsPremium(Object.keys(info.entitlements.active).length > 0);
     setManagementURL(info.managementURL ?? null);
   }, []);
 
