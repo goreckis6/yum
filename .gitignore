@@ -36,3 +36,7 @@ Thumbs.db
 
 # Backend runtime uploads
 uploads/
+
+# local .env backups (may contain secrets)
+.env.bak*
+**/.env.bak*
