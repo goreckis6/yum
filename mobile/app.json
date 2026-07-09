@@ -17,7 +17,8 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
-        "NSCameraUsageDescription": "YumiShare needs access to your camera so you can take a photo for a recipe or cookbook cover."
+        "NSCameraUsageDescription": "YumiShare needs access to your camera so you can take a photo for a recipe or cookbook cover.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -59,6 +60,7 @@
       [
         "expo-share-intent",
         {
+          "disableExperimental": true,
           "iosActivationRules": {
             "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
             "NSExtensionActivationSupportsText": true
@@ -76,7 +78,24 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "f6353ef8-1a4f-47c0-a758-88e03095236b"
+        "projectId": "f6353ef8-1a4f-47c0-a758-88e03095236b",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "ShareExtension",
+                  "bundleIdentifier": "com.yumshare.app.share-extension",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.yumshare.app"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }
