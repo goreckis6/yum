@@ -4,5 +4,5 @@
 // scanned photos are sent to OpenAI for recipe extraction (App Store 5.1.2).
 export const LINKS = {
   privacy: 'https://yumishare.com/policy.html',
-  terms: '',
+  terms: 'https://yumishare.com/terms.html',
 };
