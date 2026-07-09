@@ -79,19 +79,22 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
           <Polyline points="12 7 12 12 15.5 14" {...s} />
         </>
       );
-    case 'coin':
-      // A reward token: coin rim + a small sparkle — reads clearly as an
-      // import credit, not "fire". Filled = solid coin with a light star.
+    case 'coin': {
+      // A game-style coin: a solid disc with a big centre star cut out of it —
+      // unmistakably an import credit at any size (not a flame/sparkle). Star is
+      // white on the solid coin (header pill), or the coin colour when outlined.
+      const detail = fill ? '#fff' : color;
       return (
         <>
           <Circle cx={12} cy={12} r={9} {...s} fill={fill ? color : 'none'} />
           <Path
-            d="M12 7.6 L13 11 L16.4 12 L13 13 L12 16.4 L11 13 L7.6 12 L11 11 Z"
-            fill={fill ? '#fff' : color}
+            d="M12 7.7 L13.12 10.46 L16.09 10.67 L13.81 12.59 L14.53 15.48 L12 13.9 L9.47 15.48 L10.19 12.59 L7.91 10.67 L10.88 10.46 Z"
+            fill={detail}
             stroke="none"
           />
         </>
       );
+    }
     case 'grip':
       return (
         <>
