@@ -681,7 +681,7 @@ export function HomeScreen() {
           onPress={() => navigation.navigate('Paywall', { reason: 'upsell' })}
           hitSlop={8}
         >
-          <Icon name="flame" size={14} color={unlimited ? c.accent : c.gold} fill />
+          <Icon name="coin" size={14} color={unlimited ? c.accent : c.gold} fill />
           <Text style={[styles.creditsText, unlimited && styles.creditsTextPro]}>
             {unlimited ? t('credits.pro') : t('credits.left', { n: credits })}
           </Text>

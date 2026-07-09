@@ -35,6 +35,7 @@ export type IconName =
   | 'droplet'
   | 'grip'
   | 'clock'
+  | 'coin'
   | 'apple';
 
 interface Props {
@@ -76,6 +77,19 @@ function render(name: IconName, s: object, color: string, fill: boolean) {
         <>
           <Circle cx={12} cy={12} r={9} {...s} />
           <Polyline points="12 7 12 12 15.5 14" {...s} />
+        </>
+      );
+    case 'coin':
+      // A reward token: coin rim + a small sparkle — reads clearly as an
+      // import credit, not "fire". Filled = solid coin with a light star.
+      return (
+        <>
+          <Circle cx={12} cy={12} r={9} {...s} fill={fill ? color : 'none'} />
+          <Path
+            d="M12 7.6 L13 11 L16.4 12 L13 13 L12 16.4 L11 13 L7.6 12 L11 11 Z"
+            fill={fill ? '#fff' : color}
+            stroke="none"
+          />
         </>
       );
     case 'grip':
