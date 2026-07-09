@@ -3,6 +3,6 @@
 // a "coming soon" toast. The privacy policy MUST state that imported content and
 // scanned photos are sent to OpenAI for recipe extraction (App Store 5.1.2).
 export const LINKS = {
-  privacy: 'https://yumishare.com/policy.html',
-  terms: 'https://yumishare.com/terms.html',
+  privacy: 'https://yumishare.com/privacy/',
+  terms: 'https://yumishare.com/tos/',
 };
