@@ -73,7 +73,20 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
       const info = await Purchases.getCustomerInfo();
       applyInfo(info);
       const offerings = await Purchases.getOfferings();
-      setOffering(offerings.current ?? null);
+      const current = offerings.current ?? null;
+      setOffering(current);
+      if (__DEV__) {
+        // If this logs 0 packages, the products aren't fetchable from the
+        // store yet (wrong product IDs, still "Missing Metadata", or not in
+        // the current offering) — the paywall shows the retry state.
+        console.log(
+          '[Premium] current offering:',
+          current?.identifier ?? 'NONE',
+          '| packages:',
+          current?.availablePackages?.length ?? 0,
+          current?.availablePackages?.map((p) => `${p.identifier}:${p.product.identifier}`) ?? [],
+        );
+      }
     } catch (e) {
       console.warn('[Premium] refresh failed', e);
     } finally {

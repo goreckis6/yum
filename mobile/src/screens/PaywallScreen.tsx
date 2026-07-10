@@ -54,7 +54,7 @@ export function PaywallScreen({
   const { t } = useI18n();
   const { signOut } = useAuth();
   const { recipes } = useApp();
-  const { offering, isLoading, purchase, restore } = usePremium();
+  const { offering, isLoading, purchase, restore, refresh } = usePremium();
 
   // Sell the moment, not a feature list: someone who just hit the free-import
   // wall sees a very different headline than someone browsing Premium.
@@ -79,6 +79,14 @@ export function PaywallScreen({
   useEffect(() => {
     track('paywall_viewed', { reason });
   }, [reason]);
+
+  // Always re-pull offerings when the paywall opens. RevenueCat caches the
+  // offering, so right after you wire products in the dashboard the app can
+  // still be holding an empty cache from launch — this forces a fresh fetch
+  // so newly-added plans appear without a full app restart.
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
   // Default the selection to the annual plan (or the first available).
   const selectedPkg =
@@ -157,7 +165,12 @@ export function PaywallScreen({
       {isLoading ? (
         <ActivityIndicator color={c.ink} style={{ marginVertical: 32 }} />
       ) : packages.length === 0 ? (
-        <Text style={styles.empty}>{t('paywall.comingSoon' as TKey)}</Text>
+        <View style={styles.emptyBox}>
+          <Text style={styles.empty}>{t('paywall.plansUnavailable' as TKey)}</Text>
+          <Pressable style={styles.retryBtn} onPress={() => refresh()} hitSlop={8}>
+            <Text style={styles.retryText}>{t('paywall.retry' as TKey)}</Text>
+          </Pressable>
+        </View>
       ) : (
         <View style={styles.plans}>
           {packages.map((pkg) => {
@@ -312,7 +325,10 @@ const makeStyles = (c: ThemeColors) =>
     bestText: { fontSize: 11, fontWeight: '800', color: '#fff' },
     planPrice: { fontSize: 16, fontWeight: '700', color: c.ink },
 
-    empty: { fontSize: 15, fontWeight: '600', color: c.grayMuted, marginVertical: 32 },
+    emptyBox: { alignItems: 'center', marginVertical: 28, gap: 12 },
+    empty: { fontSize: 14, fontWeight: '600', color: c.grayMuted, textAlign: 'center', paddingHorizontal: 12 },
+    retryBtn: { backgroundColor: c.surfaceAlt, borderRadius: 999, paddingVertical: 10, paddingHorizontal: 22 },
+    retryText: { fontSize: 14, fontWeight: '700', color: c.accent },
 
     error: { fontSize: 13, fontWeight: '600', color: c.dangerText, marginBottom: 12, textAlign: 'center' },
 
