@@ -130,6 +130,9 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   const purchase = useCallback(
     async (pkg: PurchasesPackage): Promise<PurchaseResult> => {
+      // No SDK configured (Expo Go / missing key) → don't call into the native
+      // module (it throws "no singleton instance"); fail cleanly instead.
+      if (BYPASS) return { error: 'Purchases are unavailable in this build.' };
       try {
         const { customerInfo } = await Purchases.purchasePackage(pkg);
         applyInfo(customerInfo);
@@ -143,6 +146,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   );
 
   const restore = useCallback(async () => {
+    if (BYPASS) return { error: 'Purchases are unavailable in this build.' };
     try {
       const info = await Purchases.restorePurchases();
       applyInfo(info);
