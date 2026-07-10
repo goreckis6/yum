@@ -200,7 +200,7 @@ const NOTIF_ASKED_KEY = 'notif_asked_v1';
 
 function Gate() {
   const { session, user, initializing } = useAuth();
-  const { isLoading: premiumLoading } = usePremium();
+  const { initialized: premiumReady } = usePremium();
   const c = useTheme();
   const [showAuth, setShowAuth] = React.useState(false);
   // null = still loading the stored flag, false = must consent, true = consented.
@@ -249,8 +249,10 @@ function Gate() {
     return <AuthScreen onBack={() => setShowAuth(false)} />;
   }
 
-  // Logged in but still resolving subscription state.
-  if (premiumLoading) {
+  // Logged in but still resolving subscription state for the FIRST time.
+  // (Only the initial load blanks the app — later refreshes must not, or they
+  // tear down navigation and dismiss the paywall mid-open.)
+  if (!premiumReady) {
     return (
       <View style={[styles.loading, { backgroundColor: c.bg }]}>
         <ActivityIndicator size="large" color={c.ink} />

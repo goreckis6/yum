@@ -37,6 +37,10 @@ interface PurchaseResult {
 interface PremiumContextValue {
   isPremium: boolean;
   isLoading: boolean;
+  // True once the FIRST subscription resolution has finished. The app Gate
+  // waits on this — NOT on isLoading — so later refreshes (e.g. opening the
+  // paywall) don't blank the whole app and tear down navigation.
+  initialized: boolean;
   offering: PurchasesOffering | null;
   managementURL: string | null;
   purchase: (pkg: PurchasesPackage) => Promise<PurchaseResult>;
@@ -54,6 +58,8 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
   // Default to FREE (not premium); only a live RevenueCat entitlement flips this.
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(!BYPASS);
+  // In BYPASS there's nothing to resolve, so we're initialized immediately.
+  const [initialized, setInitialized] = useState(BYPASS);
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [managementURL, setManagementURL] = useState<string | null>(null);
 
@@ -66,6 +72,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
     if (BYPASS) {
       setIsPremium(false); // free account in dev / Expo Go
       setIsLoading(false);
+      setInitialized(true);
       return;
     }
     setIsLoading(true);
@@ -91,6 +98,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
       console.warn('[Premium] refresh failed', e);
     } finally {
       setIsLoading(false);
+      setInitialized(true);
     }
   }, [applyInfo]);
 
@@ -158,7 +166,7 @@ export function PremiumProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <PremiumContext.Provider
-      value={{ isPremium, isLoading, offering, managementURL, purchase, restore, refresh }}
+      value={{ isPremium, isLoading, initialized, offering, managementURL, purchase, restore, refresh }}
     >
       {children}
     </PremiumContext.Provider>

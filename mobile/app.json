@@ -14,7 +14,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.yumshare.app",
-      "buildNumber": "6",
+      "buildNumber": "7",
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
