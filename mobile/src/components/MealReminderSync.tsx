@@ -7,12 +7,13 @@ import {
   ensureNotificationPermission,
   scheduleMealReminders,
 } from '../lib/notifications';
+import { pickReminderMessage } from '../lib/reminderMessages';
 
 // Keeps the OS-scheduled meal reminders in sync with the meal plan + settings.
 // Renders nothing; lives inside AppProvider so it can read the plan and i18n.
 export function MealReminderSync() {
   const { ready, mealPlan, mealReminders, mealReminderOverrides, getRecipe } = useApp();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
 
   useEffect(() => {
     if (!ready) return;
@@ -31,10 +32,8 @@ export function MealReminderSync() {
         if (!entry) return null;
         const name = entry.type === 'recipe' ? getRecipe(entry.recipeId)?.title : entry.name;
         if (!name) return null;
-        return {
-          title: t('reminder.title', { slot: t(`slot.${slot}` as TKey) }),
-          body: t('reminder.body', { name }),
-        };
+        // Random variant per meal so the notification stack isn't repetitive.
+        return pickReminderMessage(lang, t(`slot.${slot}` as TKey), name);
       });
     };
 
@@ -44,7 +43,7 @@ export function MealReminderSync() {
       cancelled = true;
       clearTimeout(id);
     };
-  }, [ready, mealReminders.enabled, mealReminders.lead, mealPlan, mealReminderOverrides, getRecipe, t]);
+  }, [ready, mealReminders.enabled, mealReminders.lead, mealPlan, mealReminderOverrides, getRecipe, t, lang]);
 
   return null;
 }
