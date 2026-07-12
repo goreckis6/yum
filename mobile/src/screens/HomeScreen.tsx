@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
+  FlatList,
   Image,
   Pressable,
   ScrollView,
@@ -444,28 +445,6 @@ export function HomeScreen() {
         )}
       </View>
 
-      {filtered.length === 0 ? (
-        <Text style={styles.empty}>
-          {activeCookbook ? t('home.emptyCookbook') : t('home.noResults')}
-        </Text>
-      ) : (
-        <View style={styles.grid}>
-          {filtered.map((r, idx) => (
-            <View key={r.id || `r${idx}`} style={styles.gridItem}>
-              <RecipeCard
-                title={r.title}
-                rating={r.rating}
-                timeStr={`${r.time} min`}
-                sourceApp={r.app}
-                tint={r.tint}
-                imageUrl={r.imageUrl}
-                cover={r.cover}
-                onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
-              />
-            </View>
-          ))}
-        </View>
-      )}
     </>
   );
 
@@ -672,37 +651,70 @@ export function HomeScreen() {
 
   return (
     <>
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <View style={styles.brand}>
-          <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-          <Text style={styles.brandName}>YumiShare</Text>
-        </View>
-        <Pressable
-          style={[styles.creditsPill, unlimited && styles.creditsPillPro]}
-          onPress={() => navigation.navigate('Paywall', { reason: 'upsell' })}
-          hitSlop={8}
-        >
-          <Icon
-            name="coin"
-            size={14}
-            color={unlimited ? c.accent : lowCredits ? c.dangerText : c.gold}
-            fill
+    <FlatList
+      style={styles.container}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 12 }]}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      data={filtered}
+      keyExtractor={(r, idx) => r.id || `r${idx}`}
+      numColumns={2}
+      columnWrapperStyle={styles.gridRow}
+      initialNumToRender={8}
+      windowSize={7}
+      renderItem={({ item: r }) => (
+        <View style={styles.gridItem}>
+          <RecipeCard
+            title={r.title}
+            rating={r.rating}
+            timeStr={`${r.time} min`}
+            sourceApp={r.app}
+            tint={r.tint}
+            imageUrl={r.imageUrl}
+            cover={r.cover}
+            onPress={() => navigation.navigate('RecipeDetail', { id: r.id })}
           />
-          <Text
-            style={[
-              styles.creditsText,
-              unlimited && styles.creditsTextPro,
-              lowCredits && { color: c.dangerText },
-            ]}
-          >
-            {unlimited ? t('credits.pro') : t('credits.left', { n: credits })}
-          </Text>
-        </Pressable>
-      </View>
+        </View>
+      )}
+      ListHeaderComponent={
+        <>
+          <View style={styles.header}>
+            <View style={styles.brand}>
+              <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
+              <Text style={styles.brandName}>YumiShare</Text>
+            </View>
+            <Pressable
+              style={[styles.creditsPill, unlimited && styles.creditsPillPro]}
+              onPress={() => navigation.navigate('Paywall', { reason: 'upsell' })}
+              hitSlop={8}
+            >
+              <Icon
+                name="coin"
+                size={14}
+                color={unlimited ? c.accent : lowCredits ? c.dangerText : c.gold}
+                fill
+              />
+              <Text
+                style={[
+                  styles.creditsText,
+                  unlimited && styles.creditsTextPro,
+                  lowCredits && { color: c.dangerText },
+                ]}
+              >
+                {unlimited ? t('credits.pro') : t('credits.left', { n: credits })}
+              </Text>
+            </Pressable>
+          </View>
 
-      {renderOrganize()}
-    </ScrollView>
+          {renderOrganize()}
+        </>
+      }
+      ListEmptyComponent={
+        <Text style={styles.empty}>
+          {activeCookbook ? t('home.emptyCookbook') : t('home.noResults')}
+        </Text>
+      }
+    />
 
     <ActionSheet
       visible={!!coverTarget}
@@ -954,8 +966,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   cookbookTitle: { color: '#fff', fontWeight: '700', fontSize: 14.5 },
   cookbookCount: { fontSize: 12.5, fontWeight: '600', color: c.grayMid, marginTop: 7 },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -7 },
-  gridItem: { width: '50%', paddingHorizontal: 7 },
+  gridRow: { justifyContent: 'space-between' },
+  gridItem: { width: '48%' },
   empty: { textAlign: 'center', paddingVertical: 40, fontSize: 15, fontWeight: '600', color: c.grayMid },
   planTitle: { fontFamily: fonts.display, fontSize: 26, color: c.ink, marginBottom: 18 },
   weekRow: { marginBottom: 22, marginHorizontal: -20, paddingHorizontal: 20 },
