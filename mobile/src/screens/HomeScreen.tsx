@@ -19,7 +19,7 @@ import { dayOfMonth, isTodayISO, todayISO, weekdayKey, windowISO } from '../util
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { usePremium } from '../context/PremiumContext';
-import { PREMIUM_UNLIMITED } from '../config/credits';
+import { LOW_CREDITS_WARNING, PREMIUM_UNLIMITED } from '../config/credits';
 import { uploadImageIfLocal } from '../lib/storage';
 import { useTabNav } from '../navigation/TabContext';
 import { ThemeColors } from '../theme/colors';
@@ -82,6 +82,7 @@ export function HomeScreen() {
   const { user } = useAuth();
   const { isPremium } = usePremium();
   const unlimited = PREMIUM_UNLIMITED && isPremium;
+  const lowCredits = !unlimited && credits <= LOW_CREDITS_WARNING;
   const userId = user?.id;
   const [homeTab, setHomeTab] = useState<HomeTab>('organize');
   const [search, setSearch] = useState('');
@@ -681,8 +682,19 @@ export function HomeScreen() {
           onPress={() => navigation.navigate('Paywall', { reason: 'upsell' })}
           hitSlop={8}
         >
-          <Icon name="coin" size={14} color={unlimited ? c.accent : c.gold} fill />
-          <Text style={[styles.creditsText, unlimited && styles.creditsTextPro]}>
+          <Icon
+            name="coin"
+            size={14}
+            color={unlimited ? c.accent : lowCredits ? c.dangerText : c.gold}
+            fill
+          />
+          <Text
+            style={[
+              styles.creditsText,
+              unlimited && styles.creditsTextPro,
+              lowCredits && { color: c.dangerText },
+            ]}
+          >
             {unlimited ? t('credits.pro') : t('credits.left', { n: credits })}
           </Text>
         </Pressable>

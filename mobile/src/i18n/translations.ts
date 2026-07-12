@@ -40,6 +40,8 @@ export const en = {
   'home.whatsCooking': "what's cooking?",
   'credits.left': '{n} left',
   'credits.pro': 'Pro',
+  'credits.lowOne': 'Last free import left — go unlimited with Premium',
+  'credits.lowMany': '{n} free imports left — upgrade to keep importing',
   'credits.outTitle': "You're out of free imports",
   'credits.outBody': 'Upgrade to keep importing recipes from links and photos — unlimited.',
 
@@ -608,6 +610,8 @@ export const pl: Record<TKey, string> = {
   'home.whatsCooking': 'co gotujemy?',
   'credits.left': '{n} pozostało',
   'credits.pro': 'Pro',
+  'credits.lowOne': 'Został ostatni darmowy import — przejdź na Premium',
+  'credits.lowMany': 'Zostały {n} darmowe importy — ulepsz konto, aby importować dalej',
   'credits.outTitle': 'Wykorzystałeś darmowe importy',
   'credits.outBody': 'Ulepsz konto, aby dalej importować przepisy z linków i zdjęć — bez limitu.',
 

@@ -9,10 +9,11 @@ import { fonts } from '../theme/fonts';
 import { Recipe } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
+import type { TKey } from '../i18n/translations';
 import { COVER_PRESETS } from '../components/CoverArt';
 import { useApp } from '../context/AppContext';
 import { usePremium } from '../context/PremiumContext';
-import { PREMIUM_UNLIMITED } from '../config/credits';
+import { LOW_CREDITS_WARNING, PREMIUM_UNLIMITED } from '../config/credits';
 import { track } from '../lib/analytics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
@@ -43,7 +44,7 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const [msgIndex, setMsgIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isNetErr, setIsNetErr] = useState(false);
-  const { credits, setCredits } = useApp();
+  const { credits, setCredits, showToast } = useApp();
   const { isPremium } = usePremium();
   const unlimited = PREMIUM_UNLIMITED && isPremium;
 
@@ -98,7 +99,18 @@ export function ProcessingScreen({ navigation, route }: Props) {
         }
         // The server already spent the credit for a real recipe — mirror its
         // authoritative balance (null = premium/unlimited, leave as-is).
-        if (typeof res.credits === 'number') setCredits(res.credits);
+        if (typeof res.credits === 'number') {
+          setCredits(res.credits);
+          // Warn once the free imports are running low, so hitting 0 isn't a
+          // surprise (premium returns null credits, so this never fires there).
+          if (res.credits > 0 && res.credits <= LOW_CREDITS_WARNING) {
+            showToast(
+              res.credits === 1
+                ? t('credits.lowOne' as TKey)
+                : t('credits.lowMany' as TKey, { n: res.credits }),
+            );
+          }
+        }
         track('import_succeeded', {
           source: importSource,
           creditsLeft: typeof res.credits === 'number' ? res.credits : null,
