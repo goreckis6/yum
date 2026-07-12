@@ -484,6 +484,10 @@ export const en = {
   'water.weightPrompt': 'Your weight (kg)',
   'mealplan.noMeals': 'No meals planned yet — add one below.',
   'mealplan.addWeek': 'Add week to grocery list',
+  'mealplan.copyNextDay': 'Copy meals to next day',
+  'mealplan.copyNextDay.done': 'Copied {count} meals to {day}',
+  'mealplan.copyNextDay.doneOne': 'Copied 1 meal to {day}',
+  'mealplan.copyNextDay.empty': 'No meals to copy',
 
   // add-to-meal sheet
   'mealplan.add.title': 'Add to {slot} · {day}',
@@ -1037,6 +1041,10 @@ export const pl: Record<TKey, string> = {
   'water.weightPrompt': 'Twoja waga (kg)',
   'mealplan.noMeals': 'Brak zaplanowanych posiłków — dodaj poniżej.',
   'mealplan.addWeek': 'Dodaj tydzień do listy zakupów',
+  'mealplan.copyNextDay': 'Kopiuj posiłki na następny dzień',
+  'mealplan.copyNextDay.done': 'Skopiowano {count} posiłki do {day}',
+  'mealplan.copyNextDay.doneOne': 'Skopiowano 1 posiłek do {day}',
+  'mealplan.copyNextDay.empty': 'Brak posiłków do skopiowania',
 
   'mealplan.add.title': 'Dodaj do {slot} · {day}',
   'mealplan.add.search': 'Szukaj w spiżarni, przepisach, produktach…',

@@ -177,7 +177,7 @@ export function MealPlanScreen() {
   const styles = useMemo(() => makeStyles(c), [c]);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
-    mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal,
+    mealPlan, pantry, getRecipe, getPantryItem, assignMeal, removeMeal, copyDayMeals,
     addWeekToGrocery, addRecipeToGrocery, showToast, water, addWater, weightKg, setWeight,
     mealPlanWidgetOrder, setMealPlanWidgetOrder,
     mealReminderOverrides, setMealReminderOverride,
@@ -282,6 +282,24 @@ export function MealPlanScreen() {
           },
         },
       ],
+    );
+  };
+
+  // Duplicate every filled slot of the selected day onto the next day, in one
+  // tap. Only filled slots are copied; the next day's other slots are kept.
+  const nextDay = addDaysISO(selectedDate, 1);
+  const filledCount = SLOTS.filter((s) => dayPlan[s]).length;
+  const handleCopyNextDay = () => {
+    const nextLabel = `${t(`day.${weekdayKey(nextDay)}` as TKey)} ${dayOfMonth(nextDay)}`;
+    const copied = copyDayMeals(selectedDate, nextDay);
+    if (copied === 0) {
+      showToast(t('mealplan.copyNextDay.empty' as TKey));
+      return;
+    }
+    showToast(
+      copied === 1
+        ? t('mealplan.copyNextDay.doneOne' as TKey, { day: nextLabel })
+        : t('mealplan.copyNextDay.done' as TKey, { count: copied, day: nextLabel }),
     );
   };
 
@@ -559,6 +577,13 @@ export function MealPlanScreen() {
 
         {renderSlots()}
 
+        {filledCount > 0 && (
+          <Pressable style={styles.copyBtn} onPress={handleCopyNextDay}>
+            <Icon name="calendar" size={16} color={c.accent} />
+            <Text style={styles.copyBtnText}>{t('mealplan.copyNextDay' as TKey)}</Text>
+          </Pressable>
+        )}
+
         <Pressable style={styles.weekBtn} onPress={addWeekToGrocery}>
           <Text style={styles.weekBtnText}>{t('mealplan.addWeek')}</Text>
         </Pressable>
@@ -704,6 +729,11 @@ const makeStyles = (c: ThemeColors) =>
     legendLabel: { fontSize: 12, fontWeight: '600', color: c.grayMid },
     dayCardEmpty: { fontSize: 13, fontWeight: '600', color: c.grayMid, marginTop: 14 },
 
+    copyBtn: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+      backgroundColor: c.accentSoft, borderRadius: 16, paddingVertical: 15, marginBottom: 12,
+    },
+    copyBtnText: { fontSize: 15, fontWeight: '700', color: c.accent },
     weekBtn: { backgroundColor: c.surfaceAlt, borderRadius: 16, paddingVertical: 15, alignItems: 'center' },
     weekBtnText: { fontSize: 15, fontWeight: '700', color: c.grayLight },
   });

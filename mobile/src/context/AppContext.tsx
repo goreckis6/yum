@@ -6,6 +6,7 @@ import { fetchCredits } from '../api/recipes';
 import { identify, track } from '../lib/analytics';
 import {
   Aisle,
+  ALL_SLOTS,
   AppState,
   CookbookCover,
   DayKey,
@@ -50,6 +51,7 @@ interface AppContextValue extends AppState {
   setMealPlan: (plan: MealPlan) => void;
   assignMeal: (date: string, slot: MealSlot, entry: MealEntry) => void;
   removeMeal: (date: string, slot: MealSlot) => void;
+  copyDayMeals: (from: string, to: string) => number;
   toggleMade: (recipeId: string) => void;
   logCooked: (recipeId: string) => void;
   toggleIngredient: (recipeId: string, index: number) => void;
@@ -346,6 +348,28 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     });
   }, []);
 
+  // Copy every filled slot from one day onto another (e.g. "duplicate to
+  // tomorrow"). Filled source slots overwrite the target's same slot; the
+  // target's other slots are left untouched. Returns how many meals were copied
+  // so the caller can toast accordingly.
+  const copyDayMeals = useCallback((from: string, to: string): number => {
+    if (from === to) return 0;
+    const src = state.mealPlan[from];
+    const filled = src ? ALL_SLOTS.filter((slot) => src[slot]) : [];
+    if (filled.length === 0) return 0;
+    setState((s) => {
+      const srcDay = s.mealPlan[from];
+      if (!srcDay) return s;
+      const dayCopy = { ...(s.mealPlan[to] ?? {}) };
+      for (const slot of ALL_SLOTS) {
+        if (srcDay[slot]) dayCopy[slot] = srcDay[slot];
+      }
+      return { ...s, mealPlan: { ...s.mealPlan, [to]: dayCopy } };
+    });
+    track('meals_copied', { count: filled.length });
+    return filled.length;
+  }, [state.mealPlan]);
+
   const wasCooked = useCallback(
     (recipeId: string) => !!state.made[recipeId] || (state.madeHistory?.[recipeId]?.length ?? 0) > 0,
     [state.made, state.madeHistory],
@@ -553,6 +577,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       setMealPlan,
       assignMeal,
       removeMeal,
+      copyDayMeals,
       toggleMade,
       logCooked,
       toggleIngredient,
@@ -602,6 +627,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       setMealPlan,
       assignMeal,
       removeMeal,
+      copyDayMeals,
       toggleMade,
       logCooked,
       toggleIngredient,
