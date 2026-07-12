@@ -13,6 +13,7 @@ import { addDaysISO, dayOfMonth, isTodayISO, monthLabelForISO, rangeISO, todayIS
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { centeredContent } from '../theme/layout';
 import { DayKey, MealEntry, MealSlot, Recipe, TAG_ICON } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
@@ -605,7 +606,7 @@ export function MealPlanScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
+    content: { ...centeredContent, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
     titleRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 18 },
     title: { fontFamily: fonts.display, fontSize: 28, color: c.ink },
     sub: { fontSize: 14, fontWeight: '600', color: c.grayMid, marginTop: 4 },

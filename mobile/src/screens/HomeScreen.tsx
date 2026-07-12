@@ -25,6 +25,7 @@ import { useTabNav } from '../navigation/TabContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { centeredContent } from '../theme/layout';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { FilterChip, HomeTab, MealSlot, TAG_ICON } from '../types';
@@ -747,7 +748,7 @@ export function HomeScreen() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
+  content: { ...centeredContent, paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   logo: { width: 44, height: 44 },

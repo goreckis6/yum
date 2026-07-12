@@ -21,6 +21,7 @@ import { useTabNav } from '../navigation/TabContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { centeredContent } from '../theme/layout';
 import { Aisle, GroceryItem } from '../types';
 import { RootStackParamList } from '../navigation/types';
 import { IngredientIcon } from '../components/IngredientIcon';
@@ -543,7 +544,7 @@ export function GroceryScreen() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: 20, paddingBottom: 120 },
+  content: { ...centeredContent, paddingHorizontal: 20, paddingBottom: 120 },
 
   headerRow: {
     flexDirection: 'row', alignItems: 'flex-start',

@@ -18,6 +18,7 @@ import * as Sharing from 'expo-sharing';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { centeredContent } from '../theme/layout';
 import { RootStackParamList } from '../navigation/types';
 import { useApp } from '../context/AppContext';
 import { ActionSheet, SheetOption } from '../components/ActionSheet';
@@ -483,7 +484,7 @@ export function ReceiptsScreen({ navigation }: Props) {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
+    content: { ...centeredContent, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 110 },
     headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
     backBtn: {
       width: 40,

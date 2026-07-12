@@ -21,6 +21,7 @@ import { Icon } from '../components/Icon';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { centeredContent } from '../theme/layout';
 import { MealSlot, RECIPE_TAGS, TAG_ICON } from '../types';
 import { todayISO } from '../utils/dates';
 import { RootStackParamList } from '../navigation/types';
@@ -529,7 +530,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { paddingBottom: 120 },
+  content: { ...centeredContent, paddingBottom: 120 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   shareCardHost: { position: 'absolute', left: 0, top: 0, zIndex: -1 },
   hero: { height: 300, justifyContent: 'flex-end', alignItems: 'center', paddingBottom: 34, overflow: 'hidden' },

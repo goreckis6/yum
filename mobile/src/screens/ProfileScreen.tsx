@@ -10,6 +10,7 @@ import { usePremium } from '../context/PremiumContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme, useThemeCtx, ThemeMode } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { centeredContent } from '../theme/layout';
 import { useI18n } from '../i18n/I18nContext';
 import { LINKS as LEGAL } from '../config/links';
 import { Lang, TKey } from '../i18n/translations';
@@ -283,7 +284,7 @@ export function ProfileScreen() {
 
 const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
+  content: { ...centeredContent, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 130 },
   title: { fontFamily: fonts.display, fontSize: 28, color: c.ink, marginBottom: 20 },
   card: {
     flexDirection: 'row',

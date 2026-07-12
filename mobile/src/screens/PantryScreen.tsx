@@ -3,6 +3,7 @@ import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { ThemeColors } from '../theme/colors';
+import { centeredContent } from '../theme/layout';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { RootStackParamList } from '../navigation/types';
@@ -67,7 +68,7 @@ export function PantryScreen({ navigation }: Props) {
         </View>
       ) : (
         <View style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={[centeredContent, { paddingBottom: 20 }]} showsVerticalScrollIndicator={false}>
           <Text style={styles.count}>{t('pantry.count', { n: items.length })}</Text>
           {items.map((item) => {
             const m = item.perServing ?? item.per100;
