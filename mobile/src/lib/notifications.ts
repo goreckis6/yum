@@ -110,7 +110,14 @@ export async function scheduleMealReminders(
   jobs.sort((a, b) => a.when.getTime() - b.when.getTime());
   for (const job of jobs.slice(0, MAX_SCHEDULED)) {
     await Notifications.scheduleNotificationAsync({
-      content: { title: job.title, body: job.body, sound: true, data: { kind: KIND } },
+      content: {
+        title: job.title,
+        body: job.body,
+        // Custom gentle chime bundled via the expo-notifications plugin
+        // (app.json). Falls back to the default sound if unavailable.
+        sound: 'meal-chime.wav',
+        data: { kind: KIND },
+      },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: job.when },
     });
   }
