@@ -59,6 +59,18 @@ export async function cancelMealReminders(): Promise<void> {
   );
 }
 
+// Remove ALREADY-DELIVERED meal reminders sitting in Notification Center (only
+// ours). Used when the app language changes, so the stack doesn't keep showing
+// old-language reminders next to newly-scheduled ones.
+export async function dismissDeliveredMealReminders(): Promise<void> {
+  const presented = await Notifications.getPresentedNotificationsAsync().catch(() => []);
+  await Promise.all(
+    presented
+      .filter((n) => (n.request.content.data as { kind?: string } | undefined)?.kind === KIND)
+      .map((n) => Notifications.dismissNotificationAsync(n.request.identifier)),
+  );
+}
+
 // Clear and re-create one-time reminders for each FUTURE planned meal, firing
 // `leadMinutes` before the slot's default time. `content` returns the localized
 // title/body (with the meal's name) or null to skip.

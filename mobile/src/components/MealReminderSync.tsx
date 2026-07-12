@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import {
   cancelMealReminders,
+  dismissDeliveredMealReminders,
   ensureNotificationPermission,
   scheduleMealReminders,
 } from '../lib/notifications';
@@ -14,12 +15,21 @@ import { pickReminderMessage } from '../lib/reminderMessages';
 export function MealReminderSync() {
   const { ready, mealPlan, mealReminders, mealReminderOverrides, getRecipe } = useApp();
   const { t, lang } = useI18n();
+  const prevLang = useRef(lang);
 
   useEffect(() => {
     if (!ready) return;
     let cancelled = false;
 
     const run = async () => {
+      // On a language switch, clear already-delivered reminders (old language)
+      // so the stack isn't a PL/EN mix — new ones below are scheduled in the
+      // current language.
+      if (prevLang.current !== lang) {
+        prevLang.current = lang;
+        await dismissDeliveredMealReminders();
+      }
+
       if (!mealReminders.enabled) {
         await cancelMealReminders();
         return;
