@@ -17,6 +17,18 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Minimal security headers (no extra dependency). This is a JSON API consumed
+// by the native app, so a strict set is safe: never embed it in a frame, don't
+// sniff content types, don't leak the referrer, disable legacy XSS heuristics.
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'no-referrer');
+  res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+  res.removeHeader('X-Powered-By');
+  next();
+});
+
 // Accept-Encoding: identity is the real fix for the "Premature close" errors:
 // node-fetch@2 (bundled by openai@4) throws ERR_STREAM_PREMATURE_CLOSE while
 // *decompressing* gzip'd responses, and for some payloads it fails on every
@@ -1332,7 +1344,8 @@ app.use((err, req, res, next) => {
     return res.status(413).json({ error: 'Image too large. Please use a smaller photo.' });
   }
   console.error(err);
-  res.status(500).json({ error: err.message || 'Internal server error' });
+  // Log the detail server-side (above) but don't leak internals to the client.
+  res.status(500).json({ error: 'Internal server error' });
 });
 
 app.post('/api/enrich-recipe', ...aiGuard, async (req, res) => {
