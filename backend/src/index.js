@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import rateLimitMw from 'express-rate-limit';
 import * as cheerio from 'cheerio';
 import OpenAI from 'openai';
 import PDFDocument from 'pdfkit';
@@ -14,8 +15,36 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Coarse per-IP throttle in front of everything — a cheap gate against scripted
+// abuse before the per-user (auth'd) limits kick in. Generous enough that a real
+// user on a shared/NAT'd IP won't hit it. Health check is exempt.
+app.use(
+  rateLimitMw({
+    windowMs: 15 * 60 * 1000,
+    max: Number(process.env.IP_RATE_LIMIT) || 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.path === '/health',
+  }),
+);
+
+// Body parsing with a small default limit for the JSON API. The routes that
+// receive base64 image data are the only ones allowed a large payload; every
+// other endpoint is capped at 2 MB so a 50 MB blob can't reach them. The global
+// parser must run first, so it skips the image routes (which parse with bigJson
+// in their own handler) — otherwise the 2 MB cap would reject the upload before
+// the route-level parser ran.
+const IMAGE_ROUTES = new Set([
+  '/api/extract-recipe-image',
+  '/api/extract-receipt-image',
+  '/api/extract-nutrition-label',
+  '/api/resize-image',
+]);
+const bigJson = express.json({ limit: '50mb' });
+const smallJson = express.json({ limit: '2mb' });
+app.use((req, res, next) => (IMAGE_ROUTES.has(req.path) ? next() : smallJson(req, res, next)));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
 
 // Minimal security headers (no extra dependency). This is a JSON API consumed
 // by the native app, so a strict set is safe: never embed it in a frame, don't
@@ -194,21 +223,18 @@ async function requirePremium(req, res, next) {
   }
 }
 
-// In-memory per-user daily counter. Resets when the UTC day changes.
-const rateBuckets = new Map(); // userId -> { day, count }
-
-function rateLimit(req, res, next) {
+// Durable per-user daily counter backed by the api_usage table — survives
+// deploys and works across instances (unlike the old in-memory Map). Premium
+// users get the higher fair-use cap; everyone is counted once per AI request
+// here, so checkImportCredits no longer bumps separately. If the DB/function is
+// unavailable we don't enforce (fail-open on the cap, never on billing).
+async function rateLimit(req, res, next) {
   const userId = req.user.id;
-  const day = new Date().toISOString().slice(0, 10);
-  const bucket = rateBuckets.get(userId);
-  if (!bucket || bucket.day !== day) {
-    rateBuckets.set(userId, { day, count: 1 });
-    return next();
-  }
-  if (bucket.count >= AI_DAILY_LIMIT) {
-    return res.status(429).json({ error: 'rate_limited', limit: AI_DAILY_LIMIT });
-  }
-  bucket.count += 1;
+  const premium = await isPremiumUser(userId);
+  const limit = premium ? PREMIUM_DAILY_LIMIT : AI_DAILY_LIMIT;
+  const used = await bumpDailyUsage(userId);
+  if (used === null) return next();
+  if (used > limit) return res.status(429).json({ error: 'rate_limited', limit });
   next();
 }
 
@@ -291,12 +317,8 @@ async function checkImportCredits(req, res) {
   const userId = req.user.id;
   const premium = await isPremiumUser(userId);
   if (premium) {
-    // "Unlimited" total, but a durable daily fair-use cap blocks abuse/scripts.
-    const usedToday = await bumpDailyUsage(userId);
-    if (usedToday !== null && usedToday > PREMIUM_DAILY_LIMIT) {
-      res.status(429).json({ error: 'rate_limited', limit: PREMIUM_DAILY_LIMIT });
-      return { ok: false };
-    }
+    // "Unlimited" total; the daily fair-use cap is enforced upstream by
+    // rateLimit (durable counter), so there's nothing to bump here.
     return { ok: true, premium: true, credits: null, userId };
   }
   const credits = await getUserCredits(userId);
@@ -874,7 +896,7 @@ app.post('/api/extract-recipe', ...aiGuard, async (req, res) => {
   }
 });
 
-app.post('/api/extract-recipe-image', ...aiGuard, async (req, res) => {
+app.post('/api/extract-recipe-image', bigJson, ...aiGuard, async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg' } = req.body;
     if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -941,7 +963,7 @@ app.post('/api/extract-recipe-image', ...aiGuard, async (req, res) => {
   }
 });
 
-app.post('/api/extract-receipt-image', ...aiGuard, async (req, res) => {
+app.post('/api/extract-receipt-image', bigJson, ...aiGuard, async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg' } = req.body;
     if (!imageBase64 || typeof imageBase64 !== 'string') {
@@ -1002,7 +1024,7 @@ app.post('/api/extract-receipt-image', ...aiGuard, async (req, res) => {
   }
 });
 
-app.post('/api/extract-nutrition-label', ...aiGuard, async (req, res) => {
+app.post('/api/extract-nutrition-label', bigJson, ...aiGuard, async (req, res) => {
   try {
     // Accept either a single image or several photos of the SAME product label
     // (e.g. a bottle that can't be captured in one shot).
@@ -1221,7 +1243,7 @@ async function receiptsToPdf(receipts, includePhotos = false) {
   });
 }
 
-app.post('/api/resize-image', requireAuth, async (req, res) => {
+app.post('/api/resize-image', bigJson, requireAuth, async (req, res) => {
   try {
     const { base64, maxWidth = 1080, quality = 70 } = req.body;
     if (!base64 || typeof base64 !== 'string') {
