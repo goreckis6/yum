@@ -100,11 +100,20 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     };
   }, [userId]);
 
-  // Debounced persistence to Supabase (+ local cache) on every change.
+  // Debounced persistence to Supabase (+ local cache) on every change. If
+  // another device saved newer data since we loaded, the save is rejected and
+  // we adopt that newer state instead of clobbering it.
   useEffect(() => {
     if (!ready) return;
-    const t = setTimeout(() => saveState(userId, state), 600);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const res = await saveState(userId, state);
+      if (!cancelled && res?.conflict && res.state) setState(res.state);
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [state, ready, userId]);
 
   // Tie analytics events to this signed-in user (once per userId).

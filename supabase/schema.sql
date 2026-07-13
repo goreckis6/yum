@@ -24,6 +24,33 @@ drop policy if exists "app_state_update_own" on public.app_state;
 create policy "app_state_update_own" on public.app_state
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
+-- 1b) Optimistic-concurrency save for app_state. The whole state is one JSON
+-- blob, so a naive upsert lets a device with stale data clobber a newer write
+-- from another device. This function writes only when the server copy has not
+-- advanced past what the caller last synced (p_base); on conflict it returns
+-- the server's newer state so the client can adopt it instead of overwriting.
+-- Uses auth.uid() internally (never a client-supplied id) so a caller can only
+-- ever touch their own row, even though it is SECURITY DEFINER.
+create or replace function public.save_app_state(p_data jsonb, p_base timestamptz)
+returns table(updated_at timestamptz, data jsonb, conflict boolean)
+language plpgsql security definer as $$
+declare uid uuid := auth.uid(); cur_ts timestamptz; cur_data jsonb; new_ts timestamptz := now();
+begin
+  if uid is null then raise exception 'not authenticated'; end if;
+  select a.updated_at, a.data into cur_ts, cur_data from public.app_state a where a.user_id = uid;
+  -- Server has a strictly newer write than the caller's baseline → conflict.
+  if cur_ts is not null and p_base is not null and cur_ts > p_base then
+    return query select cur_ts, cur_data, true;
+    return;
+  end if;
+  insert into public.app_state (user_id, data, updated_at)
+    values (uid, p_data, new_ts)
+    on conflict (user_id) do update set data = excluded.data, updated_at = new_ts;
+  return query select new_ts, p_data, false;
+end $$;
+
+grant execute on function public.save_app_state(jsonb, timestamptz) to authenticated;
+
 -- 2) Storage bucket for recipe / cookbook images.
 insert into storage.buckets (id, name, public)
 values ('recipe-images', 'recipe-images', true)
