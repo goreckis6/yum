@@ -7,6 +7,8 @@ import PDFDocument from 'pdfkit';
 import sharp from 'sharp';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import dns from 'node:dns/promises';
+import net from 'node:net';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -427,6 +429,70 @@ function youTubeVideoId(url) {
   }
 }
 
+// ─── SSRF guard ─────────────────────────────────────────────────────────────
+// Several endpoints fetch a URL the caller supplied (recipe page, Pinterest
+// outbound link, receipt image). Without a guard, a caller could point us at
+// the cloud metadata endpoint (169.254.169.254) or an internal service and read
+// the response back. Resolve the host and refuse any private / reserved IP.
+// Note: this checks the resolved address(es) at request time; it does not fully
+// close DNS-rebinding (host re-resolving to a private IP between check and
+// fetch), but it blocks the practical SSRF vectors (literal private IPs and
+// hosts that resolve to them).
+function isPrivateIp(ip) {
+  // Unwrap IPv4-mapped IPv6 (::ffff:10.0.0.1) to its v4 form.
+  const v4 = ip.startsWith('::ffff:') ? ip.slice(7) : ip;
+  if (net.isIPv4(v4)) {
+    const [a, b] = v4.split('.').map(Number);
+    if (a === 10 || a === 127 || a === 0) return true;            // private / loopback / this-host
+    if (a === 169 && b === 254) return true;                       // link-local + cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;              // private
+    if (a === 192 && b === 168) return true;                       // private
+    if (a === 100 && b >= 64 && b <= 127) return true;             // CGNAT
+    if (a >= 224) return true;                                     // multicast / reserved
+    return false;
+  }
+  const lower = ip.toLowerCase();
+  if (lower === '::1' || lower === '::') return true;              // loopback / unspecified
+  if (lower.startsWith('fc') || lower.startsWith('fd')) return true; // unique-local fc00::/7
+  if (lower.startsWith('fe80')) return true;                       // link-local
+  return false;
+}
+
+async function assertPublicHost(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error('Invalid URL');
+  }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error('URL must use http or https');
+  }
+  const host = parsed.hostname;
+  // Literal IP in the URL — check it directly.
+  if (net.isIP(host)) {
+    if (isPrivateIp(host)) throw new Error('Blocked address');
+    return;
+  }
+  // Resolve the hostname; reject if any resolved address is private/reserved.
+  let addrs;
+  try {
+    addrs = await dns.lookup(host, { all: true });
+  } catch {
+    throw new Error('Could not resolve host');
+  }
+  if (!addrs.length || addrs.some((a) => isPrivateIp(a.address))) {
+    throw new Error('Blocked address');
+  }
+}
+
+// fetch() wrapper that refuses private/reserved targets. Use for every request
+// to a caller-supplied URL.
+async function safeFetch(url, options) {
+  await assertPublicHost(url);
+  return fetch(url, options);
+}
+
 // TikTok doesn't expose the caption in og: tags, but its official oEmbed
 // endpoint returns the full description, author and thumbnail. Short vm.tiktok
 // links are resolved to their canonical URL first.
@@ -436,7 +502,7 @@ async function fetchTikTok(url) {
 
   let finalUrl = url;
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
       redirect: 'follow',
       signal: AbortSignal.timeout(15000),
@@ -490,7 +556,7 @@ async function fetchPinterest(url) {
   let pinTitle = '';
   let pinDesc = '';
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
       redirect: 'follow',
       signal: AbortSignal.timeout(15000),
@@ -548,7 +614,7 @@ async function fetchYouTube(url) {
   let description = '';
   let author = '';
   try {
-    const res = await fetch(url, {
+    const res = await safeFetch(url, {
       headers: { 'User-Agent': BROWSER_UA, Accept: 'text/html' },
       redirect: 'follow',
       signal: AbortSignal.timeout(15000),
@@ -597,7 +663,7 @@ async function fetchPageText(url) {
     ? 'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)'
     : 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
-  const res = await fetch(url, {
+  const res = await safeFetch(url, {
     headers: {
       'User-Agent': userAgent,
       Accept: 'text/html,application/xhtml+xml',
@@ -1047,7 +1113,7 @@ function receiptsToCsv(receipts) {
 
 async function fetchImageBuffer(url) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    const res = await safeFetch(url, { signal: AbortSignal.timeout(10000) });
     if (!res.ok) return null;
     const ab = await res.arrayBuffer();
     return Buffer.from(ab);
@@ -1143,7 +1209,7 @@ async function receiptsToPdf(receipts, includePhotos = false) {
   });
 }
 
-app.post('/api/resize-image', async (req, res) => {
+app.post('/api/resize-image', requireAuth, async (req, res) => {
   try {
     const { base64, maxWidth = 1080, quality = 70 } = req.body;
     if (!base64 || typeof base64 !== 'string') {
@@ -1162,7 +1228,7 @@ app.post('/api/resize-image', async (req, res) => {
   }
 });
 
-app.post('/api/receipts/export', async (req, res) => {
+app.post('/api/receipts/export', requireAuth, async (req, res) => {
   try {
     const { receipts, format = 'csv', includePhotos = false } = req.body;
     if (!Array.isArray(receipts) || receipts.length === 0) {

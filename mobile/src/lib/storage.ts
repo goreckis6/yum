@@ -2,6 +2,7 @@ import { File } from 'expo-file-system';
 import { decode, encode } from 'base64-arraybuffer';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { getApiBaseUrl } from '../config/api';
+import { authHeader } from '../api/http';
 
 const BUCKET = 'recipe-images';
 const MAX_WIDTH = 1080;
@@ -23,6 +24,7 @@ function isLocalUri(uri: string): boolean {
 async function resizeBase64(base64: string): Promise<Uint8Array> {
   const url = `${getApiBaseUrl()}/api/resize-image`;
   const body = JSON.stringify({ base64, maxWidth: MAX_WIDTH, quality: QUALITY });
+  const auth = await authHeader();
   const ATTEMPTS = 3;
   for (let attempt = 0; attempt < ATTEMPTS; attempt++) {
     const controller = new AbortController();
@@ -30,7 +32,7 @@ async function resizeBase64(base64: string): Promise<Uint8Array> {
     try {
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...auth },
         body,
         signal: controller.signal,
       });

@@ -47,7 +47,7 @@ export async function exportReceipts(
   const base = getApiBaseUrl();
   const res = await fetch(`${base}/api/receipts/export`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify({ receipts, format, includePhotos }),
   });
 
