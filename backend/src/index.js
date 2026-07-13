@@ -168,10 +168,10 @@ const RC_SECRET_KEY = process.env.RC_SECRET_KEY;
 // 'off' (default) lets everything through so the app works before the App
 // Store / Play products exist. Set to 'on' once subscriptions go live.
 const PREMIUM_ENFORCEMENT = process.env.PREMIUM_ENFORCEMENT || 'off';
-const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 30;
+const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 100;
 // Fair-use daily cap for premium ("unlimited") users so nobody can script the
 // API. A heavy real user won't reach it; a scraper will.
-const PREMIUM_DAILY_LIMIT = Number(process.env.PREMIUM_DAILY_LIMIT) || 60;
+const PREMIUM_DAILY_LIMIT = Number(process.env.PREMIUM_DAILY_LIMIT) || 300;
 // Must match the entitlement identifier in RevenueCat (and the mobile app)
 // EXACTLY, including capitalisation and spaces.
 const RC_ENTITLEMENT = process.env.RC_ENTITLEMENT || 'YumiSharev1';
