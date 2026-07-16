@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Image,
   Pressable,
@@ -43,6 +44,12 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     return { ...d, servings: d.servings && d.servings > 0 ? d.servings : 1 };
   });
   const [enriching, setEnriching] = useState(false);
+  // Guard against double-taps on Save: the handler is async (image upload) and
+  // navigates away only afterwards, so rapid taps used to fire it several times
+  // and save duplicates. The ref blocks re-entry synchronously (state is too
+  // slow for a fast double-tap); `saving` just disables the button visually.
+  const savingRef = useRef(false);
+  const [saving, setSaving] = useState(false);
   const [enrichedKeys, setEnrichedKeys] = useState<Set<string>>(new Set());
   const [coverMode, setCoverMode] = useState<'photo' | 'text'>(
     route.params.draft.imageUrl ? 'photo' : route.params.draft.cover ? 'text' : 'photo',
@@ -152,24 +159,33 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   };
 
   const save = async () => {
-    const uploaded =
-      coverMode === 'text' || !userId ? draft.imageUrl : await uploadImageIfLocal(draft.imageUrl, userId);
-    const recipe = {
-      ...draft,
-      id: `imp${Date.now()}`,
-      // Text cover wins → drop any photo; photo mode → drop the cover preset.
-      imageUrl: coverMode === 'text' ? undefined : uploaded,
-      cover: coverMode === 'text' ? draft.cover ?? COVER_PRESETS[0].id : undefined,
-    };
-    addRecipe(recipe);
-    showToast(t('reviewImport.saved'));
-    navigation.reset({
-      index: 1,
-      routes: [
-        { name: 'Main' },
-        { name: 'RecipeDetail', params: { id: recipe.id } },
-      ],
-    });
+    if (savingRef.current) return; // ignore repeated taps while a save is in flight
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const uploaded =
+        coverMode === 'text' || !userId ? draft.imageUrl : await uploadImageIfLocal(draft.imageUrl, userId);
+      const recipe = {
+        ...draft,
+        id: `imp${Date.now()}`,
+        // Text cover wins → drop any photo; photo mode → drop the cover preset.
+        imageUrl: coverMode === 'text' ? undefined : uploaded,
+        cover: coverMode === 'text' ? draft.cover ?? COVER_PRESETS[0].id : undefined,
+      };
+      addRecipe(recipe);
+      showToast(t('reviewImport.saved'));
+      navigation.reset({
+        index: 1,
+        routes: [
+          { name: 'Main' },
+          { name: 'RecipeDetail', params: { id: recipe.id } },
+        ],
+      });
+    } catch (e) {
+      // Let the user retry if the save (e.g. image upload) failed.
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
   return (
@@ -399,8 +415,12 @@ export function ReviewImportScreen({ navigation, route }: Props) {
       </Pressable>
       </View>
 
-      <Pressable style={styles.saveBtn} onPress={save}>
-        <Text style={styles.saveText}>{t('reviewImport.saveLibrary')}</Text>
+      <Pressable style={[styles.saveBtn, saving && styles.saveBtnDisabled]} onPress={save} disabled={saving}>
+        {saving ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.saveText}>{t('reviewImport.saveLibrary')}</Text>
+        )}
       </Pressable>
     </ScrollView>
   );
@@ -566,8 +586,11 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
     borderRadius: 16,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 52,
     marginTop: 20,
   },
+  saveBtnDisabled: { opacity: 0.6 },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   modeRow: {
     flexDirection: 'row',
