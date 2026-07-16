@@ -1,5 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AccessibilityInfo,
+  ActivityIndicator,
+  Animated,
+  Easing,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { extractRecipeFromImage, extractRecipeFromUrl } from '../api/recipes';
@@ -37,29 +46,74 @@ function FallbackArt({ c }: { c: ThemeColors }) {
   );
 }
 
+// On-brand chef's toque for the loading state — a white puffy hat with an
+// accent band. It bounces (see the Animated wrapper below) while the recipe is
+// being analysed.
+function ChefHat({ c }: { c: ThemeColors }) {
+  return (
+    <Svg width={104} height={104} viewBox="0 0 104 104">
+      {/* puffy top */}
+      <Path
+        d="M32 46 c-11 0 -18 -9 -15.5 -19 c1.7 -7.7 9 -12 15.5 -11 c1.2 -9 9 -14.5 20 -14.5 c11 0 18.8 5.5 20 14.5 c6.5 -1 13.8 3.3 15.5 11 c2.5 10 -4.5 19 -15.5 19 z"
+        fill={c.surface}
+        stroke={c.border}
+        strokeWidth={2}
+        strokeLinejoin="round"
+      />
+      {/* band */}
+      <Path
+        d="M33 46 h38 v13 c0 3.3 -2.7 6 -6 6 h-26 c-3.3 0 -6 -2.7 -6 -6 z"
+        fill={c.accent}
+      />
+      {/* pleats */}
+      <Path
+        d="M44 47 v16 M52 47 v16 M60 47 v16"
+        stroke="#fff"
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        opacity={0.35}
+      />
+    </Svg>
+  );
+}
+
 export function ProcessingScreen({ navigation, route }: Props) {
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
-  const [msgIndex, setMsgIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [isNetErr, setIsNetErr] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const { credits, setCredits, showToast } = useApp();
   const { isPremium } = usePremium();
   const unlimited = PREMIUM_UNLIMITED && isPremium;
 
   const isImageMode = 'imageBase64' in route.params;
-  const URL_MESSAGES = [
-    t('processing.url1'), t('processing.url2'), t('processing.url3'),
-    t('processing.url4'), t('processing.url5'), t('processing.url6'),
-  ];
-  const IMAGE_MESSAGES = [
-    t('processing.img1'), t('processing.img2'), t('processing.img3'),
-    t('processing.img4'), t('processing.img5'),
-  ];
-  const MESSAGES = isImageMode ? IMAGE_MESSAGES : URL_MESSAGES;
-
   const importSource = isImageMode ? 'photo' : 'link';
+
+  // Bouncing chef's hat while we work. Honours Reduce Motion (static hat + a
+  // plain spinner instead).
+  const jump = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((v) => { if (mounted) setReduceMotion(v); })
+      .catch(() => {});
+    return () => { mounted = false; };
+  }, []);
+  useEffect(() => {
+    if (reduceMotion) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(jump, { toValue: 1, duration: 360, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(jump, { toValue: 0, duration: 420, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+        Animated.delay(140),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [jump, reduceMotion]);
+  const hatY = jump.interpolate({ inputRange: [0, 1], outputRange: [0, -18] });
 
   useEffect(() => {
     // Out of free imports → don't spend an API call, send them to the paywall.
@@ -70,10 +124,6 @@ export function ProcessingScreen({ navigation, route }: Props) {
 
     track('import_started', { source: importSource });
 
-    const interval = setInterval(() => {
-      setMsgIndex((i) => (i + 1) % MESSAGES.length);
-    }, 700);
-
     const work = isImageMode
       ? extractRecipeFromImage(
           (route.params as { imageBase64: string; mimeType: string }).imageBase64,
@@ -83,7 +133,6 @@ export function ProcessingScreen({ navigation, route }: Props) {
 
     work
       .then((res) => {
-        clearInterval(interval);
         const recipe = res.recipe;
         // Guard against "not a recipe" results: the extractor (or the AI) can
         // return an empty shell when the link/photo has no real recipe in it —
@@ -122,7 +171,6 @@ export function ProcessingScreen({ navigation, route }: Props) {
         navigation.replace('ReviewImport', { draft });
       })
       .catch((err: Error & { code?: string }) => {
-        clearInterval(interval);
         if (err?.code === 'no_credits') {
           track('import_failed', { source: importSource, reason: 'no_credits' });
           setCredits(0);
@@ -135,8 +183,6 @@ export function ProcessingScreen({ navigation, route }: Props) {
         setIsNetErr(net);
         setError(m || 'error');
       });
-
-    return () => clearInterval(interval);
   }, []);
 
   // ── Fallback actions ──────────────────────────────────────────
@@ -189,9 +235,13 @@ export function ProcessingScreen({ navigation, route }: Props) {
 
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color={c.accent} style={styles.spinner} />
-      <Text style={styles.title}>{MESSAGES[msgIndex]}</Text>
-      <Text style={styles.hint}>{t('processing.hint')}</Text>
+      <Animated.View style={[styles.hatWrap, { transform: [{ translateY: hatY }] }]}>
+        <ChefHat c={c} />
+      </Animated.View>
+      <Text style={styles.title}>{t('processing.chefAnalyzing')}</Text>
+      {reduceMotion && (
+        <ActivityIndicator color={c.accent} style={styles.spinner} />
+      )}
     </View>
   );
 }
@@ -205,15 +255,14 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: 'center',
       paddingHorizontal: 32,
     },
-    spinner: { marginBottom: 24 },
+    hatWrap: { marginBottom: 24 },
+    spinner: { marginTop: 22 },
     title: {
       fontFamily: fonts.display,
       fontSize: 22,
       color: c.ink,
       textAlign: 'center',
-      marginBottom: 8,
     },
-    hint: { fontSize: 13, fontWeight: '500', color: c.grayMid, textAlign: 'center' },
 
     // Fallback / error state
     errTitle: {
