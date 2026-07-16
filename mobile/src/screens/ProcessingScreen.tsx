@@ -45,25 +45,37 @@ function FallbackArt({ c }: { c: ThemeColors }) {
   );
 }
 
-// Modern chef's toque for the loading state — a solid black (ink) cap with a
-// brick/terracotta band, two-tone and flat. c.ink adapts per theme (dark on the
-// cream light bg, light on the dark bg) so it stays legible either way. It
-// bounces (see the Animated wrapper below) while the recipe is analysed.
+// Modern chef's toque for the loading state — line-art only: black (ink)
+// contours, no fill, with brick/terracotta pleats as the accent. c.ink adapts
+// per theme (dark on the cream light bg, light on the dark bg) so the outline
+// stays legible either way. It bounces (see the Animated wrapper below) while
+// the recipe is analysed.
 function ChefHat({ c }: { c: ThemeColors }) {
   return (
     <Svg width={104} height={104} viewBox="0 0 104 104">
-      {/* puffy cap — solid, modern silhouette */}
+      {/* puffy cap — outline only */}
       <Path
         d="M30 45 c-10.5 0 -17 -8.5 -14.5 -18 c1.8 -6.9 8.3 -10.6 14.2 -9.7 c1.5 -8.7 9.3 -13.8 22.3 -13.8 c13 0 20.8 5.1 22.3 13.8 c5.9 -0.9 12.4 2.8 14.2 9.7 c2.5 9.5 -4 18 -14.5 18 z"
-        fill={c.ink}
+        fill="none"
+        stroke={c.ink}
+        strokeWidth={3}
+        strokeLinejoin="round"
       />
-      {/* band — brick, rounded base */}
+      {/* band — outline only, rounded base */}
       <Path
-        d="M32 47 h40 v12.5 c0 3.6 -2.9 6.5 -6.5 6.5 h-27 c-3.6 0 -6.5 -2.9 -6.5 -6.5 z"
-        fill={c.accent}
+        d="M32 46 h40 v13 c0 3.6 -2.9 6.5 -6.5 6.5 h-27 c-3.6 0 -6.5 -2.9 -6.5 -6.5 z"
+        fill="none"
+        stroke={c.ink}
+        strokeWidth={3}
+        strokeLinejoin="round"
       />
-      {/* crisp gap between cap and band for a clean two-piece look */}
-      <Path d="M31 46.4 h42" stroke={c.bg} strokeWidth={2.4} strokeLinecap="round" />
+      {/* brick pleats — the accent */}
+      <Path
+        d="M43 48 v15 M52 48 v15 M61 48 v15"
+        stroke={c.accent}
+        strokeWidth={2.6}
+        strokeLinecap="round"
+      />
     </Svg>
   );
 }
