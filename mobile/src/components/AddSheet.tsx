@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Keyboard,
   KeyboardAvoidingView,
@@ -109,7 +110,50 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
       const noContent =
         (recipe?.ingredients?.length ?? 0) === 0 && (recipe?.steps?.length ?? 0) === 0;
       if (noTitle || noContent) {
-        crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); });
+        // Loosened import: ask whether to import anyway and finish by hand,
+        // instead of hard-blocking on a weak extraction.
+        Alert.alert(
+          t('processing.notRecipeTitle'),
+          t('processing.notRecipeBody'),
+          [
+            {
+              text: t('processing.notRecipeCancel'),
+              style: 'cancel',
+              onPress: () => crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); }),
+            },
+            {
+              text: t('processing.notRecipeImport'),
+              onPress: () => {
+                const draft: Recipe = {
+                  id: `imp${Date.now()}`,
+                  title: recipe?.title ?? '',
+                  time: recipe?.time ?? 30,
+                  servings: recipe?.servings ?? 4,
+                  rating: recipe?.rating ?? '0',
+                  app: recipe?.app ?? 'manual',
+                  handle: recipe?.handle ?? '',
+                  tint: recipe?.tint ?? '#F97316',
+                  sourceTint: recipe?.sourceTint ?? '#F97316',
+                  kcal: recipe?.kcal ?? 0,
+                  p: recipe?.p ?? 0,
+                  c: recipe?.c ?? 0,
+                  f: recipe?.f ?? 0,
+                  tags: recipe?.tags ?? [],
+                  ingredients: recipe?.ingredients ?? [],
+                  steps: recipe?.steps ?? [],
+                  imageUrl: recipe?.imageUrl,
+                  sourceUrl: recipe?.sourceUrl,
+                };
+                onClose();
+                onRecipeReady(draft);
+              },
+            },
+          ],
+          {
+            cancelable: true,
+            onDismiss: () => crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); }),
+          },
+        );
         return;
       }
       // Server already spent the credit for a real recipe — mirror its balance.

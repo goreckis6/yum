@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   ActivityIndicator,
+  Alert,
   Animated,
   Easing,
   Pressable,
@@ -143,8 +144,46 @@ export function ProcessingScreen({ navigation, route }: Props) {
           (recipe?.ingredients?.length ?? 0) === 0 && (recipe?.steps?.length ?? 0) === 0;
         if (noTitle || noContent) {
           track('import_failed', { source: importSource, reason: 'notfound' });
-          setIsNetErr(false);
-          setError('notfound');
+          // Loosened import: don't hard-block. Ask whether to import anyway and
+          // finish by hand — a weak extraction still beats starting from zero.
+          Alert.alert(
+            t('processing.notRecipeTitle' as TKey),
+            t('processing.notRecipeBody' as TKey),
+            [
+              {
+                text: t('processing.notRecipeCancel' as TKey),
+                style: 'cancel',
+                onPress: () => { setIsNetErr(false); setError('notfound'); },
+              },
+              {
+                text: t('processing.notRecipeImport' as TKey),
+                onPress: () => {
+                  const draft: Recipe = {
+                    id: `imp${Date.now()}`,
+                    title: recipe?.title ?? '',
+                    time: recipe?.time ?? 30,
+                    servings: recipe?.servings ?? 4,
+                    rating: recipe?.rating ?? '0',
+                    app: recipe?.app ?? 'manual',
+                    handle: recipe?.handle ?? '',
+                    tint: recipe?.tint ?? '#F97316',
+                    sourceTint: recipe?.sourceTint ?? '#F97316',
+                    kcal: recipe?.kcal ?? 0,
+                    p: recipe?.p ?? 0,
+                    c: recipe?.c ?? 0,
+                    f: recipe?.f ?? 0,
+                    tags: recipe?.tags ?? [],
+                    ingredients: recipe?.ingredients ?? [],
+                    steps: recipe?.steps ?? [],
+                    cover: recipe?.cover ?? COVER_PRESETS[0].id,
+                    imageUrl: recipe?.imageUrl,
+                    sourceUrl: recipe?.sourceUrl,
+                  };
+                  navigation.replace('ReviewImport', { draft, manual: true });
+                },
+              },
+            ],
+          );
           return;
         }
         // The server already spent the credit for a real recipe — mirror its
