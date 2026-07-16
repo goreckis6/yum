@@ -143,9 +143,39 @@ export function ProcessingScreen({ navigation, route }: Props) {
         const noContent =
           (recipe?.ingredients?.length ?? 0) === 0 && (recipe?.steps?.length ?? 0) === 0;
         if (noTitle || noContent) {
+          const makeDraft = (): Recipe => ({
+            id: `imp${Date.now()}`,
+            title: recipe?.title ?? '',
+            time: recipe?.time ?? 30,
+            servings: recipe?.servings ?? 4,
+            rating: recipe?.rating ?? '0',
+            app: recipe?.app ?? 'manual',
+            handle: recipe?.handle ?? '',
+            tint: recipe?.tint ?? '#F97316',
+            sourceTint: recipe?.sourceTint ?? '#F97316',
+            kcal: recipe?.kcal ?? 0,
+            p: recipe?.p ?? 0,
+            c: recipe?.c ?? 0,
+            f: recipe?.f ?? 0,
+            tags: recipe?.tags ?? [],
+            ingredients: recipe?.ingredients ?? [],
+            steps: recipe?.steps ?? [],
+            cover: recipe?.cover ?? COVER_PRESETS[0].id,
+            imageUrl: recipe?.imageUrl,
+            sourceUrl: recipe?.sourceUrl,
+          });
+
+          // "Scan a recipe" (photo) skips the is-it-a-recipe gate entirely —
+          // whatever the photo produced goes straight into the editor. The
+          // gate only guards link imports, where a random URL can be anything.
+          if (isImageMode) {
+            navigation.replace('ReviewImport', { draft: makeDraft(), manual: true });
+            return;
+          }
+
           track('import_failed', { source: importSource, reason: 'notfound' });
-          // Loosened import: don't hard-block. Ask whether to import anyway and
-          // finish by hand — a weak extraction still beats starting from zero.
+          // Link import: don't hard-block either — ask whether to import anyway
+          // and finish by hand.
           Alert.alert(
             t('processing.notRecipeTitle' as TKey),
             t('processing.notRecipeBody' as TKey),
@@ -157,30 +187,7 @@ export function ProcessingScreen({ navigation, route }: Props) {
               },
               {
                 text: t('processing.notRecipeImport' as TKey),
-                onPress: () => {
-                  const draft: Recipe = {
-                    id: `imp${Date.now()}`,
-                    title: recipe?.title ?? '',
-                    time: recipe?.time ?? 30,
-                    servings: recipe?.servings ?? 4,
-                    rating: recipe?.rating ?? '0',
-                    app: recipe?.app ?? 'manual',
-                    handle: recipe?.handle ?? '',
-                    tint: recipe?.tint ?? '#F97316',
-                    sourceTint: recipe?.sourceTint ?? '#F97316',
-                    kcal: recipe?.kcal ?? 0,
-                    p: recipe?.p ?? 0,
-                    c: recipe?.c ?? 0,
-                    f: recipe?.f ?? 0,
-                    tags: recipe?.tags ?? [],
-                    ingredients: recipe?.ingredients ?? [],
-                    steps: recipe?.steps ?? [],
-                    cover: recipe?.cover ?? COVER_PRESETS[0].id,
-                    imageUrl: recipe?.imageUrl,
-                    sourceUrl: recipe?.sourceUrl,
-                  };
-                  navigation.replace('ReviewImport', { draft, manual: true });
-                },
+                onPress: () => navigation.replace('ReviewImport', { draft: makeDraft(), manual: true }),
               },
             ],
           );
