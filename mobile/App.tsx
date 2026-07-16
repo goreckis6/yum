@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import { supabase } from './src/lib/supabase';
@@ -24,6 +23,7 @@ import { PremiumProvider, usePremium } from './src/context/PremiumContext';
 import { AuthScreen } from './src/screens/AuthScreen';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { MainNavigator } from './src/navigation/MainNavigator';
+import { LoadingScreen } from './src/components/LoadingScreen';
 import { RootStackParamList } from './src/navigation/types';
 import { ThemeProvider, useTheme, useThemeCtx } from './src/theme/ThemeContext';
 import { I18nProvider } from './src/i18n/I18nContext';
@@ -96,11 +96,7 @@ function RootNavigator() {
   const c = useTheme();
 
   if (!ready) {
-    return (
-      <View style={[styles.loading, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color={c.ink} />
-      </View>
-    );
+    return <LoadingScreen bg={c.bg} tint={c.ink} />;
   }
 
   return (
@@ -167,11 +163,8 @@ export default function App() {
   });
 
   if (!fontsLoaded) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
+    // Fonts/theme not ready yet → brand defaults (matches the native splash).
+    return <LoadingScreen />;
   }
 
   return (
@@ -230,11 +223,7 @@ function Gate() {
   }, [session, user, consented]);
 
   if (initializing || consented === null) {
-    return (
-      <View style={[styles.loading, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color={c.ink} />
-      </View>
-    );
+    return <LoadingScreen bg={c.bg} tint={c.ink} />;
   }
 
   // AI consent (App Store 5.1.2) must precede any AI feature — gate everything.
@@ -253,11 +242,7 @@ function Gate() {
   // (Only the initial load blanks the app — later refreshes must not, or they
   // tear down navigation and dismiss the paywall mid-open.)
   if (!premiumReady) {
-    return (
-      <View style={[styles.loading, { backgroundColor: c.bg }]}>
-        <ActivityIndicator size="large" color={c.ink} />
-      </View>
-    );
+    return <LoadingScreen bg={c.bg} tint={c.ink} />;
   }
 
   // Freemium: everyone gets in and receives free import credits. The paywall
@@ -275,10 +260,3 @@ function Gate() {
   );
 }
 
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
