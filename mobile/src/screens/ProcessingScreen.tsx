@@ -45,33 +45,25 @@ function FallbackArt({ c }: { c: ThemeColors }) {
   );
 }
 
-// On-brand chef's toque for the loading state — a white puffy hat with an
-// accent band. It bounces (see the Animated wrapper below) while the recipe is
-// being analysed.
+// Modern chef's toque for the loading state — a solid black (ink) cap with a
+// brick/terracotta band, two-tone and flat. c.ink adapts per theme (dark on the
+// cream light bg, light on the dark bg) so it stays legible either way. It
+// bounces (see the Animated wrapper below) while the recipe is analysed.
 function ChefHat({ c }: { c: ThemeColors }) {
   return (
     <Svg width={104} height={104} viewBox="0 0 104 104">
-      {/* puffy top */}
+      {/* puffy cap — solid, modern silhouette */}
       <Path
-        d="M32 46 c-11 0 -18 -9 -15.5 -19 c1.7 -7.7 9 -12 15.5 -11 c1.2 -9 9 -14.5 20 -14.5 c11 0 18.8 5.5 20 14.5 c6.5 -1 13.8 3.3 15.5 11 c2.5 10 -4.5 19 -15.5 19 z"
-        fill={c.surface}
-        stroke={c.border}
-        strokeWidth={2}
-        strokeLinejoin="round"
+        d="M30 45 c-10.5 0 -17 -8.5 -14.5 -18 c1.8 -6.9 8.3 -10.6 14.2 -9.7 c1.5 -8.7 9.3 -13.8 22.3 -13.8 c13 0 20.8 5.1 22.3 13.8 c5.9 -0.9 12.4 2.8 14.2 9.7 c2.5 9.5 -4 18 -14.5 18 z"
+        fill={c.ink}
       />
-      {/* band */}
+      {/* band — brick, rounded base */}
       <Path
-        d="M33 46 h38 v13 c0 3.3 -2.7 6 -6 6 h-26 c-3.3 0 -6 -2.7 -6 -6 z"
+        d="M32 47 h40 v12.5 c0 3.6 -2.9 6.5 -6.5 6.5 h-27 c-3.6 0 -6.5 -2.9 -6.5 -6.5 z"
         fill={c.accent}
       />
-      {/* pleats */}
-      <Path
-        d="M44 47 v16 M52 47 v16 M60 47 v16"
-        stroke="#fff"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        opacity={0.35}
-      />
+      {/* crisp gap between cap and band for a clean two-piece look */}
+      <Path d="M31 46.4 h42" stroke={c.bg} strokeWidth={2.4} strokeLinecap="round" />
     </Svg>
   );
 }
