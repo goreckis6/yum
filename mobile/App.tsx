@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
-import { supabase } from './src/lib/supabase';
+import { exchangeOAuthCodeOnce } from './src/lib/supabase';
 import { NavigationContainer, createNavigationContainerRef, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useShareIntent } from 'expo-share-intent';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -142,7 +142,8 @@ export default function App() {
       const code = new URLSearchParams(queryStr).get('code');
       if (code) {
         console.log('[OAuth] deep link code received, exchanging...');
-        await supabase.auth.exchangeCodeForSession(code);
+        // Deduped: performOAuth may have already exchanged this same code.
+        await exchangeOAuthCodeOnce(code);
       }
     };
 

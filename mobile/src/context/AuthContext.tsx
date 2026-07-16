@@ -4,7 +4,7 @@ import { Session, User } from '@supabase/supabase-js';
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { supabase } from '../lib/supabase';
+import { supabase, exchangeOAuthCodeOnce } from '../lib/supabase';
 import { getApiBaseUrl } from '../config/api';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -52,8 +52,8 @@ async function performOAuth(provider: 'google' | 'apple'): Promise<{ error?: str
     const code = new URLSearchParams(qs).get('code');
     if (code) {
       console.log('[OAuth] exchanging code...');
-      const { error: exchErr } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchErr) { console.log('[OAuth] exchange error:', exchErr.message); return { error: exchErr.message }; }
+      const { error: exchErr } = await exchangeOAuthCodeOnce(code);
+      if (exchErr) { console.log('[OAuth] exchange error:', exchErr); return { error: exchErr }; }
       console.log('[OAuth] success!');
       return {};
     }

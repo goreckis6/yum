@@ -39,3 +39,16 @@ AppState.addEventListener('change', (state) => {
   if (state === 'active') supabase.auth.startAutoRefresh();
   else supabase.auth.stopAutoRefresh();
 });
+
+// The OAuth callback (…/auth/callback?code=…) can arrive twice: once captured by
+// the in-app auth session (performOAuth) and once via the OS deep link handler.
+// A PKCE code is single-use, so exchanging it twice makes the second call fail
+// and can clobber the freshly-created session. Dedupe by code so only the first
+// exchange runs; later calls with the same code are no-ops.
+const exchangedCodes = new Set<string>();
+export async function exchangeOAuthCodeOnce(code: string): Promise<{ error?: string }> {
+  if (!code || exchangedCodes.has(code)) return {};
+  exchangedCodes.add(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  return { error: error?.message };
+}
