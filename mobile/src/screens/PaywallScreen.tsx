@@ -53,8 +53,8 @@ export function PaywallScreen({
   const insets = useSafeAreaInsets();
   const { t } = useI18n();
   const { signOut } = useAuth();
-  const { recipes } = useApp();
-  const { offering, isLoading, purchase, restore, refresh } = usePremium();
+  const { recipes, showToast } = useApp();
+  const { offering, isLoading, isPremium, purchase, restore, refresh } = usePremium();
 
   // Sell the moment, not a feature list: someone who just hit the free-import
   // wall sees a very different headline than someone browsing Premium.
@@ -110,7 +110,13 @@ export function PaywallScreen({
       track('purchase_failed', { plan: planName(selectedPkg), reason: res.error });
       setError(res.error);
     } else {
+      // Success: confirm, make sure entitlement state is fresh, and dismiss the
+      // modal so the user lands back in the (now unlocked) app instead of
+      // staring at the same "Start free trial" button.
       track('purchase_succeeded', { plan: planName(selectedPkg) });
+      await refresh();
+      showToast(t('paywall.thanks' as TKey));
+      onClose?.();
     }
   };
 
@@ -124,8 +130,45 @@ export function PaywallScreen({
   };
 
   const isLifetime = selectedPkg?.packageType === 'LIFETIME';
-  const cta = isLifetime ? t('paywall.ctaLifetime' as TKey) : t('paywall.ctaTrial' as TKey);
+  // Only promise a free trial when the selected product actually carries a
+  // zero-cost intro offer — otherwise the button lied ("Start free trial" on a
+  // plan that charges immediately).
+  const introPrice = selectedPkg?.product.introPrice;
+  const hasFreeTrial = !!introPrice && introPrice.price === 0;
+  const cta = isLifetime
+    ? t('paywall.ctaLifetime' as TKey)
+    : hasFreeTrial
+      ? t('paywall.ctaTrial' as TKey)
+      : t('paywall.ctaSubscribe' as TKey);
   const savedCount = recipes?.length ?? 0;
+
+  // Already subscribed (e.g. reopened the upsell, or a purchase just landed but
+  // the modal is still up) → show a clear confirmation instead of the sell.
+  if (isPremium) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.premiumWrap,
+          { backgroundColor: c.bg, paddingTop: insets.top + 40, paddingBottom: insets.bottom + 24 },
+        ]}
+      >
+        {onClose && (
+          <Pressable style={[styles.closeBtn, { top: insets.top + 8 }]} onPress={onClose} hitSlop={10}>
+            <Text style={styles.closeIcon}>✕</Text>
+          </Pressable>
+        )}
+        <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.brand}>{t('paywall.premiumTitle' as TKey)}</Text>
+        <Text style={styles.subtitle}>{t('paywall.premiumBody' as TKey)}</Text>
+        {onClose && (
+          <Pressable style={[styles.cta, styles.premiumCta]} onPress={onClose}>
+            <Text style={styles.ctaText}>{t('paywall.done' as TKey)}</Text>
+          </Pressable>
+        )}
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -236,6 +279,8 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1 },
     inner: { paddingHorizontal: 24, alignItems: 'center' },
+    premiumWrap: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, gap: 14 },
+    premiumCta: { marginTop: 12 },
     closeBtn: {
       position: 'absolute', right: 18, zIndex: 10,
       width: 34, height: 34, borderRadius: 17,
