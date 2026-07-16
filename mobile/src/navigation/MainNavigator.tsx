@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -36,6 +36,14 @@ export function MainNavigator() {
   const c = useTheme();
   const [tab, setTab] = useState<MainTab>('recipes');
   const [addOpen, setAddOpen] = useState(false);
+
+  // Close the "paste a link" sheet whenever we navigate away from Main — e.g. a
+  // share-sheet import (Instagram → YumiShare) opens Processing behind the sheet,
+  // which otherwise stayed open over the running import.
+  useEffect(() => {
+    const unsub = navigation.addListener('blur', () => setAddOpen(false));
+    return unsub;
+  }, [navigation]);
 
   return (
     <TabProvider setTab={setTab}>
