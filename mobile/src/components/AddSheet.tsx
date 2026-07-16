@@ -21,8 +21,6 @@ import { useI18n } from '../i18n/I18nContext';
 import { extractRecipeFromUrl } from '../api/recipes';
 import { Recipe } from '../types';
 import { useApp } from '../context/AppContext';
-import { usePremium } from '../context/PremiumContext';
-import { PREMIUM_UNLIMITED } from '../config/credits';
 
 type Step = 'menu' | 'link' | 'loading';
 
@@ -41,9 +39,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const c = useTheme();
   const { t } = useI18n();
   const styles = useMemo(() => makeStyles(c), [c]);
-  const { credits, setCredits } = useApp();
-  const { isPremium } = usePremium();
-  const unlimited = PREMIUM_UNLIMITED && isPremium;
+  const { setCredits } = useApp();
 
   const loadingMsgs = [
     t('processing.url1'), t('processing.url2'), t('processing.url3'),
@@ -98,12 +94,9 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const submit = async (finalUrl?: string) => {
     const u = (finalUrl ?? url).trim() || clipUrl || '';
     if (!u) return;
-    // Out of free imports → close and show the paywall upsell.
-    if (!unlimited && credits <= 0) {
-      onClose();
-      onOutOfCredits();
-      return;
-    }
+    // Credits/premium are enforced server-side; a genuinely out-of-credits free
+    // user gets a 402 (handled in the catch below → paywall). We don't guess
+    // premium on the client — isPremium can lag and wrongly gated real members.
     Keyboard.dismiss();
     crossFade(() => { setStep('loading'); setError(null); });
     try {

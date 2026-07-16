@@ -21,8 +21,7 @@ import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { COVER_PRESETS } from '../components/CoverArt';
 import { useApp } from '../context/AppContext';
-import { usePremium } from '../context/PremiumContext';
-import { LOW_CREDITS_WARNING, PREMIUM_UNLIMITED } from '../config/credits';
+import { LOW_CREDITS_WARNING } from '../config/credits';
 import { track } from '../lib/analytics';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Processing'>;
@@ -84,9 +83,7 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isNetErr, setIsNetErr] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const { credits, setCredits, showToast } = useApp();
-  const { isPremium } = usePremium();
-  const unlimited = PREMIUM_UNLIMITED && isPremium;
+  const { setCredits, showToast } = useApp();
 
   const isImageMode = 'imageBase64' in route.params;
   const importSource = isImageMode ? 'photo' : 'link';
@@ -116,12 +113,12 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const hatY = jump.interpolate({ inputRange: [0, 1], outputRange: [0, -18] });
 
   useEffect(() => {
-    // Out of free imports → don't spend an API call, send them to the paywall.
-    if (!unlimited && credits <= 0) {
-      navigation.replace('Paywall', { reason: 'out_of_credits' });
-      return;
-    }
-
+    // Credits/premium are enforced server-side (the backend knows the real
+    // subscription state via RevenueCat). We don't pre-empt with a client-side
+    // paywall redirect here: isPremium can still be resolving when an import is
+    // launched from the share sheet, which wrongly bounced premium users to the
+    // paywall. A genuinely out-of-credits free user gets a 402 below (handled in
+    // .catch), which costs no OpenAI call.
     track('import_started', { source: importSource });
 
     const work = isImageMode
