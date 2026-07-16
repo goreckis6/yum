@@ -14,6 +14,12 @@ import net from 'node:net';
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Behind Railway's proxy the client IP arrives in X-Forwarded-For. Trust
+// exactly one hop (the platform proxy) so req.ip is the real client and
+// express-rate-limit can key on it. Trusting *all* proxies (`true`) would let a
+// caller spoof X-Forwarded-For to dodge the per-IP limit, so we pin it to 1.
+app.set('trust proxy', 1);
+
 app.use(cors());
 
 // Coarse per-IP throttle in front of everything — a cheap gate against scripted
