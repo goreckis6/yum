@@ -821,7 +821,7 @@ async function extractWithOpenAI(url, pageContent) {
 
 // Bump this whenever backend behaviour changes so a deploy can be verified live
 // via GET /health (tells old vs new code apart without guessing).
-const BUILD_MARKER = 'non-recipe-guard-1';
+const BUILD_MARKER = 'rc-diagnostics-1';
 
 app.get('/health', (_req, res) => {
   res.json({
@@ -831,8 +831,25 @@ app.get('/health', (_req, res) => {
     accountDeletion: !!supabaseAdmin,
     supabaseUrl: !!SUPABASE_URL,
     serviceKey: !!SUPABASE_SERVICE_ROLE_KEY,
+    // RevenueCat config — how the server decides who is premium. If revenueCat
+    // is false, EVERY user is treated as free (server can't verify), so once
+    // their free import credits run out they get a 402 and see the paywall even
+    // though the app's own SDK shows them as premium. rcEntitlement must match
+    // the entitlement identifier in the RevenueCat dashboard EXACTLY.
+    revenueCat: !!RC_SECRET_KEY,
+    rcEntitlement: RC_ENTITLEMENT,
+    premiumEnforcement: PREMIUM_ENFORCEMENT,
     message: openai ? 'Ready' : 'Running in demo mode — set OPENAI_API_KEY for live extraction',
   });
+});
+
+// Authenticated diagnostic: what does the SERVER think about THIS user? Lets us
+// tell "client says premium but server says free" apart from a real credit
+// issue. Returns the server-side premium verdict + current credit balance.
+app.get('/api/whoami', requireAuth, async (req, res) => {
+  const premium = await isPremiumUser(req.user.id);
+  const credits = await getUserCredits(req.user.id);
+  res.json({ userId: req.user.id, premiumOnServer: premium, credits, rcConfigured: !!RC_SECRET_KEY, rcEntitlement: RC_ENTITLEMENT });
 });
 
 // Current import-credit balance for the signed-in user (the app shows this in
