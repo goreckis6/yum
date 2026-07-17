@@ -19,16 +19,18 @@ export function Wordmark({
   return (
     <Text
       accessibilityLabel="YumiShare"
-      // Horizontal padding leaves room for the italic "Share" overhang, which
-      // RN's text bounds don't account for — without it the final "e" gets
-      // clipped. Symmetric so a centred wordmark stays centred.
+      // iOS under-measures the italic "Share", clipping the final letter. Give
+      // the text frame generous horizontal room (symmetric so a centred wordmark
+      // stays centred) so nothing is cut.
       style={[
-        { fontSize: size, letterSpacing: -size * 0.01, paddingHorizontal: Math.ceil(size * 0.16) },
+        { fontSize: size, letterSpacing: -size * 0.01, paddingHorizontal: Math.ceil(size * 0.25) },
         style,
       ]}
     >
       <Text style={[styles.yumi, { color }]}>Yumi</Text>
       <Text style={styles.share}>Share</Text>
+      {/* trailing space reserves width so iOS doesn't clip the italic "e" */}
+      <Text style={styles.yumi}> </Text>
     </Text>
   );
 }
