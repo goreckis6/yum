@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import Svg, { Path, ClipPath, Rect, Defs, G } from 'react-native-svg';
 import { Icon } from '../components/Icon';
+import { Wordmark } from '../components/Wordmark';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -96,7 +97,7 @@ export function AuthScreen({ onBack }: Props) {
         )}
 
         <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.brand}>YumiShare</Text>
+        <Wordmark color={c.ink} size={32} style={{ marginBottom: 4, textAlign: 'center' }} />
         <Text style={styles.subtitle}>{t('auth.welcome')}</Text>
 
         {!isSupabaseConfigured && (
@@ -255,7 +256,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   backIcon: { fontSize: 22, color: c.ink, marginTop: -2 },
 
   logo: { width: 72, height: 72, marginBottom: 12, alignSelf: 'center' },
-  brand: { fontFamily: fonts.displayExtra, fontSize: 30, color: c.ink, letterSpacing: -0.6, marginBottom: 4, textAlign: 'center' },
   subtitle: { fontSize: 15, fontWeight: '500', color: c.grayMuted, marginBottom: 32, textAlign: 'center' },
 
   warn: {

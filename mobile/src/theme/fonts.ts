@@ -6,4 +6,7 @@ export const fonts = {
   body: 'HankenGrotesk_500Medium',
   bodySemi: 'HankenGrotesk_600SemiBold',
   bodyBold: 'HankenGrotesk_700Bold',
+  // Fraunces — the YumiShare wordmark face (soft serif). Semibold + true italic.
+  brand: 'Fraunces_600SemiBold',
+  brandItalic: 'Fraunces_600SemiBold_Italic',
 };

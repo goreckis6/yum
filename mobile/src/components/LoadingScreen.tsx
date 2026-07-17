@@ -6,9 +6,9 @@ import {
   Easing,
   Image,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { Wordmark } from './Wordmark';
 
 // Branded startup / loading screen. Shown while fonts, auth, stored flags, or
 // subscription state resolve — a continuation of the native splash rather than
@@ -69,7 +69,7 @@ export function LoadingScreen({
           style={[styles.logo, { transform: [{ scale }] }]}
           resizeMode="contain"
         />
-        <Text style={[styles.word, { color: tint }]}>YumiShare</Text>
+        <Wordmark color={tint} size={30} />
       </View>
       {reduceMotion && <ActivityIndicator style={styles.spinner} color={tint} />}
     </View>
@@ -80,6 +80,5 @@ const styles = StyleSheet.create({
   root: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   center: { alignItems: 'center', gap: 14 },
   logo: { width: 88, height: 88 },
-  word: { fontSize: 22, fontWeight: '700', letterSpacing: 0.5 },
   spinner: { position: 'absolute', bottom: 72 },
 });

@@ -15,6 +15,10 @@ import {
   HankenGrotesk_600SemiBold,
   HankenGrotesk_700Bold,
 } from '@expo-google-fonts/hanken-grotesk';
+import {
+  Fraunces_600SemiBold,
+  Fraunces_600SemiBold_Italic,
+} from '@expo-google-fonts/fraunces';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
@@ -161,6 +165,8 @@ export default function App() {
     HankenGrotesk_500Medium,
     HankenGrotesk_600SemiBold,
     HankenGrotesk_700Bold,
+    Fraunces_600SemiBold,
+    Fraunces_600SemiBold_Italic,
   });
 
   if (!fontsLoaded) {
