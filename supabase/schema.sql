@@ -90,13 +90,18 @@ alter table public.apple_tokens enable row level security;
 -- No policies → RLS denies all anon/authenticated access; service role bypasses.
 
 -- 4) Freemium import credits — every account starts with FREE_IMPORT_CREDITS
--- (10) free recipe extractions. Enforced server-side so it can't be bypassed by
+-- (20) free recipe extractions. Enforced server-side so it can't be bypassed by
 -- a modified client. Only the service role (backend) touches this table.
 create table if not exists public.user_credits (
   user_id uuid primary key references auth.users (id) on delete cascade,
-  credits int not null default 10,
+  credits int not null default 20,
   updated_at timestamptz not null default now()
 );
+
+-- The table may already exist (created when the default was 10), and
+-- `create table if not exists` won't change its default — so set it explicitly.
+-- New accounts get 20 free imports from now on.
+alter table public.user_credits alter column credits set default 20;
 
 alter table public.user_credits enable row level security;
 -- No policies → RLS denies all anon/authenticated access; service role bypasses.
