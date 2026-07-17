@@ -97,7 +97,7 @@ export function AuthScreen({ onBack }: Props) {
         )}
 
         <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-        <Wordmark color={c.ink} size={32} style={{ marginBottom: 4, textAlign: 'center' }} />
+        <Wordmark color={c.ink} size={32} centered style={{ marginBottom: 4, textAlign: 'center' }} />
         <Text style={styles.subtitle}>{t('auth.welcome')}</Text>
 
         {!isSupabaseConfigured && (

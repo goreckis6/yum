@@ -763,7 +763,7 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { ...centeredContent, paddingTop: 16, paddingHorizontal: 20, paddingBottom: 130 }, // paddingTop overridden inline with insets
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 },
-  brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   logo: { width: 44, height: 44 },
   logoIcon: { color: '#fff', fontSize: 16 },
   creditsPill: {

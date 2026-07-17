@@ -69,7 +69,7 @@ export function LoadingScreen({
           style={[styles.logo, { transform: [{ scale }] }]}
           resizeMode="contain"
         />
-        <Wordmark color={tint} size={30} />
+        <Wordmark color={tint} size={30} centered />
       </View>
       {reduceMotion && <ActivityIndicator style={styles.spinner} color={tint} />}
     </View>
