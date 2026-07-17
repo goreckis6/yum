@@ -41,6 +41,7 @@ function plRecipes(n: number, lang: string): string {
 }
 import { RootStackParamList } from '../navigation/types';
 import { Icon } from '../components/Icon';
+import { Wordmark } from '../components/Wordmark';
 
 const CHIPS: FilterChip[] = ['All', 'Favorites', 'Quick', 'Dinner', 'Breakfast', 'Lunch', 'Vegetarian', 'High-protein'];
 // Recipes that ship in the seed — used to detect "first-time / empty" state.
@@ -681,7 +682,7 @@ export function HomeScreen() {
           <View style={styles.header}>
             <View style={styles.brand}>
               <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-              <Text style={styles.brandName}>YumiShare</Text>
+              <Wordmark color={c.ink} size={23} />
             </View>
             <Pressable
               style={[styles.creditsPill, unlimited && styles.creditsPillPro]}
@@ -765,7 +766,6 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 9 },
   logo: { width: 44, height: 44 },
   logoIcon: { color: '#fff', fontSize: 16 },
-  brandName: { fontFamily: fonts.displayExtra, fontSize: 23, color: c.ink, letterSpacing: -0.5 },
   creditsPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: c.warning, borderRadius: 999,

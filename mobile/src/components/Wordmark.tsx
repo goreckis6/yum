@@ -19,7 +19,13 @@ export function Wordmark({
   return (
     <Text
       accessibilityLabel="YumiShare"
-      style={[{ fontSize: size, letterSpacing: -size * 0.01 }, style]}
+      // Horizontal padding leaves room for the italic "Share" overhang, which
+      // RN's text bounds don't account for — without it the final "e" gets
+      // clipped. Symmetric so a centred wordmark stays centred.
+      style={[
+        { fontSize: size, letterSpacing: -size * 0.01, paddingHorizontal: Math.ceil(size * 0.16) },
+        style,
+      ]}
     >
       <Text style={[styles.yumi, { color }]}>Yumi</Text>
       <Text style={styles.share}>Share</Text>
