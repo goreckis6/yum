@@ -46,41 +46,23 @@ function FallbackArt({ c }: { c: ThemeColors }) {
   );
 }
 
-// Classic chef's toque for the loading state — line-art: a tall, wavy puffy cap
-// overhanging a flared, pleated band (matching the reference art). Black (ink)
-// outline so it adapts per theme; the pleats + fold ticks are the brick accent.
-// It bounces (see the Animated wrapper below) while the recipe is analysed.
+// Chef's toque for the loading state — the supplied SVG icon rendered as a
+// single theme colour (c.ink) so it's a dark outline on the light (cream) bg and
+// turns white in dark mode. Only the icon's outline/detail paths are used (its
+// white fill + grey shading are dropped) to keep it clean line-art. It bounces
+// (see the Animated wrapper below) while the recipe is analysed.
 function ChefHat({ c }: { c: ThemeColors }) {
   return (
-    <Svg width={118} height={106} viewBox="0 0 120 108">
-      {/* puffy cap — bumpy dome overhanging the band, outline only */}
+    <Svg width={110} height={110} viewBox="0 0 481.04 481.04">
+      {/* band with fold slits */}
       <Path
-        d="M42 68 C24 70 12 61 16 46 C9 39 15 26 28 28 C26 15 43 11 53 20 C57 11 78 9 83 23 C97 22 108 33 101 47 C104 61 92 70 78 68 C66 65 54 65 42 68 Z"
-        fill="none"
-        stroke={c.ink}
-        strokeWidth={3.6}
-        strokeLinejoin="round"
+        fill={c.ink}
+        d="M351.04,232.68h-224c-4.424,0-8,3.584-8,8v216c0,13.232,10.768,24,24,24h192c13.232,0,24-10.768,24-24v-216C359.04,236.264,355.464,232.68,351.04,232.68z M343.04,456.68c0,4.408-3.584,8-8,8h-192c-4.416,0-8-3.592-8-8v-24h184c4.424,0,8-3.584,8-8s-3.576-8-8-8h-16v-48c0-4.416-3.576-8-8-8s-8,3.584-8,8v48h-40v-48c0-4.416-3.576-8-8-8s-8,3.584-8,8v48h-40v-48c0-4.416-3.576-8-8-8s-8,3.584-8,8v48h-40v-168h208V456.68z"
       />
-      {/* band — flared, rounded base, outline only */}
+      {/* puffy top outline */}
       <Path
-        d="M42 68 L78 68 C81 77 84 81 87 86 C89 90 85 92 80 92 L40 92 C35 92 31 90 33 86 C36 81 39 77 42 68 Z"
-        fill="none"
-        stroke={c.ink}
-        strokeWidth={3.6}
-        strokeLinejoin="round"
-      />
-      {/* brick accents — band pleats + centre fold ticks */}
-      <Path
-        d="M50 74 v14 M60 73 v15 M70 74 v14"
-        stroke={c.accent}
-        strokeWidth={2.6}
-        strokeLinecap="round"
-      />
-      <Path
-        d="M55 63 l2.5 4 M65 63 l-2.5 4"
-        stroke={c.accent}
-        strokeWidth={2.4}
-        strokeLinecap="round"
+        fill={c.ink}
+        d="M368.56,46.68c-6.992,0-14.016,0.704-21.352,2.136C319.808,17.96,280.72,0.36,239.2,0.36c-41.088,0-80.048,17.432-107.592,47.992c-6.432-1.112-12.816-1.672-19.048-1.672C50.488,46.68,0,97.136,0,159.16c0,62.064,50.496,112.56,112.56,112.56c15.648,0,30.832-3.248,45.184-9.656c24.192,16.544,52.248,25.256,81.448,25.256c29.728,0,58.144-8.944,82.488-25.912c14.832,6.84,30.568,10.312,46.88,10.312c62.024,0,112.48-50.496,112.48-112.56C481.04,97.136,430.584,46.68,368.56,46.68z M368.56,255.72c-15.384,0-30.192-3.608-44.024-10.712c-2.704-1.392-5.992-1.12-8.448,0.704c-22.424,16.752-49.016,25.608-76.896,25.608c-27.36,0-53.608-8.624-75.904-24.936c-1.4-1.016-3.056-1.544-4.728-1.544c-1.208,0-2.432,0.28-3.56,0.832c-13.408,6.664-27.688,10.04-42.44,10.04c-53.24,0-96.56-43.32-96.56-96.56c0-53.2,43.32-96.48,96.56-96.48c6.592,0,13.416,0.744,20.296,2.208c7.872,4.392,36.304,22.496,34.048,53.864c-0.32,4.408,3,8.24,7.408,8.552c0.192,0.008,0.384,0.016,0.576,0.016c4.16,0,7.672-3.216,7.968-7.424c2.44-33.84-21.584-55.28-35.448-64.752C171.64,30.472,204.512,16.36,239.2,16.36c34.832,0,67.64,14.04,91.712,38.648c-13.808,9.12-38.544,30.448-36.088,65.192c0.296,4.216,3.808,7.44,7.968,7.44c0.184,0,0.384-0.008,0.568-0.016c4.408-0.312,7.728-4.136,7.416-8.544c-2.184-31.024,24.952-48.736,33.408-53.48c0.624,0.008,1.256-0.024,1.888-0.168c7.88-1.848,15.232-2.752,22.496-2.752c53.192,0,96.48,43.28,96.48,96.48C465.04,212.4,421.76,255.72,368.56,255.72z"
       />
     </Svg>
   );
@@ -290,7 +272,8 @@ export function ProcessingScreen({ navigation, route }: Props) {
       <Animated.View style={[styles.hatWrap, { transform: [{ translateY: hatY }] }]}>
         <ChefHat c={c} />
       </Animated.View>
-      <Text style={styles.title}>{t('processing.chefAnalyzing')}</Text>
+      <Text style={styles.chefName}>Chef YumiShare</Text>
+      <Text style={styles.chefMsg}>{t('processing.chefAnalyzing')}</Text>
       {reduceMotion && (
         <ActivityIndicator color={c.accent} style={styles.spinner} />
       )}
@@ -309,11 +292,20 @@ const makeStyles = (c: ThemeColors) =>
     },
     hatWrap: { marginBottom: 24 },
     spinner: { marginTop: 22 },
-    title: {
+    // "Chef YumiShare" — the brand line, set in the display face.
+    chefName: {
       fontFamily: fonts.display,
       fontSize: 22,
       color: c.ink,
       textAlign: 'center',
+    },
+    // "is analyzing your recipe…" — a lighter, quieter second line under it.
+    chefMsg: {
+      fontSize: 15,
+      fontWeight: '400',
+      color: c.grayMid,
+      textAlign: 'center',
+      marginTop: 5,
     },
 
     // Fallback / error state
