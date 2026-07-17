@@ -46,35 +46,40 @@ function FallbackArt({ c }: { c: ThemeColors }) {
   );
 }
 
-// Modern chef's toque for the loading state — line-art only: black (ink)
-// contours, no fill, with brick/terracotta pleats as the accent. c.ink adapts
-// per theme (dark on the cream light bg, light on the dark bg) so the outline
-// stays legible either way. It bounces (see the Animated wrapper below) while
-// the recipe is analysed.
+// Classic chef's toque for the loading state — line-art: a tall, wavy puffy cap
+// overhanging a flared, pleated band (matching the reference art). Black (ink)
+// outline so it adapts per theme; the pleats + fold ticks are the brick accent.
+// It bounces (see the Animated wrapper below) while the recipe is analysed.
 function ChefHat({ c }: { c: ThemeColors }) {
   return (
-    <Svg width={104} height={104} viewBox="0 0 104 104">
-      {/* puffy cap — outline only */}
+    <Svg width={118} height={106} viewBox="0 0 120 108">
+      {/* puffy cap — bumpy dome overhanging the band, outline only */}
       <Path
-        d="M30 45 c-10.5 0 -17 -8.5 -14.5 -18 c1.8 -6.9 8.3 -10.6 14.2 -9.7 c1.5 -8.7 9.3 -13.8 22.3 -13.8 c13 0 20.8 5.1 22.3 13.8 c5.9 -0.9 12.4 2.8 14.2 9.7 c2.5 9.5 -4 18 -14.5 18 z"
+        d="M42 68 C24 70 12 61 16 46 C9 39 15 26 28 28 C26 15 43 11 53 20 C57 11 78 9 83 23 C97 22 108 33 101 47 C104 61 92 70 78 68 C66 65 54 65 42 68 Z"
         fill="none"
         stroke={c.ink}
-        strokeWidth={3}
+        strokeWidth={3.6}
         strokeLinejoin="round"
       />
-      {/* band — outline only, rounded base */}
+      {/* band — flared, rounded base, outline only */}
       <Path
-        d="M32 46 h40 v13 c0 3.6 -2.9 6.5 -6.5 6.5 h-27 c-3.6 0 -6.5 -2.9 -6.5 -6.5 z"
+        d="M42 68 L78 68 C81 77 84 81 87 86 C89 90 85 92 80 92 L40 92 C35 92 31 90 33 86 C36 81 39 77 42 68 Z"
         fill="none"
         stroke={c.ink}
-        strokeWidth={3}
+        strokeWidth={3.6}
         strokeLinejoin="round"
       />
-      {/* brick pleats — the accent */}
+      {/* brick accents — band pleats + centre fold ticks */}
       <Path
-        d="M43 48 v15 M52 48 v15 M61 48 v15"
+        d="M50 74 v14 M60 73 v15 M70 74 v14"
         stroke={c.accent}
         strokeWidth={2.6}
+        strokeLinecap="round"
+      />
+      <Path
+        d="M55 63 l2.5 4 M65 63 l-2.5 4"
+        stroke={c.accent}
+        strokeWidth={2.4}
         strokeLinecap="round"
       />
     </Svg>
