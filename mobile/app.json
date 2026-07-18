@@ -7,14 +7,9 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
-    "splash": {
-      "image": "./assets/icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F6F6F4"
-    },
     "ios": {
       "bundleIdentifier": "com.yumshare.app",
-      "buildNumber": "38",
+      "buildNumber": "40",
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
@@ -83,7 +78,16 @@
           "locationWhenInUsePermission": "YumiShare uses your location to check the local temperature and suggest how much water to drink."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F6F6F4",
+          "image": "./assets/logo-mark.png",
+          "imageWidth": 104,
+          "resizeMode": "contain"
+        }
+      ]
     ],
     "extra": {
       "eas": {
