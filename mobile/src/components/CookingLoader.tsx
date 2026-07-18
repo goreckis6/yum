@@ -3,9 +3,9 @@ import { AccessibilityInfo, ActivityIndicator, Animated, Easing, StyleSheet, Tex
 import Svg, { G, Path } from 'react-native-svg';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
-import { fonts } from '../theme/fonts';
 import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
+import { WavyWordmark } from './WavyWordmark';
 
 // The supplied chef-hat vector (dark-1.svg) as a single path, tinted with the
 // theme ink (dark on light, white in dark).
@@ -57,7 +57,7 @@ export function CookingLoader() {
       <Animated.View style={[styles.hatWrap, { transform: [{ translateY: hatY }] }]}>
         <ChefHat c={c} />
       </Animated.View>
-      <Text style={styles.name}>Chef YumiShare</Text>
+      <WavyWordmark color={c.ink} size={28} />
       <Text style={styles.msg}>{t('processing.chefAnalyzing' as TKey)}</Text>
       {reduceMotion && <ActivityIndicator color={c.accent} style={styles.spinner} />}
     </View>
@@ -67,8 +67,7 @@ export function CookingLoader() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     wrap: { alignItems: 'center', justifyContent: 'center' },
-    hatWrap: { marginBottom: 24 },
-    name: { fontFamily: fonts.display, fontSize: 22, color: c.ink, textAlign: 'center' },
-    msg: { fontSize: 15, fontWeight: '400', color: c.grayMid, textAlign: 'center', marginTop: 5 },
+    hatWrap: { marginBottom: 20 },
+    msg: { fontSize: 15, fontWeight: '400', color: c.grayMid, textAlign: 'center', marginTop: 4 },
     spinner: { marginTop: 22 },
   });
