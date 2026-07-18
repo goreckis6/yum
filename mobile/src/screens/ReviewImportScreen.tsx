@@ -33,7 +33,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   const c = useTheme();
   const { t } = useI18n();
   const styles = makeStyles(c);
-  const { addRecipe, showToast } = useApp();
+  const { addRecipe, showToast, recipes } = useApp();
   const { user } = useAuth();
   const userId = user?.id;
   const insets = useSafeAreaInsets();
@@ -158,7 +158,40 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     setDraft({ ...draft, steps: [...draft.steps, ''] });
   };
 
-  const save = async () => {
+  // Find an already-saved recipe that looks like this one: same (normalised)
+  // title, or the same source URL. Used to warn before saving a duplicate.
+  const findDuplicate = () => {
+    const norm = (s?: string) => (s ?? '').trim().toLowerCase().replace(/\s+/g, ' ');
+    const title = norm(draft.title);
+    const url = (draft.sourceUrl ?? '').trim();
+    return recipes.find(
+      (r) =>
+        (title.length > 0 && norm(r.title) === title) ||
+        (url.length > 0 && (r.sourceUrl ?? '').trim() === url),
+    );
+  };
+
+  const save = () => {
+    if (savingRef.current) return; // ignore repeated taps while a save is in flight
+    const dup = findDuplicate();
+    if (dup) {
+      savingRef.current = true; // block re-entry while the dialog is open
+      Alert.alert(
+        t('reviewImport.dupTitle'),
+        t('reviewImport.dupBody'),
+        [
+          { text: t('reviewImport.dupContinue'), onPress: () => { savingRef.current = false; doSave(); } },
+          { text: t('reviewImport.dupView'), onPress: () => navigation.replace('RecipeDetail', { id: dup.id }) },
+          { text: t('reviewImport.dupNo'), style: 'cancel', onPress: () => { savingRef.current = false; } },
+        ],
+        { cancelable: true, onDismiss: () => { savingRef.current = false; } },
+      );
+      return;
+    }
+    doSave();
+  };
+
+  const doSave = async () => {
     if (savingRef.current) return; // ignore repeated taps while a save is in flight
     savingRef.current = true;
     setSaving(true);
