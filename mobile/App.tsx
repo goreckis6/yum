@@ -281,4 +281,6 @@ function Gate() {
 }
 
 
-export default Sentry.wrap(App);
+// Only wrap with Sentry when a DSN is configured — otherwise stay fully dormant
+// (no native RNSentry access), so a dev client without the native module runs.
+export default SENTRY_DSN ? Sentry.wrap(App) : App;
