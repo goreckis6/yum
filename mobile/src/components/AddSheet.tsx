@@ -57,7 +57,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
       setUrl('');
       setClipUrl(null);
       setError(null);
-      setMsgIdx(0);
     }
   }, [visible]);
 

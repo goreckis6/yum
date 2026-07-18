@@ -32,6 +32,7 @@ export type AnalyticsEvent =
   // Engagement / retention signals.
   | 'recipe_cooked'
   | 'meal_planned'
+  | 'meals_copied' // { count } — copy a day's meals to the next day
   | 'recipe_shared';
 
 export type AnalyticsProps = Record<string, string | number | boolean | null | undefined>;
