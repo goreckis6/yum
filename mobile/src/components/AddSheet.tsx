@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Alert,
   Animated,
   Keyboard,
@@ -18,6 +17,7 @@ import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Icon } from './Icon';
+import { CookingLoader } from './CookingLoader';
 import { useI18n } from '../i18n/I18nContext';
 import { extractRecipeFromUrl } from '../api/recipes';
 import { Recipe } from '../types';
@@ -42,15 +42,10 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const styles = useMemo(() => makeStyles(c), [c]);
   const { setCredits } = useApp();
 
-  const loadingMsgs = [
-    t('processing.url1'), t('processing.url2'), t('processing.url3'),
-    t('processing.url4'), t('processing.url5'),
-  ];
 
   const [step, setStep] = useState<Step>('menu');
   const [url, setUrl] = useState('');
   const [clipUrl, setClipUrl] = useState<string | null>(null);
-  const [msgIdx, setMsgIdx] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -76,11 +71,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
     }
   }, [step]);
 
-  useEffect(() => {
-    if (step !== 'loading') return;
-    const id = setInterval(() => setMsgIdx((i) => (i + 1) % loadingMsgs.length), 900);
-    return () => clearInterval(id);
-  }, [step]);
 
   const crossFade = useCallback((fn: () => void) => {
     Animated.timing(fadeAnim, { toValue: 0, duration: 140, useNativeDriver: true }).start(() => {
@@ -211,7 +201,9 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
               />
             )}
             {step === 'loading' && (
-              <LoadingView styles={styles} c={c} t={t} msg={loadingMsgs[msgIdx]} />
+              <View style={styles.loadingWrap}>
+                <CookingLoader />
+              </View>
             )}
           </Animated.View>
         </View>
@@ -338,16 +330,6 @@ function LinkView({ styles, c, t, url, setUrl, clipUrl, error, canSubmit,
         <Text style={styles.submitText}>{t('addSheet.confirmLink')}</Text>
       </Pressable>
     </>
-  );
-}
-
-function LoadingView({ styles, c, t, msg }: any) {
-  return (
-    <View style={styles.loadingWrap}>
-      <ActivityIndicator size="large" color={c.accent} style={{ marginBottom: 20 }} />
-      <Text style={styles.loadingMsg}>{msg}</Text>
-      <Text style={styles.loadingHint}>{t('addSheet.loadingHint')}</Text>
-    </View>
   );
 }
 
