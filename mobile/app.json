@@ -14,7 +14,7 @@
     },
     "ios": {
       "bundleIdentifier": "com.yumshare.app",
-      "buildNumber": "36",
+      "buildNumber": "38",
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
@@ -83,9 +83,7 @@
           "locationWhenInUsePermission": "YumiShare uses your location to check the local temperature and suggest how much water to drink."
         }
       ],
-      "expo-asset",
-      "expo-secure-store",
-      "@sentry/react-native"
+      "expo-asset"
     ],
     "extra": {
       "eas": {
