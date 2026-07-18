@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState } from 'react-native';
 import { createClient } from '@supabase/supabase-js';
-import { LargeSecureStore } from './secureStore';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
@@ -24,9 +24,10 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder-anon-key',
   {
   auth: {
-    // Session (incl. refresh token) is encrypted at rest: AES key in the
-    // Keychain/Keystore via expo-secure-store, ciphertext in AsyncStorage.
-    storage: new LargeSecureStore(),
+    // Session persisted in AsyncStorage. (An encrypted SecureStore-backed adapter
+    // was tried but pulled in the expo-secure-store native module, which crashed
+    // at startup when it wasn't in the build — reverted for reliability.)
+    storage: AsyncStorage,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
