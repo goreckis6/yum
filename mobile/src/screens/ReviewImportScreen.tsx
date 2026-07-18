@@ -19,7 +19,8 @@ import { uploadImageIfLocal } from '../lib/storage';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
-import { Ingredient, TAG_ICON } from '../types';
+import { Ingredient, Recipe, TAG_ICON } from '../types';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Icon } from '../components/Icon';
 import { CoverArt, COVER_PRESETS } from '../components/CoverArt';
 import { cleanStep, scaleAmount } from '../utils/scale';
@@ -50,6 +51,9 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   // slow for a fast double-tap); `saving` just disables the button visually.
   const savingRef = useRef(false);
   const [saving, setSaving] = useState(false);
+  // Duplicate-recipe warning dialog.
+  const [dupOpen, setDupOpen] = useState(false);
+  const [dupRecipe, setDupRecipe] = useState<Recipe | null>(null);
   const [enrichedKeys, setEnrichedKeys] = useState<Set<string>>(new Set());
   const [coverMode, setCoverMode] = useState<'photo' | 'text'>(
     route.params.draft.imageUrl ? 'photo' : route.params.draft.cover ? 'text' : 'photo',
@@ -175,17 +179,8 @@ export function ReviewImportScreen({ navigation, route }: Props) {
     if (savingRef.current) return; // ignore repeated taps while a save is in flight
     const dup = findDuplicate();
     if (dup) {
-      savingRef.current = true; // block re-entry while the dialog is open
-      Alert.alert(
-        t('reviewImport.dupTitle'),
-        t('reviewImport.dupBody'),
-        [
-          { text: t('reviewImport.dupContinue'), onPress: () => { savingRef.current = false; doSave(); } },
-          { text: t('reviewImport.dupView'), onPress: () => navigation.replace('RecipeDetail', { id: dup.id }) },
-          { text: t('reviewImport.dupNo'), style: 'cancel', onPress: () => { savingRef.current = false; } },
-        ],
-        { cancelable: true, onDismiss: () => { savingRef.current = false; } },
-      );
+      setDupRecipe(dup);
+      setDupOpen(true);
       return;
     }
     doSave();
@@ -222,6 +217,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   };
 
   return (
+    <>
     <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}>
       <Pressable style={styles.backBtn} onPress={() => navigation.goBack()} hitSlop={10}>
         <Text style={styles.backIcon}>‹</Text>
@@ -456,6 +452,22 @@ export function ReviewImportScreen({ navigation, route }: Props) {
         )}
       </Pressable>
     </ScrollView>
+
+    <ConfirmDialog
+      visible={dupOpen}
+      title={t('reviewImport.dupTitle')}
+      message={t('reviewImport.dupBody')}
+      primaryLabel={t('reviewImport.dupContinue')}
+      onPrimary={() => { setDupOpen(false); doSave(); }}
+      secondaryLabel={t('reviewImport.dupView')}
+      onSecondary={() => {
+        setDupOpen(false);
+        if (dupRecipe) navigation.replace('RecipeDetail', { id: dupRecipe.id });
+      }}
+      tertiaryLabel={t('reviewImport.dupNo')}
+      onTertiary={() => setDupOpen(false)}
+    />
+    </>
   );
 }
 
