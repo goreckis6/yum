@@ -51,6 +51,19 @@ import { ReviewReceiptScreen } from './src/screens/ReviewReceiptScreen';
 import { Toast } from './src/components/Toast';
 import { initAnalytics } from './src/lib/analyticsProviders';
 import { track } from './src/lib/analytics';
+import * as Sentry from '@sentry/react-native';
+
+// Init crash reporting as early as possible (module scope, before render) so it
+// catches startup crashes. No-op until EXPO_PUBLIC_SENTRY_DSN is set.
+const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
+if (SENTRY_DSN) {
+  Sentry.init({
+    dsn: SENTRY_DSN,
+    tracesSampleRate: 0.2,
+    // Capture native + JS crashes; attach a bit of context for triage.
+    enableAutoSessionTracking: true,
+  });
+}
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -130,7 +143,7 @@ function RootNavigator() {
   );
 }
 
-export default function App() {
+function App() {
   // Turn on any configured analytics/crash providers (no-op until keys are set)
   // and record the session start.
   useEffect(() => {
@@ -267,3 +280,5 @@ function Gate() {
   );
 }
 
+
+export default Sentry.wrap(App);
