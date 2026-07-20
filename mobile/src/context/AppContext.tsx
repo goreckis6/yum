@@ -59,6 +59,7 @@ interface AppContextValue extends AppState {
   setCookbookCover: (tag: string, cover: CookbookCover | null) => void;
   createCookbook: (title: string) => string;
   deleteCookbook: (id: string) => void;
+  renameCookbook: (id: string, title: string) => void;
   toggleRecipeInCookbook: (cookbookId: string, recipeId: string) => void;
   getRecipe: (id: string) => Recipe | undefined;
   addReceipt: (receipt: Receipt) => void;
@@ -458,6 +459,15 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
     });
   }, []);
 
+  const renameCookbook = useCallback((id: string, title: string) => {
+    const next = title.trim();
+    if (!next) return;
+    setState((s) => ({
+      ...s,
+      customCookbooks: s.customCookbooks.map((cb) => (cb.id === id ? { ...cb, title: next } : cb)),
+    }));
+  }, []);
+
   const getReceipt = useCallback(
     (id: string) => state.receipts?.find((r) => r.id === id),
     [state.receipts],
@@ -594,6 +604,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       setCookbookCover,
       createCookbook,
       deleteCookbook,
+      renameCookbook,
       toggleRecipeInCookbook,
       getRecipe,
       addReceipt,
@@ -644,6 +655,7 @@ export function AppProvider({ userId, children }: { userId: string; children: Re
       setCookbookCover,
       createCookbook,
       deleteCookbook,
+      renameCookbook,
       toggleRecipeInCookbook,
       getRecipe,
       addReceipt,

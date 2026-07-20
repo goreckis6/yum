@@ -591,6 +591,17 @@ const ru: Dict = {
   'grocerySheet.deselectAll': 'Снять выделение',
   'grocerySheet.add': 'Добавить {n} товаров',
   'grocerySheet.addNone': 'Выберите товары для добавления',
+  'cookbook.edit': 'Редактировать эту книгу',
+  'cookbook.choosePhoto': 'Выбрать фото',
+  'cookbook.takePhoto': 'Сделать фото',
+  'cookbook.colourCover': 'Цветная обложка',
+  'cookbook.resetCover': 'Сбросить обложку',
+  'cookbook.rename': 'Переименовать книгу',
+  'cookbook.delete': 'Удалить книгу',
+  'cookbook.deleted': 'Книга удалена',
+  'cookbook.renameTitle': 'Переименовать книгу',
+  'cookbook.renameConfirm': 'Сохранить',
+  'cookbook.fallbackTitle': 'Кулинарная книга',
 };
 
 export default ru;

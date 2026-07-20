@@ -591,6 +591,17 @@ const fr: Dict = {
   'grocerySheet.deselectAll': 'Tout désélectionner',
   'grocerySheet.add': 'Ajouter {n} articles',
   'grocerySheet.addNone': 'Sélectionne des articles à ajouter',
+  'cookbook.edit': 'Modifier ce livre',
+  'cookbook.choosePhoto': 'Choisir une photo',
+  'cookbook.takePhoto': 'Prendre une photo',
+  'cookbook.colourCover': 'Couverture couleur',
+  'cookbook.resetCover': 'Réinitialiser la couverture',
+  'cookbook.rename': 'Renommer le livre',
+  'cookbook.delete': 'Supprimer le livre',
+  'cookbook.deleted': 'Livre supprimé',
+  'cookbook.renameTitle': 'Renommer le livre',
+  'cookbook.renameConfirm': 'Enregistrer',
+  'cookbook.fallbackTitle': 'Livre de recettes',
 };
 
 export default fr;

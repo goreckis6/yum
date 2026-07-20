@@ -203,6 +203,19 @@ export const en = {
   'home.sort.rating': 'Top rated',
   'home.sortTitle': 'Sort recipes',
 
+  // cookbook edit sheet
+  'cookbook.edit': 'Edit this cookbook',
+  'cookbook.choosePhoto': 'Choose photo',
+  'cookbook.takePhoto': 'Take photo',
+  'cookbook.colourCover': 'Colour cover',
+  'cookbook.resetCover': 'Reset cover',
+  'cookbook.rename': 'Rename cookbook',
+  'cookbook.delete': 'Delete cookbook',
+  'cookbook.deleted': 'Cookbook deleted',
+  'cookbook.renameTitle': 'Rename cookbook',
+  'cookbook.renameConfirm': 'Save',
+  'cookbook.fallbackTitle': 'Cookbook',
+
   // units
   'profile.units': 'Units',
   'profile.units.metric': 'Metric (g, ml, kg)',
@@ -791,6 +804,17 @@ export const pl: Record<TKey, string> = {
   'home.sort.az': 'A–Z',
   'home.sort.rating': 'Najwyżej oceniane',
   'home.sortTitle': 'Sortuj przepisy',
+  'cookbook.edit': 'Edytuj tę książkę',
+  'cookbook.choosePhoto': 'Wybierz zdjęcie',
+  'cookbook.takePhoto': 'Zrób zdjęcie',
+  'cookbook.colourCover': 'Okładka kolorem',
+  'cookbook.resetCover': 'Zresetuj okładkę',
+  'cookbook.rename': 'Zmień nazwę książki',
+  'cookbook.delete': 'Usuń książkę',
+  'cookbook.deleted': 'Książka usunięta',
+  'cookbook.renameTitle': 'Zmień nazwę książki',
+  'cookbook.renameConfirm': 'Zapisz',
+  'cookbook.fallbackTitle': 'Książka kucharska',
 
   'profile.units': 'Jednostki',
   'profile.units.metric': 'Metryczne (g, ml, kg)',

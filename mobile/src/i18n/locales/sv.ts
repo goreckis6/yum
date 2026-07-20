@@ -591,6 +591,17 @@ const sv: Dict = {
   'grocerySheet.deselectAll': 'Avmarkera alla',
   'grocerySheet.add': 'Lägg till {n} varor',
   'grocerySheet.addNone': 'Välj varor att lägga till',
+  'cookbook.edit': 'Redigera den här kokboken',
+  'cookbook.choosePhoto': 'Välj foto',
+  'cookbook.takePhoto': 'Ta foto',
+  'cookbook.colourCover': 'Färgomslag',
+  'cookbook.resetCover': 'Återställ omslag',
+  'cookbook.rename': 'Byt namn på kokboken',
+  'cookbook.delete': 'Radera kokbok',
+  'cookbook.deleted': 'Kokbok raderad',
+  'cookbook.renameTitle': 'Byt namn på kokboken',
+  'cookbook.renameConfirm': 'Spara',
+  'cookbook.fallbackTitle': 'Kokbok',
 };
 
 export default sv;

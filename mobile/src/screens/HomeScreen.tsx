@@ -80,6 +80,7 @@ export function HomeScreen() {
     customCookbooks,
     createCookbook,
     deleteCookbook,
+    renameCookbook,
     credits,
   } = useApp();
   const { user } = useAuth();
@@ -103,6 +104,7 @@ export function HomeScreen() {
   const [activeCookbook, setActiveCookbook] = useState<string | null>(null);
   const [coverTarget, setCoverTarget] = useState<{ key: string; hasCover: boolean; isCustom: boolean; title: string } | null>(null);
   const [colorTarget, setColorTarget] = useState<string | null>(null);
+  const [renameTarget, setRenameTarget] = useState<{ key: string; title: string } | null>(null);
   const [newOpen, setNewOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(todayISO());
   const planDays = useMemo(() => windowISO(todayISO(), 7, 7), []);
@@ -230,20 +232,26 @@ export function HomeScreen() {
 
   const coverOptions: SheetOption[] = coverTarget
     ? [
-        { label: 'Choose photo', onPress: () => pickCookbookPhoto(coverTarget.key, false) },
-        { label: 'Take photo', onPress: () => pickCookbookPhoto(coverTarget.key, true) },
-        { label: 'Colour cover', onPress: () => setColorTarget(coverTarget.key) },
+        ...(coverTarget.isCustom
+          ? [{
+              label: t('cookbook.rename'),
+              onPress: () => setRenameTarget({ key: coverTarget.key, title: coverTarget.title }),
+            }]
+          : []),
+        { label: t('cookbook.choosePhoto'), onPress: () => pickCookbookPhoto(coverTarget.key, false) },
+        { label: t('cookbook.takePhoto'), onPress: () => pickCookbookPhoto(coverTarget.key, true) },
+        { label: t('cookbook.colourCover'), onPress: () => setColorTarget(coverTarget.key) },
         ...(coverTarget.hasCover
-          ? [{ label: 'Reset cover', destructive: true, onPress: () => setCookbookCover(coverTarget.key, null) }]
+          ? [{ label: t('cookbook.resetCover'), destructive: true, onPress: () => setCookbookCover(coverTarget.key, null) }]
           : []),
         ...(coverTarget.isCustom
           ? [{
-              label: 'Delete cookbook',
+              label: t('cookbook.delete'),
               destructive: true,
               onPress: () => {
                 if (activeCookbook === coverTarget.key) setActiveCookbook(null);
                 deleteCookbook(coverTarget.key);
-                showToast('Cookbook deleted');
+                showToast(t('cookbook.deleted'));
               },
             }]
           : []),
@@ -719,10 +727,21 @@ export function HomeScreen() {
 
     <ActionSheet
       visible={!!coverTarget}
-      title={coverTarget?.title ?? 'Cookbook'}
-      message="Edit this cookbook"
+      title={coverTarget?.title ?? t('cookbook.fallbackTitle')}
+      message={t('cookbook.edit')}
       options={coverOptions}
       onClose={() => setCoverTarget(null)}
+    />
+    <PromptModal
+      visible={!!renameTarget}
+      title={t('cookbook.renameTitle')}
+      confirmLabel={t('cookbook.renameConfirm')}
+      initialValue={renameTarget?.title ?? ''}
+      onCancel={() => setRenameTarget(null)}
+      onConfirm={(title) => {
+        if (renameTarget) renameCookbook(renameTarget.key, title);
+        setRenameTarget(null);
+      }}
     />
     <ActionSheet
       visible={!!colorTarget}

@@ -591,6 +591,17 @@ const nl: Dict = {
   'grocerySheet.deselectAll': 'Alles deselecteren',
   'grocerySheet.add': '{n} artikelen toevoegen',
   'grocerySheet.addNone': 'Selecteer artikelen om toe te voegen',
+  'cookbook.edit': 'Dit kookboek bewerken',
+  'cookbook.choosePhoto': 'Foto kiezen',
+  'cookbook.takePhoto': 'Foto maken',
+  'cookbook.colourCover': 'Kleuromslag',
+  'cookbook.resetCover': 'Omslag resetten',
+  'cookbook.rename': 'Kookboek hernoemen',
+  'cookbook.delete': 'Kookboek verwijderen',
+  'cookbook.deleted': 'Kookboek verwijderd',
+  'cookbook.renameTitle': 'Kookboek hernoemen',
+  'cookbook.renameConfirm': 'Opslaan',
+  'cookbook.fallbackTitle': 'Kookboek',
 };
 
 export default nl;
