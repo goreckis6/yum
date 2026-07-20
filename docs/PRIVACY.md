@@ -1,7 +1,7 @@
 # YumiShare — Privacy Policy
 
 **Effective date:** 6 July 2026
-**Contact:** 3dstudiopoland@gmail.com
+**Contact:** support@yumishare.com
 
 This Privacy Policy explains what data YumiShare ("we", "the app") collects, how
 we use it, and the third parties we share it with. By using the app you agree to
@@ -66,7 +66,7 @@ data from them.
 ## 8. Your rights
 
 Depending on your region, you may have rights to access, correct, export, or
-delete your data. Contact us at 3dstudiopoland@gmail.com to exercise them.
+delete your data. Contact us at support@yumishare.com to exercise them.
 
 ## 9. Changes
 
@@ -75,4 +75,4 @@ date at the top of this page.
 
 ## 10. Contact
 
-Questions about this policy: **3dstudiopoland@gmail.com**
+Questions about this policy: **support@yumishare.com**

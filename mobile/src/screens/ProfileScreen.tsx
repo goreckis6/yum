@@ -33,7 +33,7 @@ const LANG_OPTIONS: { key: Lang; label: string }[] = [
   { key: 'pl', label: 'Polski' },
 ];
 
-const SUPPORT_EMAIL = '3dstudiopoland@gmail.com';
+const SUPPORT_EMAIL = 'support@yumishare.com';
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 // Legal URLs live in one shared place (config/links) so the AI consent screen
