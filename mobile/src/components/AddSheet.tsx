@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   Animated,
   Keyboard,
   KeyboardAvoidingView,
@@ -18,6 +17,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
 import { Icon } from './Icon';
 import { CookingLoader } from './CookingLoader';
+import { ConfirmDialog } from './ConfirmDialog';
 import { useI18n } from '../i18n/I18nContext';
 import { extractRecipeFromUrl } from '../api/recipes';
 import { Recipe } from '../types';
@@ -47,6 +47,9 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const [url, setUrl] = useState('');
   const [clipUrl, setClipUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Holds the draft for the branded "doesn't look like a recipe" dialog; null
+  // hides it. On confirm we import it anyway for the user to finish by hand.
+  const [notRecipeDraft, setNotRecipeDraft] = useState<Recipe | null>(null);
 
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const inputRef = useRef<TextInput>(null);
@@ -99,50 +102,28 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
       const noContent =
         (recipe?.ingredients?.length ?? 0) === 0 && (recipe?.steps?.length ?? 0) === 0;
       if (noTitle || noContent) {
-        // Loosened import: ask whether to import anyway and finish by hand,
-        // instead of hard-blocking on a weak extraction.
-        Alert.alert(
-          t('processing.notRecipeTitle'),
-          t('processing.notRecipeBody'),
-          [
-            {
-              text: t('processing.notRecipeCancel'),
-              style: 'cancel',
-              onPress: () => crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); }),
-            },
-            {
-              text: t('processing.notRecipeImport'),
-              onPress: () => {
-                const draft: Recipe = {
-                  id: `imp${Date.now()}`,
-                  title: recipe?.title ?? '',
-                  time: recipe?.time ?? 30,
-                  servings: recipe?.servings ?? 4,
-                  rating: recipe?.rating ?? '0',
-                  app: recipe?.app ?? 'manual',
-                  handle: recipe?.handle ?? '',
-                  tint: recipe?.tint ?? '#F97316',
-                  sourceTint: recipe?.sourceTint ?? '#F97316',
-                  kcal: recipe?.kcal ?? 0,
-                  p: recipe?.p ?? 0,
-                  c: recipe?.c ?? 0,
-                  f: recipe?.f ?? 0,
-                  tags: recipe?.tags ?? [],
-                  ingredients: recipe?.ingredients ?? [],
-                  steps: recipe?.steps ?? [],
-                  imageUrl: recipe?.imageUrl,
-                  sourceUrl: recipe?.sourceUrl,
-                };
-                onClose();
-                onRecipeReady(draft);
-              },
-            },
-          ],
-          {
-            cancelable: true,
-            onDismiss: () => crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); }),
-          },
-        );
+        // Loosened import: ask (branded dialog) whether to import anyway and
+        // finish by hand, instead of hard-blocking on a weak extraction.
+        setNotRecipeDraft({
+          id: `imp${Date.now()}`,
+          title: recipe?.title ?? '',
+          time: recipe?.time ?? 30,
+          servings: recipe?.servings ?? 4,
+          rating: recipe?.rating ?? '0',
+          app: recipe?.app ?? 'manual',
+          handle: recipe?.handle ?? '',
+          tint: recipe?.tint ?? '#F97316',
+          sourceTint: recipe?.sourceTint ?? '#F97316',
+          kcal: recipe?.kcal ?? 0,
+          p: recipe?.p ?? 0,
+          c: recipe?.c ?? 0,
+          f: recipe?.f ?? 0,
+          tags: recipe?.tags ?? [],
+          ingredients: recipe?.ingredients ?? [],
+          steps: recipe?.steps ?? [],
+          imageUrl: recipe?.imageUrl,
+          sourceUrl: recipe?.sourceUrl,
+        });
         return;
       }
       // Server already spent the credit for a real recipe — mirror its balance.
@@ -164,6 +145,7 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const canSubmit = url.trim().length > 0 || !!clipUrl;
 
   return (
+    <>
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.kav}
@@ -208,6 +190,24 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
         </View>
       </KeyboardAvoidingView>
     </Modal>
+
+    <ConfirmDialog
+      visible={!!notRecipeDraft}
+      title={t('processing.notRecipeTitle')}
+      message={t('processing.notRecipeBody')}
+      primaryLabel={t('processing.notRecipeImport')}
+      onPrimary={() => {
+        const draft = notRecipeDraft;
+        setNotRecipeDraft(null);
+        if (draft) { onClose(); onRecipeReady(draft); }
+      }}
+      tertiaryLabel={t('processing.notRecipeCancel')}
+      onTertiary={() => {
+        setNotRecipeDraft(null);
+        crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); });
+      }}
+    />
+    </>
   );
 }
 
