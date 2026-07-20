@@ -15,6 +15,7 @@ import it from './it';
 import pt from './pt';
 import nl from './nl';
 import sv from './sv';
+import uk from './uk';
 
 const locales: Record<string, Dict> = {
   de,
@@ -24,7 +25,7 @@ const locales: Record<string, Dict> = {
   pt,
   nl,
   sv,
-  uk: {},
+  uk,
   ru: {},
   ar: {},
   he: {},
