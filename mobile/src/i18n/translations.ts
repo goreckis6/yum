@@ -7,25 +7,21 @@ export type Lang =
   | 'pl' | 'pt' | 'ru' | 'zh-Hans' | 'es' | 'sv' | 'tr' | 'uk';
 
 // Language picker order (alphabetical by English name) with native display
-// labels. `rtl` marks right-to-left scripts. English is the default/fallback;
-// any key missing from a dictionary falls back to English (see I18nContext).
+// labels. English is the default/fallback; any key missing from a dictionary
+// falls back to English (see I18nContext). Only fully-translated languages are
+// listed here — the others (ar, he, ja, ko, zh-Hans, tr) stay in the Lang type
+// and DICTS but are hidden from the picker until their translations land.
 export const LANGS: { key: Lang; label: string; rtl?: boolean }[] = [
-  { key: 'ar', label: 'العربية', rtl: true },
   { key: 'nl', label: 'Nederlands' },
   { key: 'en', label: 'English' },
   { key: 'fr', label: 'Français' },
   { key: 'de', label: 'Deutsch' },
-  { key: 'he', label: 'עברית', rtl: true },
   { key: 'it', label: 'Italiano' },
-  { key: 'ja', label: '日本語' },
-  { key: 'ko', label: '한국어' },
   { key: 'pl', label: 'Polski' },
   { key: 'pt', label: 'Português' },
   { key: 'ru', label: 'Русский' },
-  { key: 'zh-Hans', label: '简体中文' },
   { key: 'es', label: 'Español' },
   { key: 'sv', label: 'Svenska' },
-  { key: 'tr', label: 'Türkçe' },
   { key: 'uk', label: 'Українська' },
 ];
 
