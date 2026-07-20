@@ -66,9 +66,12 @@ export function PaywallScreen({
     ? t('paywall.subOutOfCredits' as TKey)
     : t('paywall.subUpsell' as TKey);
 
+  // Only Monthly + Yearly are offered (no lifetime, no free trial).
   const packages = useMemo(() => {
     const list = offering?.availablePackages ?? [];
-    return [...list].sort((a, b) => planMeta(a).order - planMeta(b).order);
+    return list
+      .filter((p) => p.packageType === 'MONTHLY' || p.packageType === 'ANNUAL')
+      .sort((a, b) => planMeta(a).order - planMeta(b).order);
   }, [offering]);
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -129,17 +132,8 @@ export function PaywallScreen({
     else track('purchases_restored');
   };
 
-  const isLifetime = selectedPkg?.packageType === 'LIFETIME';
-  // Only promise a free trial when the selected product actually carries a
-  // zero-cost intro offer — otherwise the button lied ("Start free trial" on a
-  // plan that charges immediately).
-  const introPrice = selectedPkg?.product.introPrice;
-  const hasFreeTrial = !!introPrice && introPrice.price === 0;
-  const cta = isLifetime
-    ? t('paywall.ctaLifetime' as TKey)
-    : hasFreeTrial
-      ? t('paywall.ctaTrial' as TKey)
-      : t('paywall.ctaSubscribe' as TKey);
+  // No free trial and no lifetime plan — always a plain subscribe.
+  const cta = t('paywall.ctaSubscribe' as TKey);
   const savedCount = recipes?.length ?? 0;
 
   // Already subscribed (e.g. reopened the upsell, or a purchase just landed but
@@ -186,10 +180,7 @@ export function PaywallScreen({
       )}
       <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
       <Text style={styles.brand}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
-      <View style={styles.trialBadge}>
-        <Text style={styles.trialText}>{t('paywall.trialBadge' as TKey)}</Text>
-      </View>
+      <Text style={[styles.subtitle, { marginBottom: 20 }]}>{subtitle}</Text>
 
       {/* Social proof of the value the user has already built up. */}
       {savedCount > 0 && (
