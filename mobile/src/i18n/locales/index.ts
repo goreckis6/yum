@@ -10,11 +10,12 @@ export type Dict = Partial<Record<TKey, string>>;
 
 import de from './de';
 import es from './es';
+import fr from './fr';
 
 const locales: Record<string, Dict> = {
   de,
   es,
-  fr: {},
+  fr,
   it: {},
   pt: {},
   nl: {},
