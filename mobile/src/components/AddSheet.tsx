@@ -145,7 +145,6 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
   const canSubmit = url.trim().length > 0 || !!clipUrl;
 
   return (
-    <>
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <KeyboardAvoidingView
         style={styles.kav}
@@ -189,25 +188,25 @@ export function AddSheet({ visible, onClose, onScan, onScanBarcode, onScanReceip
           </Animated.View>
         </View>
       </KeyboardAvoidingView>
-    </Modal>
 
-    <ConfirmDialog
-      visible={!!notRecipeDraft}
-      title={t('processing.notRecipeTitle')}
-      message={t('processing.notRecipeBody')}
-      primaryLabel={t('processing.notRecipeImport')}
-      onPrimary={() => {
-        const draft = notRecipeDraft;
-        setNotRecipeDraft(null);
-        if (draft) { onClose(); onRecipeReady(draft); }
-      }}
-      tertiaryLabel={t('processing.notRecipeCancel')}
-      onTertiary={() => {
-        setNotRecipeDraft(null);
-        crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); });
-      }}
-    />
-    </>
+      <ConfirmDialog
+        inline
+        visible={!!notRecipeDraft}
+        title={t('processing.notRecipeTitle')}
+        message={t('processing.notRecipeBody')}
+        primaryLabel={t('processing.notRecipeImport')}
+        onPrimary={() => {
+          const draft = notRecipeDraft;
+          setNotRecipeDraft(null);
+          if (draft) { onClose(); onRecipeReady(draft); }
+        }}
+        tertiaryLabel={t('processing.notRecipeCancel')}
+        onTertiary={() => {
+          setNotRecipeDraft(null);
+          crossFade(() => { setStep('link'); setError(t('addSheet.notRecipe')); });
+        }}
+      />
+    </Modal>
   );
 }
 

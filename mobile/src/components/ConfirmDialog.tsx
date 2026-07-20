@@ -14,43 +14,56 @@ interface Props {
   onSecondary?: () => void;
   tertiaryLabel: string;
   onTertiary: () => void;
+  // Render as a plain in-tree overlay instead of its own Modal. Use this when
+  // the dialog lives INSIDE another Modal (e.g. AddSheet): iOS won't reliably
+  // present a second/nested Modal over an already-presented one, so the dialog
+  // silently never appears. An absolute overlay always shows.
+  inline?: boolean;
 }
 
 // A centred, on-brand confirmation dialog (used for the duplicate-recipe
 // warning). A filled primary action, an optional outlined secondary, and a
 // quiet tertiary — styled to match the app instead of the system Alert.
 export function ConfirmDialog({
-  visible, title, message, primaryLabel, onPrimary, secondaryLabel, onSecondary, tertiaryLabel, onTertiary,
+  visible, title, message, primaryLabel, onPrimary, secondaryLabel, onSecondary, tertiaryLabel, onTertiary, inline,
 }: Props) {
   const c = useTheme();
   const styles = useMemo(() => makeStyles(c), [c]);
 
+  const body = (
+    <View style={styles.backdrop}>
+      <Pressable style={StyleSheet.absoluteFill} onPress={onTertiary} />
+      <View style={styles.card}>
+        <View style={styles.badge}>
+          <Text style={styles.badgeMark}>!</Text>
+        </View>
+        {title ? <Text style={styles.title}>{title}</Text> : null}
+        <Text style={styles.message}>{message}</Text>
+
+        <Pressable style={styles.primary} onPress={onPrimary}>
+          <Text style={styles.primaryText}>{primaryLabel}</Text>
+        </Pressable>
+
+        {secondaryLabel && onSecondary ? (
+          <Pressable style={styles.secondary} onPress={onSecondary}>
+            <Text style={styles.secondaryText}>{secondaryLabel}</Text>
+          </Pressable>
+        ) : null}
+
+        <Pressable style={styles.tertiary} onPress={onTertiary}>
+          <Text style={styles.tertiaryText}>{tertiaryLabel}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+
+  if (inline) {
+    return visible ? <View style={StyleSheet.absoluteFill}>{body}</View> : null;
+  }
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onTertiary}>
-      <View style={styles.backdrop}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onTertiary} />
-        <View style={styles.card}>
-          <View style={styles.badge}>
-            <Text style={styles.badgeMark}>!</Text>
-          </View>
-          {title ? <Text style={styles.title}>{title}</Text> : null}
-          <Text style={styles.message}>{message}</Text>
-
-          <Pressable style={styles.primary} onPress={onPrimary}>
-            <Text style={styles.primaryText}>{primaryLabel}</Text>
-          </Pressable>
-
-          {secondaryLabel && onSecondary ? (
-            <Pressable style={styles.secondary} onPress={onSecondary}>
-              <Text style={styles.secondaryText}>{secondaryLabel}</Text>
-            </Pressable>
-          ) : null}
-
-          <Pressable style={styles.tertiary} onPress={onTertiary}>
-            <Text style={styles.tertiaryText}>{tertiaryLabel}</Text>
-          </Pressable>
-        </View>
-      </View>
+      {body}
     </Modal>
   );
 }
