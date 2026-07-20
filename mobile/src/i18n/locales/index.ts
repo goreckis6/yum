@@ -8,8 +8,10 @@ import type { TKey } from '../translations';
 
 export type Dict = Partial<Record<TKey, string>>;
 
+import de from './de';
+
 const locales: Record<string, Dict> = {
-  de: {},
+  de,
   es: {},
   fr: {},
   it: {},
