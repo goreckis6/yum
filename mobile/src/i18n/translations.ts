@@ -1,7 +1,35 @@
 // UI string dictionaries. Keys are dot-namespaced by screen/area.
 // Recipe/receipt *content* is never translated — only the app chrome.
+import locales from './locales';
 
-export type Lang = 'en' | 'pl';
+export type Lang =
+  | 'ar' | 'nl' | 'en' | 'fr' | 'de' | 'he' | 'it' | 'ja' | 'ko'
+  | 'pl' | 'pt' | 'ru' | 'zh-Hans' | 'es' | 'sv' | 'tr' | 'uk';
+
+// Language picker order (alphabetical by English name) with native display
+// labels. `rtl` marks right-to-left scripts. English is the default/fallback;
+// any key missing from a dictionary falls back to English (see I18nContext).
+export const LANGS: { key: Lang; label: string; rtl?: boolean }[] = [
+  { key: 'ar', label: 'العربية', rtl: true },
+  { key: 'nl', label: 'Nederlands' },
+  { key: 'en', label: 'English' },
+  { key: 'fr', label: 'Français' },
+  { key: 'de', label: 'Deutsch' },
+  { key: 'he', label: 'עברית', rtl: true },
+  { key: 'it', label: 'Italiano' },
+  { key: 'ja', label: '日本語' },
+  { key: 'ko', label: '한국어' },
+  { key: 'pl', label: 'Polski' },
+  { key: 'pt', label: 'Português' },
+  { key: 'ru', label: 'Русский' },
+  { key: 'zh-Hans', label: '简体中文' },
+  { key: 'es', label: 'Español' },
+  { key: 'sv', label: 'Svenska' },
+  { key: 'tr', label: 'Türkçe' },
+  { key: 'uk', label: 'Українська' },
+];
+
+export const RTL_LANGS: Lang[] = ['ar', 'he'];
 
 export const en = {
   // common
@@ -1158,4 +1186,25 @@ export const pl: Record<TKey, string> = {
   'grocerySheet.addNone': 'Zaznacz produkty',
 };
 
-export const DICTS: Record<Lang, Record<string, string>> = { en, pl };
+// Translated dictionaries are added per language as separate files under
+// ./locales and wired in here. Any language left as {} (or with missing keys)
+// falls back to English via the t() helper.
+export const DICTS: Record<Lang, Partial<Record<TKey, string>>> = {
+  en,
+  pl,
+  de: locales.de,
+  es: locales.es,
+  fr: locales.fr,
+  it: locales.it,
+  pt: locales.pt,
+  nl: locales.nl,
+  sv: locales.sv,
+  uk: locales.uk,
+  ru: locales.ru,
+  ar: locales.ar,
+  he: locales.he,
+  ja: locales.ja,
+  ko: locales.ko,
+  tr: locales.tr,
+  'zh-Hans': locales['zh-Hans'],
+};

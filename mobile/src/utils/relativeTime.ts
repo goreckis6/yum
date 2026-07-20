@@ -1,7 +1,7 @@
 // Compact "time ago" strings for cooking history, localized EN + PL with
-// correct Polish plural forms.
+// correct Polish plural forms. Any other language falls back to English.
 
-type Lang = 'en' | 'pl';
+import type { Lang } from '../i18n/translations';
 
 // Polish picks one of three forms depending on the number.
 function plForm(n: number, one: string, few: string, many: string): string {

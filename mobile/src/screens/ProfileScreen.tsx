@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Linking, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,7 +13,7 @@ import { fonts } from '../theme/fonts';
 import { centeredContent } from '../theme/layout';
 import { useI18n } from '../i18n/I18nContext';
 import { LINKS as LEGAL } from '../config/links';
-import { Lang, TKey } from '../i18n/translations';
+import { LANGS, TKey } from '../i18n/translations';
 import { Icon, IconName } from '../components/Icon';
 import { ActionSheet } from '../components/ActionSheet';
 import { RootStackParamList } from '../navigation/types';
@@ -26,11 +26,6 @@ const LEAD_OPTIONS: { value: number; labelKey: TKey }[] = [
   { value: 30, labelKey: 'reminder.lead30' },
   { value: 60, labelKey: 'reminder.lead60' },
   { value: 120, labelKey: 'reminder.lead120' },
-];
-
-const LANG_OPTIONS: { key: Lang; label: string }[] = [
-  { key: 'en', label: 'English' },
-  { key: 'pl', label: 'Polski' },
 ];
 
 const SUPPORT_EMAIL = 'support@yumishare.com';
@@ -84,6 +79,8 @@ export function ProfileScreen() {
 
   const lastSynced = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const [deleteOpen, setDeleteOpen] = React.useState(false);
+  const [langOpen, setLangOpen] = React.useState(false);
+  const currentLangLabel = LANGS.find((l) => l.key === lang)?.label ?? 'English';
 
   const deleteAccount = async () => {
     try {
@@ -196,16 +193,33 @@ export function ProfileScreen() {
       </View>
 
       <Text style={styles.section}>{t('profile.language')}</Text>
-      <View style={styles.segment}>
-        {LANG_OPTIONS.map((opt) => {
-          const on = lang === opt.key;
-          return (
-            <Pressable key={opt.key} style={[styles.segmentBtn, on && styles.segmentBtnOn]} onPress={() => setLang(opt.key)}>
-              <Text style={[styles.segmentText, on && styles.segmentTextOn]}>{opt.label}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <Pressable style={styles.dropdown} onPress={() => setLangOpen(true)}>
+        <Text style={styles.dropdownValue}>{currentLangLabel}</Text>
+        <Text style={styles.dropdownChevron}>⌄</Text>
+      </Pressable>
+
+      <Modal visible={langOpen} transparent animationType="fade" onRequestClose={() => setLangOpen(false)}>
+        <Pressable style={styles.langBackdrop} onPress={() => setLangOpen(false)}>
+          <Pressable style={styles.langCard} onPress={() => {}}>
+            <Text style={styles.langTitle}>{t('profile.language')}</Text>
+            <ScrollView style={styles.langList} showsVerticalScrollIndicator={false}>
+              {LANGS.map((opt) => {
+                const on = lang === opt.key;
+                return (
+                  <Pressable
+                    key={opt.key}
+                    style={[styles.langRow, on && styles.langRowOn]}
+                    onPress={() => { setLang(opt.key); setLangOpen(false); }}
+                  >
+                    <Text style={[styles.langRowText, on && styles.langRowTextOn]}>{opt.label}</Text>
+                    {on && <Text style={styles.langCheck}>✓</Text>}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <Text style={styles.section}>{t('profile.reminders')}</Text>
       <View style={styles.group}>
@@ -349,6 +363,54 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   segmentBtnOn: { backgroundColor: c.accent },
   segmentText: { fontSize: 14, fontWeight: '700', color: c.grayMid },
   segmentTextOn: { color: '#fff' },
+
+  // Language dropdown
+  dropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: c.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    marginBottom: 24,
+  },
+  dropdownValue: { fontSize: 15, fontWeight: '700', color: c.ink },
+  dropdownChevron: { fontSize: 18, fontWeight: '700', color: c.grayMid, marginTop: -4 },
+  langBackdrop: {
+    flex: 1,
+    backgroundColor: c.scrim,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 28,
+  },
+  langCard: {
+    width: '100%',
+    maxWidth: 360,
+    maxHeight: '70%',
+    backgroundColor: c.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: c.border,
+    paddingVertical: 18,
+    paddingHorizontal: 8,
+  },
+  langTitle: { fontFamily: fonts.display, fontSize: 18, color: c.ink, textAlign: 'center', marginBottom: 10 },
+  langList: { alignSelf: 'stretch' },
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+  },
+  langRowOn: { backgroundColor: c.accentSoft },
+  langRowText: { fontSize: 16, fontWeight: '600', color: c.ink },
+  langRowTextOn: { color: c.accent, fontWeight: '800' },
+  langCheck: { fontSize: 16, fontWeight: '800', color: c.accent },
   unitsCard: {
     backgroundColor: c.surface, borderRadius: 16,
     borderWidth: 1, borderColor: c.border,

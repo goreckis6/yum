@@ -3,7 +3,7 @@
 // name (Breakfast, Dinner, …), {name} = the recipe. Each line keeps at most one
 // dash — no doubled "—" — and mixes emoji for a bit of personality.
 
-type Lang = 'en' | 'pl';
+import type { Lang } from '../i18n/translations';
 
 interface Template {
   title: string; // uses {slot}
