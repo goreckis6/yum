@@ -602,6 +602,9 @@ const sv: Dict = {
   'cookbook.renameTitle': 'Byt namn på kokboken',
   'cookbook.renameConfirm': 'Spara',
   'cookbook.fallbackTitle': 'Kokbok',
+  'cookbook.namePlaceholder': 'Kokbokens namn',
+  'cookbook.createConfirm': 'Skapa',
+  'cookbook.created': '”{name}” skapad',
 };
 
 export default sv;

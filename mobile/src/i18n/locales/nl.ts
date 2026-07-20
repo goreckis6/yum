@@ -602,6 +602,9 @@ const nl: Dict = {
   'cookbook.renameTitle': 'Kookboek hernoemen',
   'cookbook.renameConfirm': 'Opslaan',
   'cookbook.fallbackTitle': 'Kookboek',
+  'cookbook.namePlaceholder': 'Naam van kookboek',
+  'cookbook.createConfirm': 'Aanmaken',
+  'cookbook.created': '“{name}” aangemaakt',
 };
 
 export default nl;

@@ -215,6 +215,9 @@ export const en = {
   'cookbook.renameTitle': 'Rename cookbook',
   'cookbook.renameConfirm': 'Save',
   'cookbook.fallbackTitle': 'Cookbook',
+  'cookbook.namePlaceholder': 'Cookbook name',
+  'cookbook.createConfirm': 'Create',
+  'cookbook.created': 'Created “{name}”',
 
   // units
   'profile.units': 'Units',
@@ -815,6 +818,9 @@ export const pl: Record<TKey, string> = {
   'cookbook.renameTitle': 'Zmień nazwę książki',
   'cookbook.renameConfirm': 'Zapisz',
   'cookbook.fallbackTitle': 'Książka kucharska',
+  'cookbook.namePlaceholder': 'Nazwa książki',
+  'cookbook.createConfirm': 'Utwórz',
+  'cookbook.created': 'Utworzono „{name}”',
 
   'profile.units': 'Jednostki',
   'profile.units.metric': 'Metryczne (g, ml, kg)',

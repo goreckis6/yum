@@ -602,6 +602,9 @@ const es: Dict = {
   'cookbook.renameTitle': 'Renombrar recetario',
   'cookbook.renameConfirm': 'Guardar',
   'cookbook.fallbackTitle': 'Recetario',
+  'cookbook.namePlaceholder': 'Nombre del recetario',
+  'cookbook.createConfirm': 'Crear',
+  'cookbook.created': 'Creado «{name}»',
 };
 
 export default es;

@@ -602,6 +602,9 @@ const ru: Dict = {
   'cookbook.renameTitle': 'Переименовать книгу',
   'cookbook.renameConfirm': 'Сохранить',
   'cookbook.fallbackTitle': 'Кулинарная книга',
+  'cookbook.namePlaceholder': 'Название книги',
+  'cookbook.createConfirm': 'Создать',
+  'cookbook.created': 'Создано «{name}»',
 };
 
 export default ru;

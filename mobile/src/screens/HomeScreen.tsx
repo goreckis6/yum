@@ -763,7 +763,8 @@ export function HomeScreen() {
     <PromptModal
       visible={newOpen}
       title={t('home.newCookbook')}
-      placeholder="Cookbook name"
+      placeholder={t('cookbook.namePlaceholder')}
+      confirmLabel={t('cookbook.createConfirm')}
       onCancel={() => setNewOpen(false)}
       onConfirm={(title) => {
         setNewOpen(false);
@@ -771,7 +772,7 @@ export function HomeScreen() {
         setActiveCookbook(id);
         setChip('All');
         setSearch('');
-        showToast(`Created “${title}”`);
+        showToast(t('cookbook.created', { name: title }));
       }}
     />
     </>
