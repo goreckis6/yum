@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
+import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
+import * as SplashScreen from 'expo-splash-screen';
 import { exchangeOAuthCodeOnce } from './src/lib/supabase';
 import { NavigationContainer, createNavigationContainerRef, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useShareIntent } from 'expo-share-intent';
@@ -130,6 +132,12 @@ function RootNavigator() {
   );
 }
 
+// Keep the native splash (logo + "YumiShare", themed light/dark — see app.json)
+// on screen until our fonts are ready, then hand off to the JS app. This avoids
+// a flash of the bare logo or a fallback-font wordmark on a mismatched
+// background before Fraunces + the theme resolve.
+SplashScreen.preventAutoHideAsync().catch(() => {});
+
 function App() {
   // Turn on any configured analytics/crash providers (no-op until keys are set)
   // and record the session start.
@@ -169,24 +177,34 @@ function App() {
     Fraunces_600SemiBold_Italic,
   });
 
+  // Hide the native splash only once the first themed frame has laid out, so the
+  // themed LoadingScreen (dark/light bg + real Fraunces wordmark) is already
+  // painted underneath — a seamless hand-off from the baked splash.
+  const onLayoutRoot = useCallback(() => {
+    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
+  }, [fontsLoaded]);
+
   if (!fontsLoaded) {
-    // Fonts/theme not ready yet → brand defaults (matches the native splash).
-    return <LoadingScreen />;
+    // Keep the native splash up (return nothing to paint) rather than flashing a
+    // fallback-font wordmark on a mismatched background.
+    return null;
   }
 
   return (
-    <SafeAreaProvider>
-      <I18nProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <PremiumProvider>
-              <ThemedStatusBar />
-              <Gate />
-            </PremiumProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </I18nProvider>
-    </SafeAreaProvider>
+    <View style={{ flex: 1 }} onLayout={onLayoutRoot}>
+      <SafeAreaProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <PremiumProvider>
+                <ThemedStatusBar />
+                <Gate />
+              </PremiumProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </I18nProvider>
+      </SafeAreaProvider>
+    </View>
   );
 }
 

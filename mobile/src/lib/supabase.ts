@@ -36,6 +36,11 @@ export const supabase = createClient(
 });
 
 // Keep the auth token fresh while the app is foregrounded (Supabase RN guidance).
+// The app launches already-active, so the 'change' event never fires for that
+// first foreground — kick off auto-refresh now, then let AppState manage it.
+if (isSupabaseConfigured && AppState.currentState === 'active') {
+  supabase.auth.startAutoRefresh();
+}
 AppState.addEventListener('change', (state) => {
   if (state === 'active') supabase.auth.startAutoRefresh();
   else supabase.auth.stopAutoRefresh();

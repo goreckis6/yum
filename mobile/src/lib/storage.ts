@@ -109,8 +109,17 @@ export async function uploadImageIfLocal(
       const original = await new File(uri).bytes();
       base64 = encode(original.buffer as ArrayBuffer);
     } else {
-      // Remote URL — download it before it expires, then re-host it.
-      const res = await fetch(uri);
+      // Remote URL — download it before it expires, then re-host it. Send
+      // browser-like headers: Facebook/Instagram CDN (scontent.*.fbcdn.net)
+      // rejects a bare fetch with a 403, which would otherwise leave the cover
+      // as an expiring signed link (→ blank cover a few hours later).
+      const res = await fetch(uri, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+          Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        },
+      });
       if (!res.ok) return uri; // unreachable → keep the original link
       const ab = await res.arrayBuffer();
       base64 = encode(ab);
