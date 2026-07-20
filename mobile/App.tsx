@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
@@ -106,7 +106,7 @@ function RootNavigator() {
   }
 
   return (
-    <>
+    <FirstScreen>
       <Stack.Navigator
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}
         initialRouteName="Main"
@@ -128,15 +128,35 @@ function RootNavigator() {
         <Stack.Screen name="ReviewReceipt" component={ReviewReceiptScreen} />
       </Stack.Navigator>
       <Toast message={toast.message} visible={toast.visible} />
-    </>
+    </FirstScreen>
   );
 }
 
 // Keep the native splash (logo + "YumiShare", themed light/dark — see app.json)
-// on screen until our fonts are ready, then hand off to the JS app. This avoids
-// a flash of the bare logo or a fallback-font wordmark on a mismatched
-// background before Fraunces + the theme resolve.
+// on screen until the first REAL screen is ready. Crucially it stays up over the
+// intermediate JS LoadingScreens (fonts → auth → premium), so the app never
+// paints its own logo screen underneath the splash — which is what read as a
+// "double logo" / flicker on launch. One branded splash, then straight to
+// content.
 SplashScreen.preventAutoHideAsync().catch(() => {});
+
+let splashHidden = false;
+function hideNativeSplash() {
+  if (splashHidden) return;
+  splashHidden = true;
+  SplashScreen.hideAsync().catch(() => {});
+}
+
+// Wrap a real (non-loading) screen: dismiss the native splash the moment it has
+// laid out. Never wrap a LoadingScreen — the splash must stay up over those so
+// the hand-off goes splash → content with no second logo in between.
+function FirstScreen({ children }: { children: React.ReactNode }) {
+  return (
+    <View style={{ flex: 1 }} onLayout={hideNativeSplash}>
+      {children}
+    </View>
+  );
+}
 
 function App() {
   // Turn on any configured analytics/crash providers (no-op until keys are set)
@@ -177,12 +197,11 @@ function App() {
     Fraunces_600SemiBold_Italic,
   });
 
-  // Hide the native splash only once the first themed frame has laid out, so the
-  // themed LoadingScreen (dark/light bg + real Fraunces wordmark) is already
-  // painted underneath — a seamless hand-off from the baked splash.
-  const onLayoutRoot = useCallback(() => {
-    if (fontsLoaded) SplashScreen.hideAsync().catch(() => {});
-  }, [fontsLoaded]);
+  // Failsafe: never let a stuck font load leave the splash up forever.
+  useEffect(() => {
+    const t = setTimeout(hideNativeSplash, 8000);
+    return () => clearTimeout(t);
+  }, []);
 
   if (!fontsLoaded) {
     // Keep the native splash up (return nothing to paint) rather than flashing a
@@ -191,20 +210,18 @@ function App() {
   }
 
   return (
-    <View style={{ flex: 1 }} onLayout={onLayoutRoot}>
-      <SafeAreaProvider>
-        <I18nProvider>
-          <ThemeProvider>
-            <AuthProvider>
-              <PremiumProvider>
-                <ThemedStatusBar />
-                <Gate />
-              </PremiumProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </I18nProvider>
-      </SafeAreaProvider>
-    </View>
+    <SafeAreaProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <PremiumProvider>
+              <ThemedStatusBar />
+              <Gate />
+            </PremiumProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </I18nProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -253,14 +270,18 @@ function Gate() {
 
   // AI consent (App Store 5.1.2) must precede any AI feature — gate everything.
   if (!consented) {
-    return <AIConsentScreen onAgree={acceptConsent} />;
+    return <FirstScreen><AIConsentScreen onAgree={acceptConsent} /></FirstScreen>;
   }
 
   if (!session || !user) {
     if (!showAuth) {
-      return <OnboardingScreen onDone={() => { track('onboarding_completed'); setShowAuth(true); }} />;
+      return (
+        <FirstScreen>
+          <OnboardingScreen onDone={() => { track('onboarding_completed'); setShowAuth(true); }} />
+        </FirstScreen>
+      );
     }
-    return <AuthScreen onBack={() => setShowAuth(false)} />;
+    return <FirstScreen><AuthScreen onBack={() => setShowAuth(false)} /></FirstScreen>;
   }
 
   // Logged in but still resolving subscription state for the FIRST time.
