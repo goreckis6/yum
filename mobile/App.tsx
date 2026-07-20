@@ -106,7 +106,7 @@ function RootNavigator() {
   }
 
   return (
-    <FirstScreen>
+    <>
       <Stack.Navigator
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: c.bg } }}
         initialRouteName="Main"
@@ -128,16 +128,16 @@ function RootNavigator() {
         <Stack.Screen name="ReviewReceipt" component={ReviewReceiptScreen} />
       </Stack.Navigator>
       <Toast message={toast.message} visible={toast.visible} />
-    </FirstScreen>
+    </>
   );
 }
 
-// Keep the native splash (logo + "YumiShare", themed light/dark — see app.json)
-// on screen until the first REAL screen is ready. Crucially it stays up over the
-// intermediate JS LoadingScreens (fonts → auth → premium), so the app never
-// paints its own logo screen underneath the splash — which is what read as a
-// "double logo" / flicker on launch. One branded splash, then straight to
-// content.
+// The native splash shows just the app logo (themed light/dark — see app.json).
+// Keep it up only until our fonts are ready, then hand off to the JS
+// LoadingScreen, which shows the SAME logo (same size/position, so it doesn't
+// move) with the "YumiShare" letters bobbing in beneath it. Holding the splash
+// until fonts load avoids a flash of a fallback-font wordmark before Fraunces
+// resolves.
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 let splashHidden = false;
@@ -145,17 +145,6 @@ function hideNativeSplash() {
   if (splashHidden) return;
   splashHidden = true;
   SplashScreen.hideAsync().catch(() => {});
-}
-
-// Wrap a real (non-loading) screen: dismiss the native splash the moment it has
-// laid out. Never wrap a LoadingScreen — the splash must stay up over those so
-// the hand-off goes splash → content with no second logo in between.
-function FirstScreen({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={{ flex: 1 }} onLayout={hideNativeSplash}>
-      {children}
-    </View>
-  );
 }
 
 function App() {
@@ -209,19 +198,23 @@ function App() {
     return null;
   }
 
+  // Dismiss the native splash once this first JS frame (the animated
+  // LoadingScreen shown while the auth/premium gates resolve) has laid out.
   return (
-    <SafeAreaProvider>
-      <I18nProvider>
-        <ThemeProvider>
-          <AuthProvider>
-            <PremiumProvider>
-              <ThemedStatusBar />
-              <Gate />
-            </PremiumProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </I18nProvider>
-    </SafeAreaProvider>
+    <View style={{ flex: 1 }} onLayout={hideNativeSplash}>
+      <SafeAreaProvider>
+        <I18nProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <PremiumProvider>
+                <ThemedStatusBar />
+                <Gate />
+              </PremiumProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </I18nProvider>
+      </SafeAreaProvider>
+    </View>
   );
 }
 
@@ -270,18 +263,14 @@ function Gate() {
 
   // AI consent (App Store 5.1.2) must precede any AI feature — gate everything.
   if (!consented) {
-    return <FirstScreen><AIConsentScreen onAgree={acceptConsent} /></FirstScreen>;
+    return <AIConsentScreen onAgree={acceptConsent} />;
   }
 
   if (!session || !user) {
     if (!showAuth) {
-      return (
-        <FirstScreen>
-          <OnboardingScreen onDone={() => { track('onboarding_completed'); setShowAuth(true); }} />
-        </FirstScreen>
-      );
+      return <OnboardingScreen onDone={() => { track('onboarding_completed'); setShowAuth(true); }} />;
     }
-    return <FirstScreen><AuthScreen onBack={() => setShowAuth(false)} /></FirstScreen>;
+    return <AuthScreen onBack={() => setShowAuth(false)} />;
   }
 
   // Logged in but still resolving subscription state for the FIRST time.

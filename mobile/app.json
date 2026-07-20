@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.yumshare.app",
-      "buildNumber": "40",
+      "buildNumber": "44",
       "supportsTablet": true,
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "YumiShare needs access to your photos so you can set a cover image for a recipe or cookbook.",
@@ -83,12 +83,12 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#FBF7F1",
-          "image": "./assets/splash-light.png",
-          "imageWidth": 161,
+          "image": "./assets/logo-mark.png",
+          "imageWidth": 88,
           "resizeMode": "contain",
           "dark": {
             "backgroundColor": "#1A1510",
-            "image": "./assets/splash-dark.png"
+            "image": "./assets/logo-mark.png"
           }
         }
       ]
