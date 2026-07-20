@@ -2,11 +2,19 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 import { I18nManager } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getLocales } from 'expo-localization';
-import { DICTS, Lang, LANGS, RTL_LANGS, TKey } from './translations';
+import { DICTS, Lang, LANGS, TKey } from './translations';
 
 const STORAGE_KEY = '@yumshare/lang';
 
 const SUPPORTED = new Set<string>(LANGS.map((l) => l.key));
+
+// Keep the whole app left-to-right. The RTL languages (ar/he) aren't translated
+// yet (they fall back to English), and forcing RTL persists natively and only
+// takes effect after a restart — which left the UI stuck mirrored. Pin LTR here
+// and undo any previously-persisted forceRTL(true). Revisit when ar/he ship with
+// a proper RTL restart flow.
+I18nManager.allowRTL(false);
+if (I18nManager.isRTL) I18nManager.forceRTL(false);
 
 function normalizeCode(code?: string): Lang | null {
   if (!code) return null;
@@ -22,14 +30,6 @@ function deviceLang(): Lang {
   } catch {
     return 'en';
   }
-}
-
-// RTL takes effect after an app restart (I18nManager persists the flag
-// natively). We set it but never force a reload — a mid-session flip can crash.
-function applyDirection(lang: Lang) {
-  const rtl = RTL_LANGS.includes(lang);
-  I18nManager.allowRTL(true);
-  if (I18nManager.isRTL !== rtl) I18nManager.forceRTL(rtl);
 }
 
 interface I18nValue {
@@ -49,13 +49,8 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  useEffect(() => {
-    applyDirection(lang);
-  }, [lang]);
-
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
-    applyDirection(l);
     AsyncStorage.setItem(STORAGE_KEY, l).catch(() => {});
   }, []);
 
