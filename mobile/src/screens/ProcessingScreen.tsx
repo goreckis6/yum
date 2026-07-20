@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { extractRecipeFromImage, extractRecipeFromUrl } from '../api/recipes';
@@ -12,6 +12,7 @@ import { useI18n } from '../i18n/I18nContext';
 import type { TKey } from '../i18n/translations';
 import { COVER_PRESETS } from '../components/CoverArt';
 import { CookingLoader } from '../components/CookingLoader';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useApp } from '../context/AppContext';
 import { LOW_CREDITS_WARNING } from '../config/credits';
 import { track } from '../lib/analytics';
@@ -44,6 +45,9 @@ export function ProcessingScreen({ navigation, route }: Props) {
   const styles = useMemo(() => makeStyles(c), [c]);
   const [error, setError] = useState<string | null>(null);
   const [isNetErr, setIsNetErr] = useState(false);
+  // When a link has no detectable recipe we ask (via a branded dialog) whether
+  // to import it anyway and finish by hand. Holds the draft to import on "yes".
+  const [notRecipeDraft, setNotRecipeDraft] = useState<Recipe | null>(null);
   const { setCredits, showToast } = useApp();
 
   const isImageMode = 'imageBase64' in route.params;
@@ -106,23 +110,9 @@ export function ProcessingScreen({ navigation, route }: Props) {
           }
 
           track('import_failed', { source: importSource, reason: 'notfound' });
-          // Link import: don't hard-block either — ask whether to import anyway
-          // and finish by hand.
-          Alert.alert(
-            t('processing.notRecipeTitle' as TKey),
-            t('processing.notRecipeBody' as TKey),
-            [
-              {
-                text: t('processing.notRecipeCancel' as TKey),
-                style: 'cancel',
-                onPress: () => { setIsNetErr(false); setError('notfound'); },
-              },
-              {
-                text: t('processing.notRecipeImport' as TKey),
-                onPress: () => navigation.replace('ReviewImport', { draft: makeDraft(), manual: true }),
-              },
-            ],
-          );
+          // Link import: don't hard-block either — ask (branded dialog) whether
+          // to import anyway and finish by hand.
+          setNotRecipeDraft(makeDraft());
           return;
         }
         // The server already spent the credit for a real recipe — mirror its
@@ -215,6 +205,17 @@ export function ProcessingScreen({ navigation, route }: Props) {
   return (
     <View style={styles.container}>
       <CookingLoader />
+      <ConfirmDialog
+        visible={!!notRecipeDraft}
+        title={t('processing.notRecipeTitle' as TKey)}
+        message={t('processing.notRecipeBody' as TKey)}
+        primaryLabel={t('processing.notRecipeImport' as TKey)}
+        onPrimary={() => {
+          if (notRecipeDraft) navigation.replace('ReviewImport', { draft: notRecipeDraft, manual: true });
+        }}
+        tertiaryLabel={t('processing.notRecipeCancel' as TKey)}
+        onTertiary={() => { setNotRecipeDraft(null); setIsNetErr(false); setError('notfound'); }}
+      />
     </View>
   );
 }
