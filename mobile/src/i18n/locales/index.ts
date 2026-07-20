@@ -12,13 +12,14 @@ import de from './de';
 import es from './es';
 import fr from './fr';
 import it from './it';
+import pt from './pt';
 
 const locales: Record<string, Dict> = {
   de,
   es,
   fr,
   it,
-  pt: {},
+  pt,
   nl: {},
   sv: {},
   uk: {},
