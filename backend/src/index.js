@@ -1059,7 +1059,7 @@ app.post('/api/extract-receipt-image', bigJson, ...premiumAiGuard, async (req, r
   }
 });
 
-app.post('/api/extract-nutrition-label', bigJson, ...aiGuard, async (req, res) => {
+app.post('/api/extract-nutrition-label', bigJson, ...premiumAiGuard, async (req, res) => {
   try {
     // Accept either a single image or several photos of the SAME product label
     // (e.g. a bottle that can't be captured in one shot).
@@ -1405,7 +1405,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.post('/api/enrich-recipe', ...aiGuard, async (req, res) => {
+app.post('/api/enrich-recipe', ...premiumAiGuard, async (req, res) => {
   try {
     const { recipe } = req.body;
     if (!recipe || typeof recipe !== 'object') {

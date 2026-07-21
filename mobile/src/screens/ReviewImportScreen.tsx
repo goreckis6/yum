@@ -27,6 +27,7 @@ import { cleanStep, scaleAmount } from '../utils/scale';
 import { RootStackParamList } from '../navigation/types';
 import { useI18n } from '../i18n/I18nContext';
 import { enrichRecipe } from '../api/recipes';
+import { usePremium } from '../context/PremiumContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReviewImport'>;
 
@@ -36,6 +37,7 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   const styles = makeStyles(c);
   const { addRecipe, showToast, recipes } = useApp();
   const { user } = useAuth();
+  const { isPremium } = usePremium();
   const userId = user?.id;
   const insets = useSafeAreaInsets();
   const isManual = route.params.manual === true;
@@ -126,6 +128,8 @@ export function ReviewImportScreen({ navigation, route }: Props) {
   };
 
   const enrich = async () => {
+    // "AI Inspired" enrichment is premium-only.
+    if (!isPremium) { navigation.navigate('Paywall', { reason: 'upsell' }); return; }
     setEnriching(true);
     try {
       const { recipe: enriched } = await enrichRecipe(draft as any);

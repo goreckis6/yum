@@ -13,6 +13,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { Icon } from '../components/Icon';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
+import { usePremium } from '../context/PremiumContext';
 import { uploadBase64Image, uploadImageIfLocal } from '../lib/storage';
 import { PantryItem } from '../types';
 import { lookupBarcode, lookupBarcodeImage } from '../api/openfoodfacts';
@@ -70,6 +71,7 @@ export function ScanBarcodeScreen({ navigation }: Props) {
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { addPantryItem, addPantryToGrocery, grocery, showToast } = useApp();
+  const { isPremium } = usePremium();
   const [savedId, setSavedId] = useState<string | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
@@ -187,6 +189,8 @@ export function ScanBarcodeScreen({ navigation }: Props) {
 
   const analyze = async () => {
     if (!shots.length) return;
+    // AI nutrition-label reading is premium-only (the barcode DB lookup stays free).
+    if (!isPremium) { navigation.navigate('Paywall', { reason: 'upsell' }); return; }
     setMode('analyzing');
     setError(null);
     try {
