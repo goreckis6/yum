@@ -81,7 +81,7 @@ export interface PantryItem {
   basis: '100g' | '100ml';
   per100: Macros;
   perServing?: Macros;
-  source: 'off' | 'label';
+  source: 'off' | 'label' | 'manual';
   createdAt: number;
 }
 

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Animated, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -10,6 +10,8 @@ import { RootStackParamList } from '../navigation/types';
 import { useApp } from '../context/AppContext';
 import { useI18n } from '../i18n/I18nContext';
 import { Icon } from '../components/Icon';
+import { ActionSheet, SheetOption } from '../components/ActionSheet';
+import { PantryAddModal, PantryAddMode } from '../components/PantryAddModal';
 import { PantryItem } from '../types';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Pantry'>;
@@ -39,13 +41,22 @@ export function PantryScreen({ navigation }: Props) {
   const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
-  const { pantry, removePantryItem, addPantryToGrocery, removeGrocery, grocery, showToast } = useApp();
+  const { pantry, removePantryItem, addPantryItem, addPantryToGrocery, removeGrocery, grocery, showToast } = useApp();
   const items = pantry ?? [];
+
+  const [addChoiceOpen, setAddChoiceOpen] = useState(false);
+  const [addMode, setAddMode] = useState<PantryAddMode | null>(null);
 
   const remove = (item: PantryItem) => {
     removePantryItem(item.id);
     showToast(t('pantry.removed'));
   };
+
+  const addOptions: SheetOption[] = [
+    { label: t('pantry.addSearch'), onPress: () => setAddMode('search') },
+    { label: t('pantry.scanBtn'), onPress: () => navigation.navigate('ScanBarcode') },
+    { label: t('pantry.addManual'), onPress: () => setAddMode('manual') },
+  ];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 12 }]}>
@@ -62,8 +73,8 @@ export function PantryScreen({ navigation }: Props) {
         <View style={styles.empty}>
           <Icon name="barcode" size={44} color={c.gray} />
           <Text style={styles.emptyText}>{t('pantry.empty')}</Text>
-          <Pressable style={styles.scanBtn} onPress={() => navigation.navigate('ScanBarcode')}>
-            <Text style={styles.scanBtnText}>{t('pantry.scanBtn')}</Text>
+          <Pressable style={styles.scanBtn} onPress={() => setAddChoiceOpen(true)}>
+            <Text style={styles.scanBtnText}>{t('pantry.addTitle')}</Text>
           </Pressable>
         </View>
       ) : (
@@ -121,12 +132,25 @@ export function PantryScreen({ navigation }: Props) {
         </ScrollView>
         <Pressable
           style={[styles.scanBtn, { marginBottom: insets.bottom + 12 }]}
-          onPress={() => navigation.navigate('ScanBarcode')}
+          onPress={() => setAddChoiceOpen(true)}
         >
-          <Text style={styles.scanBtnText}>+ {t('pantry.scanBtn')}</Text>
+          <Text style={styles.scanBtnText}>+ {t('pantry.addTitle')}</Text>
         </Pressable>
         </View>
       )}
+
+      <ActionSheet
+        visible={addChoiceOpen}
+        title={t('pantry.addTitle')}
+        options={addOptions}
+        onClose={() => setAddChoiceOpen(false)}
+      />
+      <PantryAddModal
+        visible={addMode !== null}
+        mode={addMode ?? 'search'}
+        onClose={() => setAddMode(null)}
+        onAdd={(item) => { addPantryItem(item); showToast(t('pantry.added')); }}
+      />
     </View>
   );
 }
