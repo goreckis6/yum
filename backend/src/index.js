@@ -1297,7 +1297,7 @@ app.post('/api/resize-image', bigJson, requireAuth, async (req, res) => {
   }
 });
 
-app.post('/api/receipts/export', requireAuth, async (req, res) => {
+app.post('/api/receipts/export', requireAuth, requirePremiumStrict, async (req, res) => {
   try {
     const { receipts, format = 'csv', includePhotos = false } = req.body;
     if (!Array.isArray(receipts) || receipts.length === 0) {
