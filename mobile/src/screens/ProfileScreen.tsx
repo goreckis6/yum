@@ -63,6 +63,12 @@ export function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
+  // Pantry & receipts are premium-only — free accounts get the paywall.
+  const gatePremium = (action: () => void) => {
+    if (isPremium) action();
+    else navigation.navigate('Paywall', { reason: 'upsell' });
+  };
+
   const THEME_OPTIONS: { key: ThemeMode; label: string }[] = [
     { key: 'system', label: t('profile.system') },
     { key: 'light', label: t('profile.light') },
@@ -258,9 +264,9 @@ export function ProfileScreen() {
 
       <Text style={styles.section}>{t('profile.data')}</Text>
       <View style={styles.group}>
-        <Row icon="barcode" labelKey="profile.myPantry" right={String(pantry?.length ?? 0)} onPress={() => navigation.navigate('Pantry')} />
-        <Row icon="receipt" labelKey="profile.myReceipts" right={String(receipts?.length ?? 0)} onPress={() => navigation.navigate('Receipts')} />
-        <Row icon="document" labelKey="profile.exportReceipts" onPress={() => navigation.navigate('Receipts')} />
+        <Row icon="barcode" labelKey="profile.myPantry" right={String(pantry?.length ?? 0)} onPress={() => gatePremium(() => navigation.navigate('Pantry'))} />
+        <Row icon="receipt" labelKey="profile.myReceipts" right={String(receipts?.length ?? 0)} onPress={() => gatePremium(() => navigation.navigate('Receipts'))} />
+        <Row icon="document" labelKey="profile.exportReceipts" onPress={() => gatePremium(() => navigation.navigate('Receipts'))} />
         <Row icon="sync" labelKey="profile.syncData" right={t('profile.lastSynced', { time: lastSynced })} onPress={() => showToast(t('profile.syncedToast'))} last />
       </View>
 

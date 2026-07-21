@@ -5,6 +5,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { AddSheet } from '../components/AddSheet';
 import { BottomNav } from '../components/BottomNav';
 import { useApp } from '../context/AppContext';
+import { usePremium } from '../context/PremiumContext';
 import { useTheme } from '../theme/ThemeContext';
 import { COVER_PRESETS } from '../components/CoverArt';
 import { RootStackParamList } from './types';
@@ -33,9 +34,20 @@ function ScreenHost({ tab }: { tab: MainTab }) {
 export function MainNavigator() {
   const navigation = useNavigation<Nav>();
   const { showToast } = useApp();
+  const { isPremium } = usePremium();
   const c = useTheme();
   const [tab, setTab] = useState<MainTab>('recipes');
   const [addOpen, setAddOpen] = useState(false);
+
+  // Meal planner and grocery are premium-only. Free accounts get the paywall
+  // instead of the tab; browsing recipes stays free.
+  const gatedSetTab = (target: MainTab) => {
+    if ((target === 'mealplan' || target === 'grocery') && !isPremium) {
+      navigation.navigate('Paywall', { reason: 'upsell' });
+      return;
+    }
+    setTab(target);
+  };
 
   // Close the "paste a link" sheet whenever we navigate away from Main — e.g. a
   // share-sheet import (Instagram → YumiShare) opens Processing behind the sheet,
@@ -46,15 +58,15 @@ export function MainNavigator() {
   }, [navigation]);
 
   return (
-    <TabProvider setTab={setTab}>
+    <TabProvider setTab={gatedSetTab}>
     <View style={[styles.shell, { backgroundColor: c.bg }]}>
       <ScreenHost tab={tab} />
 
       <BottomNav
         active={tab}
         onRecipes={() => setTab('recipes')}
-        onMeal={() => setTab('mealplan')}
-        onGrocery={() => setTab('grocery')}
+        onMeal={() => gatedSetTab('mealplan')}
+        onGrocery={() => gatedSetTab('grocery')}
         onProfile={() => setTab('profile')}
         onAdd={() => setAddOpen(true)}
       />
@@ -65,7 +77,11 @@ export function MainNavigator() {
         onOutOfCredits={() => navigation.navigate('Paywall', { reason: 'out_of_credits' })}
         onScan={() => { setAddOpen(false); navigation.navigate('ScanRecipe'); }}
         onScanBarcode={() => { setAddOpen(false); navigation.navigate('ScanBarcode'); }}
-        onScanReceipt={() => { setAddOpen(false); navigation.navigate('ScanReceipt'); }}
+        onScanReceipt={() => {
+          setAddOpen(false);
+          if (!isPremium) navigation.navigate('Paywall', { reason: 'upsell' });
+          else navigation.navigate('ScanReceipt');
+        }}
         onRecipeReady={(draft) => { setAddOpen(false); navigation.navigate('ReviewImport', { draft }); }}
         onManualRecipe={() => {
           setAddOpen(false);

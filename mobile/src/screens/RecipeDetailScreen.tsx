@@ -15,6 +15,7 @@ import * as Sharing from 'expo-sharing';
 import { ShareCard } from '../components/ShareCard';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
+import { usePremium } from '../context/PremiumContext';
 import { MealPickerSheet } from '../components/MealPickerSheet';
 import { IngredientIcon } from '../components/IngredientIcon';
 import { Icon } from '../components/Icon';
@@ -73,6 +74,13 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
     toggleRecipeInCookbook,
     unitSystem,
   } = useApp();
+  const { isPremium } = usePremium();
+
+  // Grocery list & meal planner are premium-only — free accounts get the paywall.
+  const gatePremium = (action: () => void) => {
+    if (isPremium) action();
+    else navigation.navigate('Paywall', { reason: 'upsell' });
+  };
 
   const [localUnit, setLocalUnit] = React.useState<UnitSystem>(unitSystem);
   React.useEffect(() => { setLocalUnit(unitSystem); }, [unitSystem]);
@@ -394,7 +402,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             <Text style={styles.sectionTitle}>
               {hasGroups ? ingredientGroups[0][0] || t('recipe.ingredients') : t('recipe.ingredients')}
             </Text>
-            <Pressable onPress={() => addRecipeToGrocery(recipe.id)}>
+            <Pressable onPress={() => gatePremium(() => addRecipeToGrocery(recipe.id))}>
               <Text style={styles.sectionAction}>{t('recipe.addAllToGrocery')}</Text>
             </Pressable>
           </View>
@@ -424,7 +432,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
             ))}
           </View>
 
-          <Pressable style={styles.addGroceriesBtn} onPress={() => setGrocerySheetOpen(true)}>
+          <Pressable style={styles.addGroceriesBtn} onPress={() => gatePremium(() => setGrocerySheetOpen(true))}>
             <Icon name="cart" size={18} color={c.accent} />
             <Text style={styles.addGroceriesText}>{t('recipe.addToGroceries')}</Text>
           </Pressable>
@@ -464,7 +472,7 @@ export function RecipeDetailScreen({ navigation, route }: Props) {
           <Icon name="flame" size={17} color="#fff" />
           <Text style={styles.actionPrimaryText}>{t('recipe.startCooking')}</Text>
         </Pressable>
-        <Pressable style={styles.actionIcon} onPress={() => setPickerOpen(true)}>
+        <Pressable style={styles.actionIcon} onPress={() => gatePremium(() => setPickerOpen(true))}>
           <Icon name="calendar" size={17} color={c.ink} />
         </Pressable>
         <Pressable style={styles.actionIcon} onPress={() => setAddOpen(true)}>
