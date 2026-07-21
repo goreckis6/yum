@@ -132,9 +132,22 @@ export function PaywallScreen({
     else track('purchases_restored');
   };
 
-  // No free trial and no lifetime plan — always a plain subscribe.
-  const cta = t('paywall.ctaSubscribe' as TKey);
+  // Intro offer (e.g. $0.99 for 3 days on the yearly plan) is configured on the
+  // store product in App Store Connect; RevenueCat returns it (localized per
+  // currency) as product.introPrice. When the selected plan has one, the CTA
+  // reflects the intro price; otherwise it's a plain subscribe.
+  const selIntro = selectedPkg?.product.introPrice ?? null;
+  const cta = selIntro
+    ? t('paywall.ctaIntro' as TKey, { price: selIntro.priceString })
+    : t('paywall.ctaSubscribe' as TKey);
   const savedCount = recipes?.length ?? 0;
+
+  // Localized "3 days / weeks / months" for an intro offer's duration.
+  const introUnit = (u: string): string => {
+    const key = `paywall.unit.${u.toLowerCase()}` as TKey;
+    const label = t(key);
+    return label === key ? u.toLowerCase() : label; // fall back to the raw unit
+  };
 
   // Already subscribed (e.g. reopened the upsell, or a purchase just landed but
   // the modal is still up) → show a clear confirmation instead of the sell.
@@ -219,20 +232,31 @@ export function PaywallScreen({
                   track('paywall_plan_selected', { plan: planName(pkg) });
                 }}
               >
-                <View style={styles.planLeft}>
-                  <View style={[styles.radio, on && styles.radioOn]}>
-                    {on && <View style={styles.radioDot} />}
-                  </View>
-                  <Text style={[styles.planLabel, on && styles.planLabelOn]}>{t(meta.labelKey)}</Text>
-                  {meta.best && (
-                    <View style={styles.bestBadge}>
-                      <Text style={styles.bestText}>{t('paywall.bestValue' as TKey)}</Text>
+                <View style={styles.planRow}>
+                  <View style={styles.planLeft}>
+                    <View style={[styles.radio, on && styles.radioOn]}>
+                      {on && <View style={styles.radioDot} />}
                     </View>
-                  )}
+                    <Text style={[styles.planLabel, on && styles.planLabelOn]}>{t(meta.labelKey)}</Text>
+                    {meta.best && (
+                      <View style={styles.bestBadge}>
+                        <Text style={styles.bestText}>{t('paywall.bestValue' as TKey)}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={[styles.planPrice, on && styles.planLabelOn]}>
+                    {pkg.product.introPrice ? pkg.product.introPrice.priceString : pkg.product.priceString}
+                  </Text>
                 </View>
-                <Text style={[styles.planPrice, on && styles.planLabelOn]}>
-                  {pkg.product.priceString}
-                </Text>
+                {pkg.product.introPrice && (
+                  <Text style={styles.introLine}>
+                    {t('paywall.introLine' as TKey, {
+                      n: pkg.product.introPrice.periodNumberOfUnits,
+                      unit: introUnit(pkg.product.introPrice.periodUnit),
+                      full: pkg.product.priceString,
+                    })}
+                  </Text>
+                )}
               </Pressable>
             );
           })}
@@ -332,9 +356,6 @@ const makeStyles = (c: ThemeColors) =>
 
     plans: { alignSelf: 'stretch', gap: 12, marginBottom: 16 },
     planCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
       backgroundColor: c.surface,
       borderRadius: 16,
       borderWidth: 2,
@@ -342,8 +363,10 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 16,
       paddingHorizontal: 16,
     },
+    planRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     planCardOn: { borderColor: c.accent, backgroundColor: c.accentSoft },
-    planLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+    planLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 },
+    introLine: { fontSize: 12.5, fontWeight: '600', color: c.accent, marginTop: 8 },
     radio: {
       width: 22,
       height: 22,

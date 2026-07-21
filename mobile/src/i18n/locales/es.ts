@@ -605,6 +605,11 @@ const es: Dict = {
   'cookbook.namePlaceholder': 'Nombre del recetario',
   'cookbook.createConfirm': 'Crear',
   'cookbook.created': 'Creado «{name}»',
+  'paywall.ctaIntro': 'Empezar por {price}',
+  'paywall.introLine': 'Primeros {n} {unit}, luego {full}/año',
+  'paywall.unit.day': 'días',
+  'paywall.unit.week': 'semanas',
+  'paywall.unit.month': 'meses',
 };
 
 export default es;

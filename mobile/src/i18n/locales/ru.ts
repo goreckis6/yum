@@ -605,6 +605,11 @@ const ru: Dict = {
   'cookbook.namePlaceholder': 'Название книги',
   'cookbook.createConfirm': 'Создать',
   'cookbook.created': 'Создано «{name}»',
+  'paywall.ctaIntro': 'Начать за {price}',
+  'paywall.introLine': 'Первые {n} {unit}, затем {full}/год',
+  'paywall.unit.day': 'дн.',
+  'paywall.unit.week': 'нед.',
+  'paywall.unit.month': 'мес.',
 };
 
 export default ru;

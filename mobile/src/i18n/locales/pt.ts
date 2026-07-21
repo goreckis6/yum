@@ -605,6 +605,11 @@ const pt: Dict = {
   'cookbook.namePlaceholder': 'Nome do livro',
   'cookbook.createConfirm': 'Criar',
   'cookbook.created': '“{name}” criado',
+  'paywall.ctaIntro': 'Começar por {price}',
+  'paywall.introLine': 'Primeiros {n} {unit}, depois {full}/ano',
+  'paywall.unit.day': 'dias',
+  'paywall.unit.week': 'semanas',
+  'paywall.unit.month': 'meses',
 };
 
 export default pt;

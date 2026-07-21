@@ -605,6 +605,11 @@ const nl: Dict = {
   'cookbook.namePlaceholder': 'Naam van kookboek',
   'cookbook.createConfirm': 'Aanmaken',
   'cookbook.created': '“{name}” aangemaakt',
+  'paywall.ctaIntro': 'Begin voor {price}',
+  'paywall.introLine': 'Eerste {n} {unit}, daarna {full}/jaar',
+  'paywall.unit.day': 'dagen',
+  'paywall.unit.week': 'weken',
+  'paywall.unit.month': 'maanden',
 };
 
 export default nl;

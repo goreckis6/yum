@@ -605,6 +605,11 @@ const uk: Dict = {
   'cookbook.namePlaceholder': 'Назва книги',
   'cookbook.createConfirm': 'Створити',
   'cookbook.created': 'Створено «{name}»',
+  'paywall.ctaIntro': 'Почати за {price}',
+  'paywall.introLine': 'Перші {n} {unit}, потім {full}/рік',
+  'paywall.unit.day': 'дн.',
+  'paywall.unit.week': 'тиж.',
+  'paywall.unit.month': 'міс.',
 };
 
 export default uk;
