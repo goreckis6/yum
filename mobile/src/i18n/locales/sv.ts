@@ -607,6 +607,7 @@ const sv: Dict = {
   'cookbook.created': '”{name}” skapad',
   'paywall.ctaIntro': 'Börja för {price}',
   'paywall.introLine': 'Första {n} {unit}, sedan {full}/år',
+  'paywall.introFree': 'Gratis i {n} {unit}, sedan {full}/år',
   'paywall.unit.day': 'dagar',
   'paywall.unit.week': 'veckor',
   'paywall.unit.month': 'månader',

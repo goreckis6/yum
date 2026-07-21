@@ -607,6 +607,7 @@ const nl: Dict = {
   'cookbook.created': '“{name}” aangemaakt',
   'paywall.ctaIntro': 'Begin voor {price}',
   'paywall.introLine': 'Eerste {n} {unit}, daarna {full}/jaar',
+  'paywall.introFree': 'Gratis {n} {unit}, daarna {full}/jaar',
   'paywall.unit.day': 'dagen',
   'paywall.unit.week': 'weken',
   'paywall.unit.month': 'maanden',

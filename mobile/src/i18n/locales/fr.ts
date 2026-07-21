@@ -607,6 +607,7 @@ const fr: Dict = {
   'cookbook.created': '« {name} » créé',
   'paywall.ctaIntro': 'Commencer pour {price}',
   'paywall.introLine': '{n} premiers {unit}, puis {full}/an',
+  'paywall.introFree': 'Gratuit pendant {n} {unit}, puis {full}/an',
   'paywall.unit.day': 'jours',
   'paywall.unit.week': 'semaines',
   'paywall.unit.month': 'mois',

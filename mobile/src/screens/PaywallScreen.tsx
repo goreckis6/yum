@@ -137,9 +137,12 @@ export function PaywallScreen({
   // currency) as product.introPrice. When the selected plan has one, the CTA
   // reflects the intro price; otherwise it's a plain subscribe.
   const selIntro = selectedPkg?.product.introPrice ?? null;
-  const cta = selIntro
-    ? t('paywall.ctaIntro' as TKey, { price: selIntro.priceString })
-    : t('paywall.ctaSubscribe' as TKey);
+  const selFreeTrial = !!selIntro && selIntro.price === 0;
+  const cta = selFreeTrial
+    ? t('paywall.ctaTrial' as TKey)
+    : selIntro
+      ? t('paywall.ctaIntro' as TKey, { price: selIntro.priceString })
+      : t('paywall.ctaSubscribe' as TKey);
   const savedCount = recipes?.length ?? 0;
 
   // Localized "3 days / weeks / months" for an intro offer's duration.
@@ -245,16 +248,24 @@ export function PaywallScreen({
                     )}
                   </View>
                   <Text style={[styles.planPrice, on && styles.planLabelOn]}>
-                    {pkg.product.introPrice ? pkg.product.introPrice.priceString : pkg.product.priceString}
+                    {pkg.product.introPrice && pkg.product.introPrice.price > 0
+                      ? pkg.product.introPrice.priceString
+                      : pkg.product.priceString}
                   </Text>
                 </View>
                 {pkg.product.introPrice && (
                   <Text style={styles.introLine}>
-                    {t('paywall.introLine' as TKey, {
-                      n: pkg.product.introPrice.periodNumberOfUnits,
-                      unit: introUnit(pkg.product.introPrice.periodUnit),
-                      full: pkg.product.priceString,
-                    })}
+                    {pkg.product.introPrice.price === 0
+                      ? t('paywall.introFree' as TKey, {
+                          n: pkg.product.introPrice.periodNumberOfUnits,
+                          unit: introUnit(pkg.product.introPrice.periodUnit),
+                          full: pkg.product.priceString,
+                        })
+                      : t('paywall.introLine' as TKey, {
+                          n: pkg.product.introPrice.periodNumberOfUnits,
+                          unit: introUnit(pkg.product.introPrice.periodUnit),
+                          full: pkg.product.priceString,
+                        })}
                   </Text>
                 )}
               </Pressable>
