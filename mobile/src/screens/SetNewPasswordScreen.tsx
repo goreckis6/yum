@@ -15,12 +15,14 @@ import { useAuth } from '../context/AuthContext';
 import { ThemeColors } from '../theme/colors';
 import { useTheme } from '../theme/ThemeContext';
 import { fonts } from '../theme/fonts';
+import { useI18n } from '../i18n/I18nContext';
 
 // Shown after the user opens a password-reset link (recovering === true). They
 // set a new password; on success AuthContext clears `recovering` and the app
 // continues to the normal signed-in flow.
 export function SetNewPasswordScreen() {
   const c = useTheme();
+  const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
   const { updatePassword } = useAuth();
@@ -32,7 +34,7 @@ export function SetNewPasswordScreen() {
   const save = async () => {
     setError(null);
     if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
+      setError(t('auth.passMin'));
       return;
     }
     setBusy(true);
@@ -48,14 +50,14 @@ export function SetNewPasswordScreen() {
     >
       <View style={[styles.inner, { paddingTop: insets.top + 48, paddingBottom: insets.bottom + 24 }]}>
         <Image source={require('../../assets/logo-mark.png')} style={styles.logo} resizeMode="contain" />
-        <Text style={styles.title}>Set a new password</Text>
-        <Text style={styles.subtitle}>Enter a new password for your account.</Text>
+        <Text style={styles.title}>{t('auth.newPassTitle')}</Text>
+        <Text style={styles.subtitle}>{t('auth.newPassSub')}</Text>
 
         <TextInput
           style={styles.field}
           value={password}
           onChangeText={setPassword}
-          placeholder="New password"
+          placeholder={t('auth.newPassPlaceholder')}
           placeholderTextColor={c.gray}
           secureTextEntry
           autoFocus
@@ -64,7 +66,7 @@ export function SetNewPasswordScreen() {
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         <Pressable style={[styles.btn, busy && styles.btnDisabled]} onPress={save} disabled={busy}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Save password</Text>}
+          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>{t('auth.newPassSave')}</Text>}
         </Pressable>
       </View>
     </KeyboardAvoidingView>

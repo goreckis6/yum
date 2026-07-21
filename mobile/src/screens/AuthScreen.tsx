@@ -63,7 +63,7 @@ export function AuthScreen({ onBack }: Props) {
     setError(null);
     setNotice(null);
     if (!email.trim() || password.length < 6) {
-      setError('Enter your email and a password (min 6 characters).');
+      setError(t('auth.emailPassError'));
       return;
     }
     setBusy('email');
@@ -73,7 +73,7 @@ export function AuthScreen({ onBack }: Props) {
     setBusy(null);
     if (res.error) { setError(res.error); return; }
     if (emailMode === 'up' && 'needsConfirm' in res && res.needsConfirm) {
-      setNotice('Check your inbox to confirm your email, then sign in.');
+      setNotice(t('auth.confirmEmail'));
       setEmailMode('in');
     }
   };
@@ -82,14 +82,14 @@ export function AuthScreen({ onBack }: Props) {
     setError(null);
     setNotice(null);
     if (!email.trim()) {
-      setError('Enter your email above first, then tap “Forgot password?”.');
+      setError(t('auth.forgotNoEmail'));
       return;
     }
     setBusy('email');
     const res = await resetPassword(email);
     setBusy(null);
     if (res.error) { setError(res.error); return; }
-    setNotice('Check your email for a link to reset your password.');
+    setNotice(t('auth.resetSent'));
   };
 
   const anyBusy = busy !== null;
@@ -131,7 +131,7 @@ export function AuthScreen({ onBack }: Props) {
           ) : (
             <>
               <GoogleLogo />
-              <Text style={styles.googleText}>Continue with Google</Text>
+              <Text style={styles.googleText}>{t('auth.continueGoogle')}</Text>
             </>
           )}
         </Pressable>
@@ -148,7 +148,7 @@ export function AuthScreen({ onBack }: Props) {
             ) : (
               <>
                 <Icon name="apple" size={18} color="#fff" />
-                <Text style={styles.appleText}>Continue with Apple</Text>
+                <Text style={styles.appleText}>{t('auth.continueApple')}</Text>
               </>
             )}
           </Pressable>
@@ -157,7 +157,7 @@ export function AuthScreen({ onBack }: Props) {
         {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.divLine} />
-          <Text style={styles.divText}>or</Text>
+          <Text style={styles.divText}>{t('auth.or')}</Text>
           <View style={styles.divLine} />
         </View>
 
@@ -168,7 +168,7 @@ export function AuthScreen({ onBack }: Props) {
             onPress={() => setShowEmail(true)}
           >
             <Text style={styles.emailIcon}>✉</Text>
-            <Text style={styles.emailText}>Continue with Email</Text>
+            <Text style={styles.emailText}>{t('auth.continueEmail')}</Text>
           </Pressable>
         ) : (
           <View style={styles.emailForm}>
@@ -178,7 +178,7 @@ export function AuthScreen({ onBack }: Props) {
                 onPress={() => { setEmailMode('in'); setError(null); setNotice(null); }}
               >
                 <Text style={[styles.modeTabText, emailMode === 'in' && styles.modeTabTextOn]}>
-                  Sign In
+                  {t('auth.signIn')}
                 </Text>
               </Pressable>
               <Pressable
@@ -186,7 +186,7 @@ export function AuthScreen({ onBack }: Props) {
                 onPress={() => { setEmailMode('up'); setError(null); setNotice(null); }}
               >
                 <Text style={[styles.modeTabText, emailMode === 'up' && styles.modeTabTextOn]}>
-                  Sign Up
+                  {t('auth.signUp')}
                 </Text>
               </Pressable>
             </View>
@@ -195,7 +195,7 @@ export function AuthScreen({ onBack }: Props) {
               style={styles.field}
               value={email}
               onChangeText={setEmail}
-              placeholder="Email"
+              placeholder={t('auth.email')}
               placeholderTextColor={c.gray}
               autoCapitalize="none"
               autoCorrect={false}
@@ -206,14 +206,14 @@ export function AuthScreen({ onBack }: Props) {
               style={styles.field}
               value={password}
               onChangeText={setPassword}
-              placeholder="Password"
+              placeholder={t('auth.password')}
               placeholderTextColor={c.gray}
               secureTextEntry
             />
 
             {emailMode === 'in' && (
               <Pressable onPress={handleForgot} disabled={anyBusy} hitSlop={8} style={styles.forgotBtn}>
-                <Text style={styles.forgotText}>Forgot password?</Text>
+                <Text style={styles.forgotText}>{t('auth.forgot')}</Text>
               </Pressable>
             )}
 
@@ -229,7 +229,7 @@ export function AuthScreen({ onBack }: Props) {
                 <ActivityIndicator color="#fff" />
               ) : (
                 <Text style={styles.submitText}>
-                  {emailMode === 'in' ? 'Sign In' : 'Create Account'}
+                  {emailMode === 'in' ? t('auth.signIn') : t('auth.signUp')}
                 </Text>
               )}
             </Pressable>
@@ -239,7 +239,7 @@ export function AuthScreen({ onBack }: Props) {
         {error && !showEmail ? <Text style={[styles.error, { marginTop: 12 }]}>{error}</Text> : null}
 
         <Text style={styles.legal}>
-          By continuing you agree to our Terms of Service and Privacy Policy.
+          {t('auth.legal')}
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>
