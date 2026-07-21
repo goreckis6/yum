@@ -247,6 +247,18 @@ async function rateLimit(req, res, next) {
 // Convenience: the full guard chain for AI endpoints.
 const aiGuard = [requireAuth, requirePremium, rateLimit];
 
+// Hard premium gate for premium-only features (e.g. receipt scanning),
+// independent of PREMIUM_ENFORCEMENT. Recipe import stays freemium (credits);
+// this only blocks endpoints that are premium-exclusive. Returns 403 for
+// non-subscribers. When RevenueCat isn't configured (dev), isPremiumUser is
+// false, so these endpoints are closed until it's set up.
+async function requirePremiumStrict(req, res, next) {
+  const active = await isPremiumUser(req.user.id);
+  if (!active) return res.status(403).json({ error: 'premium_required' });
+  next();
+}
+const premiumAiGuard = [requireAuth, requirePremiumStrict, rateLimit];
+
 // ── Freemium import credits ────────────────────────────────────────────────
 // Enforced here (server-side) so a modified client can't mint free extractions.
 // Premium subscribers are unlimited; everyone else spends one credit per
@@ -986,7 +998,7 @@ app.post('/api/extract-recipe-image', bigJson, ...aiGuard, async (req, res) => {
   }
 });
 
-app.post('/api/extract-receipt-image', bigJson, ...aiGuard, async (req, res) => {
+app.post('/api/extract-receipt-image', bigJson, ...premiumAiGuard, async (req, res) => {
   try {
     const { imageBase64, mimeType = 'image/jpeg' } = req.body;
     if (!imageBase64 || typeof imageBase64 !== 'string') {
