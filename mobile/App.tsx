@@ -30,6 +30,7 @@ import { AuthScreen } from './src/screens/AuthScreen';
 import { PaywallScreen } from './src/screens/PaywallScreen';
 import { MainNavigator } from './src/navigation/MainNavigator';
 import { LoadingScreen } from './src/components/LoadingScreen';
+import { SetNewPasswordScreen } from './src/screens/SetNewPasswordScreen';
 import { RootStackParamList } from './src/navigation/types';
 import { ThemeProvider, useTheme, useThemeCtx } from './src/theme/ThemeContext';
 import { I18nProvider } from './src/i18n/I18nContext';
@@ -227,7 +228,7 @@ const AI_CONSENT_KEY = 'ai_consent_v1';
 const NOTIF_ASKED_KEY = 'notif_asked_v1';
 
 function Gate() {
-  const { session, user, initializing } = useAuth();
+  const { session, user, initializing, recovering } = useAuth();
   const { initialized: premiumReady } = usePremium();
   const c = useTheme();
   const [showAuth, setShowAuth] = React.useState(false);
@@ -256,6 +257,12 @@ function Gate() {
       ensureNotificationPermission().catch(() => {});
     });
   }, [session, user, consented]);
+
+  // Opened a password-reset link → let them set a new password before anything
+  // else (even if a recovery session is already active).
+  if (recovering) {
+    return <SetNewPasswordScreen />;
+  }
 
   if (initializing || consented === null) {
     return <LoadingScreen bg={c.bg} tint={c.ink} />;

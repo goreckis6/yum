@@ -33,7 +33,7 @@ export function AuthScreen({ onBack }: Props) {
   const { t } = useI18n();
   const styles = makeStyles(c);
   const insets = useSafeAreaInsets();
-  const { signIn, signUp, signInWithGoogle, signInWithApple } = useAuth();
+  const { signIn, signUp, resetPassword, signInWithGoogle, signInWithApple } = useAuth();
 
   const [showEmail, setShowEmail] = useState(false);
   const [emailMode, setEmailMode] = useState<EmailMode>('in');
@@ -76,6 +76,20 @@ export function AuthScreen({ onBack }: Props) {
       setNotice('Check your inbox to confirm your email, then sign in.');
       setEmailMode('in');
     }
+  };
+
+  const handleForgot = async () => {
+    setError(null);
+    setNotice(null);
+    if (!email.trim()) {
+      setError('Enter your email above first, then tap “Forgot password?”.');
+      return;
+    }
+    setBusy('email');
+    const res = await resetPassword(email);
+    setBusy(null);
+    if (res.error) { setError(res.error); return; }
+    setNotice('Check your email for a link to reset your password.');
   };
 
   const anyBusy = busy !== null;
@@ -197,6 +211,12 @@ export function AuthScreen({ onBack }: Props) {
               secureTextEntry
             />
 
+            {emailMode === 'in' && (
+              <Pressable onPress={handleForgot} disabled={anyBusy} hitSlop={8} style={styles.forgotBtn}>
+                <Text style={styles.forgotText}>Forgot password?</Text>
+              </Pressable>
+            )}
+
             {error ? <Text style={styles.error}>{error}</Text> : null}
             {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
@@ -302,6 +322,8 @@ const makeStyles = (c: ThemeColors) => StyleSheet.create({
   },
   error: { fontSize: 13, fontWeight: '600', color: c.dangerText, marginBottom: 8 },
   notice: { fontSize: 13, fontWeight: '600', color: '#15803D', marginBottom: 8 },
+  forgotBtn: { alignSelf: 'flex-end', paddingVertical: 2, marginBottom: 8, marginTop: -2 },
+  forgotText: { fontSize: 13, fontWeight: '700', color: c.accent },
 
   submitBtn: {
     backgroundColor: c.accent, borderRadius: 13,

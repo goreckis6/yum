@@ -13,8 +13,13 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   initializing: boolean;
+  // True after the user opens a password-reset link — the app shows the
+  // "set a new password" screen until updatePassword() succeeds.
+  recovering: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (email: string, password: string) => Promise<{ error?: string; needsConfirm?: boolean }>;
+  resetPassword: (email: string) => Promise<{ error?: string }>;
+  updatePassword: (password: string) => Promise<{ error?: string }>;
   signInWithGoogle: () => Promise<{ error?: string }>;
   signInWithApple: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
@@ -77,16 +82,35 @@ async function performOAuth(provider: 'google' | 'apple'): Promise<{ error?: str
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
+  const [recovering, setRecovering] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setInitializing(false);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, s) => {
       setSession(s);
+      if (event === 'PASSWORD_RECOVERY') setRecovering(true);
     });
     return () => sub.subscription.unsubscribe();
+  }, []);
+
+  // Password-reset links (from resetPassword's email) come back as a deep link
+  // to auth/reset?code=…. Exchange the code for a (recovery) session, then show
+  // the "set a new password" screen via `recovering`.
+  useEffect(() => {
+    const handleReset = async (url: string) => {
+      if (!url.includes('auth/reset')) return;
+      const qs = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
+      const code = new URLSearchParams(qs).get('code');
+      if (!code) return;
+      const { error } = await exchangeOAuthCodeOnce(code);
+      if (!error) setRecovering(true);
+    };
+    Linking.getInitialURL().then((url) => { if (url) handleReset(url); });
+    const sub = Linking.addEventListener('url', ({ url }) => handleReset(url));
+    return () => sub.remove();
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -98,6 +122,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data, error } = await supabase.auth.signUp({ email: email.trim(), password });
     if (error) return { error: error.message };
     return { needsConfirm: !data.session };
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: Linking.createURL('auth/reset'),
+    });
+    return { error: error?.message };
+  };
+
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    if (!error) setRecovering(false);
+    return { error: error?.message };
   };
 
   const signInWithGoogle = () => performOAuth('google');
@@ -158,7 +195,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, user: session?.user ?? null, initializing, signIn, signUp, signInWithGoogle, signInWithApple, signOut }}
+      value={{ session, user: session?.user ?? null, initializing, recovering, signIn, signUp, resetPassword, updatePassword, signInWithGoogle, signInWithApple, signOut }}
     >
       {children}
     </AuthContext.Provider>
