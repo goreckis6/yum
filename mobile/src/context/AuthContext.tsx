@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { supabase, exchangeOAuthCodeOnce } from '../lib/supabase';
+import { getRecovering, setRecovering, subscribeRecovering } from '../lib/authRecovery';
 import { getApiBaseUrl } from '../config/api';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -82,7 +83,12 @@ async function performOAuth(provider: 'google' | 'apple'): Promise<{ error?: str
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [initializing, setInitializing] = useState(true);
-  const [recovering, setRecovering] = useState(false);
+  // `recovering` is driven by a module-level flag (authRecovery) so the
+  // top-level deep-link handler in App.tsx can set it. We also flip it on the
+  // Supabase PASSWORD_RECOVERY event as a backup.
+  const [recovering, setRecoveringState] = useState(getRecovering());
+
+  useEffect(() => subscribeRecovering(setRecoveringState), []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -94,23 +100,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
     });
     return () => sub.subscription.unsubscribe();
-  }, []);
-
-  // Password-reset links (from resetPassword's email) come back as a deep link
-  // to auth/reset?code=…. Exchange the code for a (recovery) session, then show
-  // the "set a new password" screen via `recovering`.
-  useEffect(() => {
-    const handleReset = async (url: string) => {
-      if (!url.includes('auth/reset')) return;
-      const qs = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
-      const code = new URLSearchParams(qs).get('code');
-      if (!code) return;
-      const { error } = await exchangeOAuthCodeOnce(code);
-      if (!error) setRecovering(true);
-    };
-    Linking.getInitialURL().then((url) => { if (url) handleReset(url); });
-    const sub = Linking.addEventListener('url', ({ url }) => handleReset(url));
-    return () => sub.remove();
   }, []);
 
   const signIn = async (email: string, password: string) => {

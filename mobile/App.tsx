@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Linking from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
 import { exchangeOAuthCodeOnce } from './src/lib/supabase';
+import { setRecovering } from './src/lib/authRecovery';
 import { NavigationContainer, createNavigationContainerRef, useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useShareIntent } from 'expo-share-intent';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -156,14 +157,20 @@ function App() {
     track('app_opened');
   }, []);
 
-  // Handle OAuth deep link callback (exp://IP:PORT/--/auth/callback?code=...)
+  // Handle auth deep links: OAuth callback (…/auth/callback?code=…) and the
+  // password-reset link (…/auth/reset?code=…). Handled here (above the
+  // providers) because this listener reliably fires; the reset path flips the
+  // shared recovery flag so the "set a new password" screen shows.
   useEffect(() => {
     const handleUrl = async (url: string) => {
-      if (!url.includes('auth/callback')) return;
+      const isCallback = url.includes('auth/callback');
+      const isReset = url.includes('auth/reset');
+      if (!isCallback && !isReset) return;
+      // Show the reset screen immediately, even before the code exchange lands.
+      if (isReset) setRecovering(true);
       const queryStr = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
       const code = new URLSearchParams(queryStr).get('code');
       if (code) {
-        console.log('[OAuth] deep link code received, exchanging...');
         // Deduped: performOAuth may have already exchanged this same code.
         await exchangeOAuthCodeOnce(code);
       }
