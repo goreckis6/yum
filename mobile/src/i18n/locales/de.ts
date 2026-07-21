@@ -458,7 +458,7 @@ const de: Dict = {
   'grocery.fromPantry': 'Aus deinem Vorrat',
   'grocery.swipeDelete': 'Löschen',
   'grocery.calcHint': 'Wiederholte Zutaten summieren – z. B. ½ Zitrone + ½ Zitrone = 1 Zitrone',
-  'grocery.calcTitle': '🧮 Summierte Zutaten',
+  'grocery.calcTitle': 'Summierte Zutaten',
   'grocery.calcItems': '{n} Artikel',
   'mealplan.slot.added': 'Zu {slot} hinzugefügt',
   'mealplan.entry.grams': '{g} g · {kcal} kcal',

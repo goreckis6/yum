@@ -458,7 +458,7 @@ const sv: Dict = {
   'grocery.fromPantry': 'Från ditt skafferi',
   'grocery.swipeDelete': 'Ta bort',
   'grocery.calcHint': 'Summera upprepade ingredienser — t.ex. ½ citron + ½ citron = 1 citron',
-  'grocery.calcTitle': '🧮 Summerade ingredienser',
+  'grocery.calcTitle': 'Summerade ingredienser',
   'grocery.calcItems': '{n} varor',
   'mealplan.slot.added': 'Tillagd i {slot}',
   'mealplan.entry.grams': '{g} g · {kcal} kcal',

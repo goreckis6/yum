@@ -458,7 +458,7 @@ const uk: Dict = {
   'grocery.fromPantry': 'З вашої комори',
   'grocery.swipeDelete': 'Видалити',
   'grocery.calcHint': 'Підсумовуйте повторювані інгредієнти — напр., ½ лимона + ½ лимона = 1 лимон',
-  'grocery.calcTitle': '🧮 Підсумовані інгредієнти',
+  'grocery.calcTitle': 'Підсумовані інгредієнти',
   'grocery.calcItems': '{n} товарів',
   'mealplan.slot.added': 'Додано до {slot}',
   'mealplan.entry.grams': '{g} г · {kcal} ккал',

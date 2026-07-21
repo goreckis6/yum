@@ -458,7 +458,7 @@ const ru: Dict = {
   'grocery.fromPantry': 'Из вашей кладовой',
   'grocery.swipeDelete': 'Удалить',
   'grocery.calcHint': 'Суммируйте повторяющиеся ингредиенты — напр., ½ лимона + ½ лимона = 1 лимон',
-  'grocery.calcTitle': '🧮 Суммированные ингредиенты',
+  'grocery.calcTitle': 'Суммированные ингредиенты',
   'grocery.calcItems': '{n} товаров',
   'mealplan.slot.added': 'Добавлено в {slot}',
   'mealplan.entry.grams': '{g} г · {kcal} ккал',

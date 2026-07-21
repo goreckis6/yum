@@ -458,7 +458,7 @@ const pt: Dict = {
   'grocery.fromPantry': 'Da sua despensa',
   'grocery.swipeDelete': 'Excluir',
   'grocery.calcHint': 'Soma ingredientes repetidos — ex.: ½ limão + ½ limão = 1 limão',
-  'grocery.calcTitle': '🧮 Ingredientes somados',
+  'grocery.calcTitle': 'Ingredientes somados',
   'grocery.calcItems': '{n} itens',
   'mealplan.slot.added': 'Adicionado a {slot}',
   'mealplan.entry.grams': '{g} g · {kcal} kcal',

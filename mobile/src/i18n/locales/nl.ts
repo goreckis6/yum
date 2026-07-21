@@ -458,7 +458,7 @@ const nl: Dict = {
   'grocery.fromPantry': 'Uit je voorraad',
   'grocery.swipeDelete': 'Verwijderen',
   'grocery.calcHint': 'Tel herhaalde ingrediënten op — bijv. ½ citroen + ½ citroen = 1 citroen',
-  'grocery.calcTitle': '🧮 Opgetelde ingrediënten',
+  'grocery.calcTitle': 'Opgetelde ingrediënten',
   'grocery.calcItems': '{n} artikelen',
   'mealplan.slot.added': 'Toegevoegd aan {slot}',
   'mealplan.entry.grams': '{g} g · {kcal} kcal',

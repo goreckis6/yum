@@ -197,6 +197,15 @@ export function GroceryScreen() {
     }, 80);
   };
 
+  // Tapping a summed ingredient checks off every matching item so the whole
+  // group jumps down to "In the basket".
+  const basketConsolidated = (name: string) => {
+    const key = name.toLowerCase().trim().replace(/\s+/g, ' ');
+    grocery
+      .filter((g) => !g.checked && g.n.toLowerCase().trim().replace(/\s+/g, ' ') === key)
+      .forEach((g) => toggleGrocery(g.id));
+  };
+
   // Capture the branded shopping-list card as an image and hand it to the OS
   // share sheet — WhatsApp, Messages, Instagram, Notes, etc.
   const shareCardRef = useRef<View>(null);
@@ -463,7 +472,7 @@ export function GroceryScreen() {
               </View>
               {consolidated.map((item, idx) => (
                 <View key={item.name + idx}>
-                  <View style={styles.calcRow}>
+                  <Pressable style={styles.calcRow} onPress={() => basketConsolidated(item.name)}>
                     <IngredientIcon name={item.name} size={26} />
                     <View style={styles.rowBody}>
                       <Text style={styles.calcRowName}>{item.name}</Text>
@@ -483,7 +492,7 @@ export function GroceryScreen() {
                         </View>
                       )}
                     </View>
-                  </View>
+                  </Pressable>
                   {idx < consolidated.length - 1 && <View style={styles.calcSep} />}
                 </View>
               ))}

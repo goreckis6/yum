@@ -458,7 +458,7 @@ const fr: Dict = {
   'grocery.fromPantry': 'De ton garde-manger',
   'grocery.swipeDelete': 'Supprimer',
   'grocery.calcHint': 'Additionne les ingrédients répétés — ex. ½ citron + ½ citron = 1 citron',
-  'grocery.calcTitle': '🧮 Ingrédients additionnés',
+  'grocery.calcTitle': 'Ingrédients additionnés',
   'grocery.calcItems': '{n} articles',
   'mealplan.slot.added': 'Ajouté à {slot}',
   'mealplan.entry.grams': '{g} g · {kcal} kcal',
