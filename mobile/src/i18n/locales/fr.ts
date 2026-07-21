@@ -45,6 +45,8 @@ const fr: Dict = {
   'auth.newPassSub': 'Saisis un nouveau mot de passe pour ton compte.',
   'auth.newPassPlaceholder': 'Nouveau mot de passe',
   'auth.newPassSave': 'Enregistrer le mot de passe',
+  'auth.newPassConfirm': 'Confirme le nouveau mot de passe',
+  'auth.passMismatch': 'Les mots de passe ne correspondent pas.',
   'auth.passMin': 'Le mot de passe doit comporter au moins 6 caractères.',
 
   // home

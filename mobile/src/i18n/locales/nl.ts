@@ -45,6 +45,8 @@ const nl: Dict = {
   'auth.newPassSub': 'Voer een nieuw wachtwoord in voor je account.',
   'auth.newPassPlaceholder': 'Nieuw wachtwoord',
   'auth.newPassSave': 'Wachtwoord opslaan',
+  'auth.newPassConfirm': 'Bevestig nieuw wachtwoord',
+  'auth.passMismatch': 'De wachtwoorden komen niet overeen.',
   'auth.passMin': 'Het wachtwoord moet minstens 6 tekens hebben.',
 
   // home

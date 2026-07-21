@@ -45,6 +45,8 @@ const es: Dict = {
   'auth.newPassSub': 'Introduce una nueva contraseña para tu cuenta.',
   'auth.newPassPlaceholder': 'Nueva contraseña',
   'auth.newPassSave': 'Guardar contraseña',
+  'auth.newPassConfirm': 'Confirma la nueva contraseña',
+  'auth.passMismatch': 'Las contraseñas no coinciden.',
   'auth.passMin': 'La contraseña debe tener al menos 6 caracteres.',
 
   // home

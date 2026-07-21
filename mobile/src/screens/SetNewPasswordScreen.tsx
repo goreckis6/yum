@@ -28,6 +28,7 @@ export function SetNewPasswordScreen() {
   const { updatePassword } = useAuth();
 
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,6 +36,10 @@ export function SetNewPasswordScreen() {
     setError(null);
     if (password.length < 6) {
       setError(t('auth.passMin'));
+      return;
+    }
+    if (password !== confirm) {
+      setError(t('auth.passMismatch'));
       return;
     }
     setBusy(true);
@@ -61,6 +66,16 @@ export function SetNewPasswordScreen() {
           placeholderTextColor={c.gray}
           secureTextEntry
           autoFocus
+        />
+        <TextInput
+          style={styles.field}
+          value={confirm}
+          onChangeText={setConfirm}
+          placeholder={t('auth.newPassConfirm')}
+          placeholderTextColor={c.gray}
+          secureTextEntry
+          onSubmitEditing={save}
+          returnKeyType="done"
         />
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

@@ -70,6 +70,8 @@ export const en = {
   'auth.newPassSub': 'Enter a new password for your account.',
   'auth.newPassPlaceholder': 'New password',
   'auth.newPassSave': 'Save password',
+  'auth.newPassConfirm': 'Confirm new password',
+  'auth.passMismatch': 'Passwords do not match.',
   'auth.passMin': 'Password must be at least 6 characters.',
 
   // home
@@ -710,6 +712,8 @@ export const pl: Record<TKey, string> = {
   'auth.newPassSub': 'Wpisz nowe hasło do swojego konta.',
   'auth.newPassPlaceholder': 'Nowe hasło',
   'auth.newPassSave': 'Zapisz hasło',
+  'auth.newPassConfirm': 'Powtórz nowe hasło',
+  'auth.passMismatch': 'Hasła nie są takie same.',
   'auth.passMin': 'Hasło musi mieć co najmniej 6 znaków.',
 
   'home.greetingMorning': 'Dzień dobry',

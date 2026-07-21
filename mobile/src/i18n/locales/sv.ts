@@ -45,6 +45,8 @@ const sv: Dict = {
   'auth.newPassSub': 'Ange ett nytt lösenord för ditt konto.',
   'auth.newPassPlaceholder': 'Nytt lösenord',
   'auth.newPassSave': 'Spara lösenord',
+  'auth.newPassConfirm': 'Bekräfta nytt lösenord',
+  'auth.passMismatch': 'Lösenorden matchar inte.',
   'auth.passMin': 'Lösenordet måste vara minst 6 tecken.',
 
   // home

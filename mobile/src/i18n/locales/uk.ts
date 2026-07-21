@@ -45,6 +45,8 @@ const uk: Dict = {
   'auth.newPassSub': 'Введіть новий пароль для свого акаунта.',
   'auth.newPassPlaceholder': 'Новий пароль',
   'auth.newPassSave': 'Зберегти пароль',
+  'auth.newPassConfirm': 'Підтвердіть новий пароль',
+  'auth.passMismatch': 'Паролі не збігаються.',
   'auth.passMin': 'Пароль має містити щонайменше 6 символів.',
 
   // home

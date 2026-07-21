@@ -45,6 +45,8 @@ const pt: Dict = {
   'auth.newPassSub': 'Digite uma nova senha para sua conta.',
   'auth.newPassPlaceholder': 'Nova senha',
   'auth.newPassSave': 'Salvar senha',
+  'auth.newPassConfirm': 'Confirme a nova senha',
+  'auth.passMismatch': 'As senhas não coincidem.',
   'auth.passMin': 'A senha deve ter pelo menos 6 caracteres.',
 
   // home
